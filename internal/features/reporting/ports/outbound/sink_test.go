@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package outbound
 
 import (
@@ -11,7 +14,7 @@ func (nopWriteCloser) Close() error { return nil }
 
 type stubSink struct{}
 
-func (stubSink) Open() (io.WriteCloser, error) { return nopWriteCloser{io.Discard}, nil }
+func (stubSink) Open() (Stream, error) { return NewStream(nopWriteCloser{io.Discard}), nil }
 
 var _ Sink = stubSink{}
 
@@ -26,7 +29,7 @@ func TestSinkContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := io.WriteString(w, "hello"); err != nil {
+	if _, err := io.WriteString(&w, "hello"); err != nil {
 		t.Fatal(err)
 	}
 

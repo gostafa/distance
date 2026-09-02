@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package profiling
 
 import (
@@ -19,6 +22,7 @@ func TestStartCPUWritesProfile(t *testing.T) {
 	}
 
 	sum := 0
+
 	for i := range 100000 {
 		sum += i
 	}
@@ -28,6 +32,7 @@ func TestStartCPUWritesProfile(t *testing.T) {
 	if err := stop(); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := stop(); err == nil {
 		t.Fatal("expected a second stop to report that the profile is already closed")
 	}
@@ -52,13 +57,16 @@ func TestStartCPUAlreadyActive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	t.Cleanup(func() {
-		if err := stop(); err != nil {
+		err := stop()
+		if err != nil {
 			t.Errorf("stop first profile: %v", err)
 		}
 	})
 
 	second := filepath.Join(t.TempDir(), "second.prof")
+
 	if _, err := StartCPU(second); err == nil {
 		t.Fatal("expected an error when CPU profiling is already active")
 	}
@@ -67,6 +75,7 @@ func TestStartCPUAlreadyActive(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open second profile after failed start: %v", err)
 	}
+
 	if err := file.Close(); err != nil {
 		t.Fatalf("close second profile: %v", err)
 	}
@@ -79,25 +88,43 @@ func TestCreateProfileFileWithoutDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if err := file.Close(); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestWriteHeapWriteAndCloseErrors(t *testing.T) {
-	origWrite, origClose := writeHeapProfile, closeFile
-	t.Cleanup(func() { writeHeapProfile, closeFile = origWrite, origClose })
-
 	sentinel := errors.New("heap write failed")
-	writeHeapProfile = func(io.Writer) error { return sentinel }
-	if err := WriteHeap(filepath.Join(t.TempDir(), "heap.prof")); !errors.Is(err, sentinel) {
+	runtime := defaultProfilingRuntime()
+
+	runtime.writeHeapProfile = func(io.Writer) error { return sentinel }
+
+	err := runtime.writeHeap(
+		filepath.Join(t.TempDir(), "heap.prof"),
+	)
+	if !errors.Is(
+		err,
+		sentinel,
+	) {
+
 		t.Fatalf("write error = %v", err)
 	}
 
-	writeHeapProfile = func(io.Writer) error { return nil }
+	runtime.writeHeapProfile = func(io.Writer) error { return nil }
+
 	closeSentinel := errors.New("close failed")
-	closeFile = func(*os.File) error { return closeSentinel }
-	if err := WriteHeap(filepath.Join(t.TempDir(), "heap2.prof")); !errors.Is(err, closeSentinel) {
+
+	runtime.closeFile = func(*os.File) error { return closeSentinel }
+
+	err = runtime.writeHeap(
+		filepath.Join(t.TempDir(), "heap2.prof"),
+	)
+	if !errors.Is(
+		err,
+		closeSentinel,
+	) {
+
 		t.Fatalf("close error = %v", err)
 	}
 }

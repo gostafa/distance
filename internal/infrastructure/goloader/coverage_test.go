@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package goloader
 
 import (
@@ -12,8 +15,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gostafa/distance/internal/features/typefacts/domain"
+	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	"github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
+	"github.com/gostafa/distance/internal/shared/workerpool"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -21,19 +25,26 @@ func writeModule(t *testing.T, files map[string]string) string {
 	t.Helper()
 
 	dir := t.TempDir()
-	if err := os.WriteFile(
+
+	err := os.WriteFile(
 		filepath.Join(dir, "go.mod"),
 		[]byte("module example.com/cov\n\ngo 1.22\n"),
 		0o600,
-	); err != nil {
+	)
+	if err != nil {
 		t.Fatal(err)
 	}
+
 	for name, content := range files {
 		path := filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+
+		err := os.MkdirAll(filepath.Dir(path), 0o755)
+		if err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+
+		err = os.WriteFile(path, []byte(content), 0o600)
+		if err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -93,25 +104,28 @@ func (Talker) Speak() {}
 `,
 	})
 
-	mod, pkgs, err := load(context.Background(), outbound.FactOptions{
+	out := defaultLoaderRuntime().load(t.Context(), &outbound.FactOptions{
 		Directory:        dir,
 		Patterns:         nil, // exercises ./... default
 		IncludeGenerated: true,
 		BuildTags:        []string{"ignoretag"},
 	})
-	if err != nil {
-		t.Fatal(err)
+	if out.err != nil {
+		t.Fatal(out.err)
 	}
-	if mod != "example.com/cov" {
-		t.Fatalf("module = %q", mod)
+
+	if out.mod != "example.com/cov" {
+		t.Fatalf("module = %q", out.mod)
 	}
 
 	foundGen := false
 	foundHolder := false
-	for _, pkg := range pkgs {
+
+	for _, pkg := range out.ext {
 		if !strings.HasSuffix(pkg.Path, "/shapes") {
 			continue
 		}
+
 		for _, te := range pkg.Types {
 			switch te.Name {
 			case "Generated":
@@ -121,21 +135,24 @@ func (Talker) Speak() {}
 			}
 		}
 	}
+
 	if !foundHolder {
 		t.Fatal("Holder not extracted")
 	}
+
 	if !foundGen {
 		t.Fatal("Generated type missing with IncludeGenerated=true")
 	}
 
-	_, pkgs2, err := load(context.Background(), outbound.FactOptions{
+	out2 := defaultLoaderRuntime().load(t.Context(), &outbound.FactOptions{
 		Directory: dir,
 		Patterns:  []string{"./shapes"},
 	})
-	if err != nil {
-		t.Fatal(err)
+	if out2.err != nil {
+		t.Fatal(out2.err)
 	}
-	for _, pkg := range pkgs2 {
+
+	for _, pkg := range out2.ext {
 		for _, te := range pkg.Types {
 			if te.Name == "Generated" {
 				t.Fatal("Generated should be skipped when IncludeGenerated=false")
@@ -144,19 +161,23 @@ func (Talker) Speak() {}
 	}
 
 	foundTalker := false
-	for _, pkg := range pkgs {
+
+	for _, pkg := range out.ext {
 		if !strings.HasSuffix(pkg.Path, "/iface") {
 			continue
 		}
+
 		for _, te := range pkg.Types {
 			if te.Name == "Talker" {
 				foundTalker = true
-				if te.Kind != domain.KindOther {
+
+				if te.Kind != model.KindOther {
 					t.Fatalf("Talker kind = %d, want other", te.Kind)
 				}
 			}
 		}
 	}
+
 	if !foundTalker {
 		t.Fatal("Talker not extracted")
 	}
@@ -166,64 +187,79 @@ func TestSkipPos(t *testing.T) {
 	fset := token.NewFileSet()
 	f := fset.AddFile("gen.go", -1, 20)
 	f.SetLinesForContent([]byte("package x\n"))
-	if skipPos(fset, true, map[string]bool{f.Name(): true}, token.Pos(f.Base())) {
+
+	filter := skipFilter{
+		fset:      fset,
+		generated: map[string]bool{f.Name(): true},
+		opts:      &extractorOptions{includeGenerated: true},
+	}
+
+	if skipPos(&filter, token.Pos(f.Base())) {
 		t.Fatal("includeGenerated=true must not skip")
 	}
-	if !skipPos(fset, false, map[string]bool{f.Name(): true}, token.Pos(f.Base())) {
+
+	filter.opts.includeGenerated = false
+
+	if !skipPos(&filter, token.Pos(f.Base())) {
 		t.Fatal("generated file should be skipped")
 	}
 }
 
 func TestSelectPackagesTruncation(t *testing.T) {
 	loaded := make([]*packages.Package, 0, 12)
-	for i := 0; i < 12; i++ {
+
+	for i := range 12 {
 		loaded = append(loaded, &packages.Package{
 			PkgPath: fmt.Sprintf("m/p%d", i),
 			Errors:  []packages.Error{{Msg: "boom"}},
 		})
 	}
-	_, err := selectPackages(loaded, false)
+
+	_, err := selectPackages(loaded, &outbound.FactOptions{})
+
 	if err == nil || !strings.Contains(err.Error(), "and 2 more") {
 		t.Fatalf("truncation error = %v", err)
 	}
 }
 
 func TestLoadPackagesSeamErrors(t *testing.T) {
-	orig := packagesLoad
-	t.Cleanup(func() { packagesLoad = orig })
-
 	sentinel := errors.New("load boom")
-	packagesLoad = func(*packages.Config, ...string) ([]*packages.Package, error) {
+	runtime := defaultLoaderRuntime()
+
+	runtime.packagesLoad = func(*packages.Config, ...string) ([]*packages.Package, error) {
 		return nil, sentinel
 	}
-	if _, err := loadPackages(
-		context.Background(),
-		outbound.FactOptions{Patterns: []string{"./"}},
+
+	if _, err := runtime.loadPackages(
+		t.Context(), &outbound.FactOptions{Patterns: []string{"./"}},
 	); !errors.Is(
 		err,
 		sentinel,
 	) {
+
 		t.Fatalf("load error = %v", err)
 	}
 
-	packagesLoad = func(*packages.Config, ...string) ([]*packages.Package, error) {
+	runtime.packagesLoad = func(*packages.Config, ...string) ([]*packages.Package, error) {
 		return nil, nil
 	}
-	if _, err := loadPackages(
-		context.Background(),
-		outbound.FactOptions{Patterns: []string{"./x"}},
+
+	if _, err := runtime.loadPackages(
+		t.Context(), &outbound.FactOptions{Patterns: []string{"./x"}},
 	); err == nil ||
 		!strings.Contains(err.Error(), "no packages matched") {
+
 		t.Fatalf("empty load = %v", err)
 	}
 
-	packagesLoad = func(*packages.Config, ...string) ([]*packages.Package, error) {
+	runtime.packagesLoad = func(*packages.Config, ...string) ([]*packages.Package, error) {
 		return []*packages.Package{{
 			PkgPath: "m/broken",
 			Errors:  []packages.Error{{Msg: "x"}},
 		}}, nil
 	}
-	if _, err := loadPackages(context.Background(), outbound.FactOptions{
+
+	if _, err := runtime.loadPackages(t.Context(), &outbound.FactOptions{
 		Patterns: []string{"./x"}, ContinueOnError: true,
 	}); err == nil || !strings.Contains(err.Error(), "no loadable packages") {
 		t.Fatalf("no loadable = %v", err)
@@ -231,33 +267,34 @@ func TestLoadPackagesSeamErrors(t *testing.T) {
 }
 
 func TestExtractAllWorkerError(t *testing.T) {
-	orig := runExtractWorkers
-	t.Cleanup(func() { runExtractWorkers = orig })
-
 	sentinel := errors.New("extract failed")
-	runExtractWorkers = func(context.Context, int, int, func(int) error) error {
+	runtime := defaultLoaderRuntime()
+
+	runtime.runExtractWorkers = func(context.Context, workerpool.PoolConfig, func(int) error) error {
 		return sentinel
 	}
 
 	pkg := healthy("m/a", "a.go")
-	_, err := extractAll(
-		context.Background(),
-		[]*packages.Package{pkg},
-		outbound.FactOptions{},
-		"m",
+	_, err := runtime.extractAll(
+		t.Context(),
+		&extractJob{
+			pkgs:       []*packages.Package{pkg},
+			opts:       &outbound.FactOptions{},
+			modulePath: "m",
+		},
 	)
+
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("extractAll = %v", err)
 	}
 
-	packagesLoadOrig := packagesLoad
-	t.Cleanup(func() { packagesLoad = packagesLoadOrig })
-	packagesLoad = func(*packages.Config, ...string) ([]*packages.Package, error) {
+	runtime.packagesLoad = func(*packages.Config, ...string) ([]*packages.Package, error) {
 		return []*packages.Package{healthy("m/a", "a.go")}, nil
 	}
-	_, _, err = load(context.Background(), outbound.FactOptions{Patterns: []string{"./a"}})
-	if !errors.Is(err, sentinel) {
-		t.Fatalf("load extract error = %v", err)
+	loaded := runtime.load(t.Context(), &outbound.FactOptions{Patterns: []string{"./a"}})
+
+	if !errors.Is(loaded.err, sentinel) {
+		t.Fatalf("load extract error = %v", loaded.err)
 	}
 }
 
@@ -270,18 +307,24 @@ type I interface{ M() }
 type A int
 `,
 	})
-	_, pkgs, err := load(context.Background(), outbound.FactOptions{
+
+	out := defaultLoaderRuntime().load(t.Context(), &outbound.FactOptions{
 		Directory: dir,
 		Patterns:  []string{"."},
 	})
-	if err != nil {
-		t.Fatal(err)
+	if out.err != nil {
+		t.Fatal(out.err)
 	}
-	kinds := map[string]domain.TypeKind{}
-	for _, te := range pkgs[0].Types {
+
+	kinds := map[string]uint8{}
+
+	for _, te := range out.ext[0].Types {
 		kinds[te.Name] = te.Kind
 	}
-	if kinds["S"] != domain.KindStruct || kinds["I"] != domain.KindInterface || kinds["A"] != domain.KindOther {
+
+	if kinds["S"] != model.KindStruct || kinds["I"] != model.KindInterface ||
+		kinds["A"] != model.KindOther {
+
 		t.Fatalf("kinds = %+v", kinds)
 	}
 }
@@ -294,6 +337,7 @@ func TestExtractPackageSkipsNonNamedTypeName(t *testing.T) {
 	tpkg := types.NewPackage("m", "m")
 	// TypeParam: IsAlias=false but Type() is not *Named.
 	tn := types.NewTypeName(token.Pos(file.Base()), tpkg, "T", nil)
+
 	_ = types.NewTypeParam(tn, types.NewInterfaceType(nil, nil))
 	tpkg.Scope().Insert(tn)
 
@@ -304,7 +348,8 @@ func TestExtractPackageSkipsNonNamedTypeName(t *testing.T) {
 		TypesInfo: &types.Info{},
 		Syntax:    []*ast.File{{Name: &ast.Ident{Name: "m"}}},
 	}
-	out := extractPackage(pkg, extractorOptions{})
+	out := extractPackage(pkg, &extractorOptions{})
+
 	if len(out.Types) != 0 {
 		t.Fatalf("types = %+v, want none", out.Types)
 	}

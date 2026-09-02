@@ -1,10 +1,13 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package outbound_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/gostafa/distance/internal/features/typefacts/domain"
+	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	"github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
 )
 
@@ -13,10 +16,10 @@ type fakeSource struct{}
 
 func (fakeSource) Load(
 	_ context.Context,
-	opts outbound.FactOptions,
-) (string, []domain.PackageExtract, error) {
-	return "example.com/m", []domain.PackageExtract{
-		{Path: "example.com/m/a", InModule: true, Types: []domain.TypeExtract{{Name: "A"}}},
+	opts *outbound.FactOptions,
+) (string, []model.PackageExtract, error) {
+	return "example.com/m", []model.PackageExtract{
+		{Path: "example.com/m/a", InModule: true, Types: []model.TypeName{{Name: "A"}}},
 	}, nil
 }
 
@@ -26,7 +29,7 @@ func TestFactSourceImplementable(t *testing.T) {
 
 	var src outbound.FactSource = fakeSource{}
 
-	mod, pkgs, err := src.Load(context.Background(), outbound.FactOptions{})
+	mod, pkgs, err := src.Load(t.Context(), &outbound.FactOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

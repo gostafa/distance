@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package application_test
 
 import (
@@ -15,12 +18,14 @@ func TestWriteWeb(t *testing.T) {
 	t.Parallel()
 
 	sink := bufSink{&bytes.Buffer{}}
-	err := reporting.Write(report(), domain.FormatWeb, sink, domain.TextOptions{})
+
+	err := reporting.Write(report(), sink, &reporting.WriteOptions{Format: domain.FormatWeb})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	html := sink.buf.String()
+
 	if !strings.HasPrefix(html, "<!doctype html>") {
 		t.Errorf("web report does not start with a doctype: %.40q", html)
 	}
@@ -95,21 +100,25 @@ func TestWriteWebEscapesScriptTerminator(t *testing.T) {
 	t.Parallel()
 
 	rep := report()
+
 	rep.Packages[0].Path = "</script><script>alert(1)</script>"
 
 	sink := bufSink{&bytes.Buffer{}}
-	err := reporting.Write(rep, domain.FormatWeb, sink, domain.TextOptions{})
+
+	err := reporting.Write(rep, sink, &reporting.WriteOptions{Format: domain.FormatWeb})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	html := sink.buf.String()
+
 	if strings.Contains(html, "</script><script>alert(1)") {
 		t.Error("payload contains an unescaped script terminator")
 	}
 
 	if !strings.Contains(html, `\u003c/script\u003e`) &&
 		!strings.Contains(html, `\u003c`) {
+
 		t.Error("angle brackets in the payload are not escaped")
 	}
 }
@@ -121,15 +130,18 @@ func TestWriteWebPayloadCannotSpoofDocsPlaceholder(t *testing.T) {
 	t.Parallel()
 
 	rep := report()
+
 	rep.Packages[0].Path = "__DOCS_DATA__"
 
 	sink := bufSink{&bytes.Buffer{}}
-	err := reporting.Write(rep, domain.FormatWeb, sink, domain.TextOptions{})
+
+	err := reporting.Write(rep, sink, &reporting.WriteOptions{Format: domain.FormatWeb})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	html := sink.buf.String()
+
 	if got := strings.Count(html, `id="docs-data"`); got != 1 {
 		t.Errorf("docs-data script elements = %d, want 1", got)
 	}

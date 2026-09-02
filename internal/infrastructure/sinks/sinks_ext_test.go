@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package sinks_test
 
 import (
@@ -19,6 +22,7 @@ var (
 // Black-box: FileSink round-trips a report body through the port.
 func TestFileSinkRoundTrip(t *testing.T) {
 	t.Parallel()
+
 	path := filepath.Join(t.TempDir(), "report.json")
 
 	var s outbound.Sink = sinks.FileSink{Path: path}
@@ -28,7 +32,7 @@ func TestFileSinkRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := io.WriteString(w, `{"ok":true}`); err != nil {
+	if _, err := io.WriteString(&w, `{"ok":true}`); err != nil {
 		t.Fatal(err)
 	}
 
@@ -37,6 +41,7 @@ func TestFileSinkRoundTrip(t *testing.T) {
 	}
 
 	data, _ := os.ReadFile(path)
+
 	if string(data) != `{"ok":true}` {
 		t.Fatalf("round-trip = %q", data)
 	}
@@ -52,6 +57,7 @@ func TestStdoutSinkWritesToStdout(t *testing.T) {
 	}
 
 	os.Stdout = w
+
 	defer func() { os.Stdout = orig }()
 
 	out, err := sinks.StdoutSink{}.Open()
@@ -59,7 +65,7 @@ func TestStdoutSinkWritesToStdout(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := io.WriteString(out, "hello stdout"); err != nil {
+	if _, err := io.WriteString(&out, "hello stdout"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -72,6 +78,7 @@ func TestStdoutSinkWritesToStdout(t *testing.T) {
 	}
 
 	data, _ := io.ReadAll(r)
+
 	if string(data) != "hello stdout" {
 		t.Fatalf("stdout captured = %q", data)
 	}

@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package application_test
 
 import (
@@ -15,16 +18,20 @@ func TestWriteDocs(t *testing.T) {
 	t.Parallel()
 
 	sink := bufSink{&bytes.Buffer{}}
-	if err := reporting.WriteDocs(sink, "v1.2.3"); err != nil {
+
+	err := reporting.WriteDocs(sink, "v1.2.3")
+	if err != nil {
 		t.Fatal(err)
 	}
 
 	html := sink.buf.String()
+
 	if !strings.HasPrefix(html, "<!doctype html>") {
 		t.Errorf("guide does not start with a doctype: %.40q", html)
 	}
 
 	wanted := []string{`id="docs-data"`, `<math`, `"v1.2.3"`}
+
 	for _, name := range metrics.ReportedMetricOrder() {
 		wanted = append(wanted, `"name":"`+name+`"`)
 	}

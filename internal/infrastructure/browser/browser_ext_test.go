@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package browser_test
 
 import (
@@ -20,8 +23,10 @@ func TestOpenCommand(t *testing.T) {
 		{"linux", "xdg-open"},
 		{"freebsd", "xdg-open"},
 	}
+
 	for _, tt := range tests {
 		name, args := browser.OpenCommand(tt.goos, "r.html")
+
 		if name != tt.want {
 			t.Errorf("OpenCommand(%q) name = %q, want %q", tt.goos, name, tt.want)
 		}

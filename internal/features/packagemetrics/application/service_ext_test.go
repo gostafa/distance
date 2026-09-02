@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package application_test
 
 import (
@@ -23,8 +26,9 @@ func TestComputeForPackagesIsolated(t *testing.T) {
 		},
 	}
 
-	graph := domain.BuildDependencyGraph(facts, domain.Scope("project"))
-	got := architecture.ComputeForPackages(facts, graph)
+	graph := domain.BuildDependencyGraph(facts, domain.ScopeProject)
+	got := architecture.ComputeForPackages(facts, &graph)
+
 	if len(got) != 1 {
 		t.Fatalf("got %d results", len(got))
 	}

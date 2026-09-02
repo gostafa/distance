@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package domain_test
 
 import (
@@ -16,6 +19,7 @@ func TestMetricDocsCoverEveryMetric(t *testing.T) {
 	docs := domain.MetricDocs()
 
 	byName := make(map[string]domain.MetricDoc, len(docs))
+
 	for _, d := range docs {
 		if _, dup := byName[d.Name]; dup {
 			t.Errorf("duplicate docs entry %q", d.Name)
@@ -30,6 +34,7 @@ func TestMetricDocsCoverEveryMetric(t *testing.T) {
 
 	for _, name := range []string{"ca", "ce"} {
 		d, ok := byName[name]
+
 		if !ok {
 			t.Errorf("structural column %q has no docs entry", name)
 
@@ -42,6 +47,7 @@ func TestMetricDocsCoverEveryMetric(t *testing.T) {
 
 		if d.Label == "" || d.FullName == "" || d.Summary == "" ||
 			d.HowCalculated == "" || d.Interpretation == "" || d.Example == "" {
+
 			t.Errorf("structural entry %q has empty prose fields", name)
 		}
 
@@ -62,6 +68,7 @@ func assertMetricDoc(
 	t.Helper()
 
 	d, ok := byName[name]
+
 	if !ok {
 		t.Errorf("metric %q has no docs entry", name)
 

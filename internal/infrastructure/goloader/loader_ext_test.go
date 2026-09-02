@@ -1,12 +1,14 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package goloader_test
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/gostafa/distance/internal/features/typefacts/domain"
+	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	"github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
 	"github.com/gostafa/distance/internal/infrastructure/goloader"
 )
@@ -17,11 +19,14 @@ func writeFile(t *testing.T, dir, name, content string) {
 	t.Helper()
 
 	path := filepath.Join(dir, name)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+
+	err := os.MkdirAll(filepath.Dir(path), 0o755)
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+	err = os.WriteFile(path, []byte(content), 0o644)
+	if err != nil {
 		t.Fatal(err)
 	}
 }
@@ -31,7 +36,7 @@ func writeFile(t *testing.T, dir, name, content string) {
 func TestLoadFixture(t *testing.T) {
 	t.Parallel()
 
-	mod, pkgs, err := goloader.New().Load(context.Background(), outbound.FactOptions{
+	mod, pkgs, err := goloader.New().Load(t.Context(), &outbound.FactOptions{
 		Directory: fixtureDir(),
 		Patterns:  []string{"./..."},
 	})
@@ -43,7 +48,7 @@ func TestLoadFixture(t *testing.T) {
 		t.Fatalf("module = %q", mod)
 	}
 
-	var orders *domain.PackageExtract
+	var orders *model.PackageExtract
 
 	for i := range pkgs {
 		if pkgs[i].Path == "example.com/fixture/orders" {
@@ -59,7 +64,7 @@ func TestLoadFixture(t *testing.T) {
 		t.Error("orders should be in-module")
 	}
 
-	var order *domain.TypeExtract
+	var order *model.TypeName
 
 	for i := range orders.Types {
 		if orders.Types[i].Name == "Order" {
@@ -71,7 +76,7 @@ func TestLoadFixture(t *testing.T) {
 		t.Fatal("Order type not extracted")
 	}
 
-	if order.Kind != domain.KindStruct {
+	if order.Kind != model.KindStruct {
 		t.Errorf("Order kind = %d, want struct", order.Kind)
 	}
 }
@@ -89,25 +94,31 @@ type Alias = Widget
 type Count int
 `)
 
-	_, pkgs, err := goloader.New().Load(context.Background(), outbound.FactOptions{
+	_, pkgs, err := goloader.New().Load(t.Context(), &outbound.FactOptions{
 		Directory: dir,
 		Patterns:  []string{"."},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if len(pkgs) != 1 {
 		t.Fatalf("packages = %d, want 1", len(pkgs))
 	}
 
-	kinds := map[string]domain.TypeKind{}
+	kinds := map[string]uint8{}
+
 	for _, te := range pkgs[0].Types {
 		kinds[te.Name] = te.Kind
 	}
+
 	if _, ok := kinds["Alias"]; ok {
 		t.Fatal("type aliases should not be extracted")
 	}
-	if kinds["Widget"] != domain.KindStruct || kinds["Closer"] != domain.KindInterface || kinds["Count"] != domain.KindOther {
+
+	if kinds["Widget"] != model.KindStruct || kinds["Closer"] != model.KindInterface ||
+		kinds["Count"] != model.KindOther {
+
 		t.Fatalf("kinds = %+v", kinds)
 	}
 }
@@ -116,7 +127,7 @@ type Count int
 func TestLoadNoMatch(t *testing.T) {
 	t.Parallel()
 
-	_, _, err := goloader.New().Load(context.Background(), outbound.FactOptions{
+	_, _, err := goloader.New().Load(t.Context(), &outbound.FactOptions{
 		Directory: fixtureDir(),
 		Patterns:  []string{"./does-not-exist"},
 	})

@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package inbound_test
 
 import (
@@ -10,11 +13,11 @@ import (
 
 // fakeAnalyzer proves the inbound port is implementable from outside.
 type fakeAnalyzer struct {
-	result inbound.Result
 	err    error
+	result inbound.Result
 }
 
-func (f fakeAnalyzer) Analyze(context.Context, inbound.Options) (inbound.Result, error) {
+func (f fakeAnalyzer) Analyze(context.Context, *inbound.Options) (inbound.Result, error) {
 	return f.result, f.err
 }
 
@@ -24,7 +27,7 @@ func TestAnalyzerImplementable(t *testing.T) {
 
 	var a inbound.Analyzer = fakeAnalyzer{result: inbound.Result{ModulePath: "example.com/m"}}
 
-	got, err := a.Analyze(context.Background(), inbound.Options{Patterns: []string{"./..."}})
+	got, err := a.Analyze(t.Context(), &inbound.Options{Patterns: []string{"./..."}})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -34,13 +37,15 @@ func TestAnalyzerImplementable(t *testing.T) {
 	}
 
 	sentinel := errors.New("boom")
+
 	if _, err := (fakeAnalyzer{err: sentinel}).Analyze(
-		context.Background(),
-		inbound.Options{},
+		t.Context(),
+		&inbound.Options{},
 	); !errors.Is(
 		err,
 		sentinel,
 	) {
+
 		t.Fatalf("error not propagated: %v", err)
 	}
 }

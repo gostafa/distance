@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package profiling_test
 
 import (
@@ -11,6 +14,7 @@ import (
 // Black-box: WriteHeap produces a non-empty heap profile.
 func TestWriteHeap(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "heap.prof")
+
 	err := profiling.WriteHeap(path)
 	if err != nil {
 		t.Fatal(err)

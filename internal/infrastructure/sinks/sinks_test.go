@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package sinks
 
 import (
@@ -20,6 +23,7 @@ func TestStdoutStreamCloseFlushes(t *testing.T) {
 	defer func() { _ = f.Close() }()
 
 	s := stdoutStream{bufio.NewWriter(f)}
+
 	if _, err := s.Write([]byte("buffered")); err != nil {
 		t.Fatal(err)
 	}
@@ -29,6 +33,7 @@ func TestStdoutStreamCloseFlushes(t *testing.T) {
 	}
 
 	data, _ := os.ReadFile(f.Name())
+
 	if string(data) != "buffered" {
 		t.Fatalf("Close did not flush: %q", data)
 	}
@@ -39,6 +44,7 @@ func TestFileSinkOpenTruncates(t *testing.T) {
 	t.Parallel()
 
 	path := filepath.Join(t.TempDir(), "out.txt")
+
 	if err := os.WriteFile(path, []byte("stale, longer content"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -57,6 +63,7 @@ func TestFileSinkOpenTruncates(t *testing.T) {
 	}
 
 	data, _ := os.ReadFile(path)
+
 	if string(data) != "new" {
 		t.Fatalf("file not truncated: %q", data)
 	}

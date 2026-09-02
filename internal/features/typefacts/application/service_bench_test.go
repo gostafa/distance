@@ -1,23 +1,26 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package application
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/gostafa/distance/internal/features/typefacts/domain"
+	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
 )
 
-func benchExtracts(pkgCount, typesPerPkg int) []domain.PackageExtract {
-	pkgs := make([]domain.PackageExtract, pkgCount)
+func benchExtracts(pkgCount, typesPerPkg int) []model.PackageExtract {
+	pkgs := make([]model.PackageExtract, pkgCount)
+
 	for p := range pkgs {
-		types := make([]domain.TypeExtract, typesPerPkg)
-		for i := range types {
-			types[i] = domain.TypeExtract{
-				Name: fmt.Sprintf("Type%02d", i),
-			}
+		types := make([]model.TypeName, 0, typesPerPkg)
+
+		for i := range typesPerPkg {
+			types = append(types, model.Named(fmt.Sprintf("Type%02d", i), 0))
 		}
 
-		pkgs[p] = domain.PackageExtract{
+		pkgs[p] = model.PackageExtract{
 			Path:     fmt.Sprintf("example.com/m/pkg%d", p),
 			InModule: true,
 			Imports: []string{
@@ -41,8 +44,9 @@ func BenchmarkAssemble(b *testing.B) {
 	for range b.N {
 		// Assemble mutates (sorts) its input in place; copy per iteration so
 		// each run sees identical work.
-		cp := make([]domain.PackageExtract, len(extracts))
+		cp := make([]model.PackageExtract, len(extracts))
 		copy(cp, extracts)
+
 		_ = Assemble("example.com/m", cp)
 	}
 }

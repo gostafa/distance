@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package version
 
 import "testing"
@@ -6,7 +9,7 @@ import "testing"
 func TestVersionIsSet(t *testing.T) {
 	t.Parallel()
 
-	if Version == "" {
+	if Version() == "" {
 		t.Fatal("Version must not be empty")
 	}
 }

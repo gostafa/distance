@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package metrics
 
 import (
@@ -58,21 +61,29 @@ func TestInstability(t *testing.T) {
 func TestDistance(t *testing.T) {
 	abstractness := Abstractness(1, 4) // 0.25
 	instability := Instability(1, 3)   // 0.75
-	assertApplicable(t, Distance(abstractness, instability), 0)
+	assertApplicable(t, Distance(&abstractness, &instability), 0)
 
-	assertNotApplicable(t, Distance(Abstractness(0, 0), instability))
+	naAbs := Abstractness(0, 0)
+	assertNotApplicable(t, Distance(&naAbs, &instability))
+
 	// Isolated packages have instability 0, so distance stays computable.
-	assertApplicable(t, Distance(abstractness, Instability(0, 0)), 0.75)
-	assertApplicable(t, Distance(Abstractness(1, 1), Instability(0, 2)), 1)
+	iso := Instability(0, 0)
+	assertApplicable(t, Distance(&abstractness, &iso), 0.75)
 
-	assertNotApplicable(t, Distance(abstractness, MetricResult{
+	abs1 := Abstractness(1, 1)
+	ins2 := Instability(0, 2)
+	assertApplicable(t, Distance(&abs1, &ins2), 1)
+
+	naIns := MetricResult{
 		Name: MetricInstability, Applicable: false, Reason: "no coupling data",
-	}))
+	}
+	assertNotApplicable(t, Distance(&abstractness, &naIns))
 }
 
 func TestReportedMetricOrder(t *testing.T) {
 	got := ReportedMetricOrder()
 	want := []string{MetricAbstractness, MetricInstability, MetricDistance}
+
 	if len(got) != len(want) {
 		t.Fatalf("ReportedMetricOrder() = %v, want %v", got, want)
 	}

@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package domain
 
 import "testing"
@@ -26,7 +29,8 @@ func TestMetricDocsDirectionMatchesQuality(t *testing.T) {
 			t.Errorf("%s: label = %q, want column heading %q", d.Name, d.Label, abbrev(d.Name))
 		}
 
-		q, colored := qualityByMetric[d.Name]
+		direction, bounded, colored := qualityFor(d.Name)
+
 		if !colored {
 			if d.Direction != DirectionNeutral {
 				t.Errorf(
@@ -40,17 +44,12 @@ func TestMetricDocsDirectionMatchesQuality(t *testing.T) {
 			continue
 		}
 
-		want := DirectionHigher
-		if q.lowerBetter {
-			want = DirectionLower
+		if d.Direction != direction {
+			t.Errorf("%s: direction = %q, want %q", d.Name, d.Direction, direction)
 		}
 
-		if d.Direction != want {
-			t.Errorf("%s: direction = %q, want %q", d.Name, d.Direction, want)
-		}
-
-		if d.Bounded != q.bounded {
-			t.Errorf("%s: bounded = %v, want %v", d.Name, d.Bounded, q.bounded)
+		if d.Bounded != bounded {
+			t.Errorf("%s: bounded = %v, want %v", d.Name, d.Bounded, bounded)
 		}
 	}
 }

@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package application
 
 import (
@@ -11,7 +14,7 @@ import (
 	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
-func sampleReport() distance.Report {
+func sampleReport() *distance.Report {
 	applicable := metrics.MetricResult{
 		Name:       "distance",
 		Scope:      metrics.ScopePackage,
@@ -20,9 +23,9 @@ func sampleReport() distance.Report {
 		Definition: "d",
 	}
 
-	return distance.Report{
+	return &distance.Report{
 		SchemaVersion: "1",
-		Tool:          distance.ToolInfo{Name: "distance", Version: "test"},
+		Tool:          distance.ToolIdent("distance", "test"),
 		Module:        "example.com/m",
 		Packages: []distance.PackageReport{{
 			Path:     "example.com/m/a",
@@ -39,12 +42,14 @@ func TestRenderJSONContract(t *testing.T) {
 	t.Parallel()
 
 	var buf strings.Builder
+
 	err := renderJSON(&buf, sampleReport())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var got map[string]any
+
 	err = json.Unmarshal([]byte(buf.String()), &got)
 	if err != nil {
 		t.Fatalf("invalid JSON: %v\n%s", err, buf.String())
@@ -55,11 +60,13 @@ func TestRenderJSONContract(t *testing.T) {
 	}
 
 	pkg := got["packages"].([]any)[0].(map[string]any)
+
 	if pkg["afferent"].(float64) != 1 || pkg["efferent"].(float64) != 2 {
 		t.Errorf("package coupling = ca %v ce %v, want 1 and 2", pkg["afferent"], pkg["efferent"])
 	}
 
 	dist := pkg["metrics"].(map[string]any)["distance"].(map[string]any)
+
 	if dist["value"].(float64) != 0.5 {
 		t.Errorf("distance value = %v", dist["value"])
 	}
@@ -70,15 +77,30 @@ func TestEncodeOrderedMetricsPreservesOrder(t *testing.T) {
 	t.Parallel()
 
 	got, err := encodeOrderedMetrics([]metrics.MetricResult{
-		{Name: metrics.MetricAbstractness, Scope: metrics.ScopePackage, Value: 1, Applicable: true, Definition: "d"},
-		{Name: metrics.MetricDistance, Scope: metrics.ScopePackage, Applicable: false, Reason: "x", Definition: "d"},
+		{
+			Name:       metrics.MetricAbstractness,
+			Scope:      metrics.ScopePackage,
+			Value:      1,
+			Applicable: true,
+			Definition: "d",
+		},
+		{
+			Name:       metrics.MetricDistance,
+			Scope:      metrics.ScopePackage,
+			Applicable: false,
+			Reason:     "x",
+			Definition: "d",
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	s := string(got)
-	if !strings.HasPrefix(s, `{"abstractness":`) || strings.Index(s, "abstractness") > strings.Index(s, "distance") {
+
+	if !strings.HasPrefix(s, `{"abstractness":`) ||
+		strings.Index(s, "abstractness") > strings.Index(s, "distance") {
+
 		t.Errorf("order not preserved: %s", s)
 	}
 }
@@ -87,7 +109,10 @@ func TestEncodeOrderedMetricsPreservesOrder(t *testing.T) {
 func TestRenderUnknownFormat(t *testing.T) {
 	t.Parallel()
 
-	err := render(io.Discard, sampleReport(), domain.Format("xml"), domain.TextOptions{})
+	err := render(io.Discard, &renderOptions{
+		report: sampleReport(),
+		format: domain.Format("xml"),
+	})
 	if err == nil {
 		t.Fatal("unknown format should error")
 	}

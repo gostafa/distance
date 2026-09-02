@@ -1,7 +1,9 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package analyzer_test
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -14,7 +16,7 @@ import (
 func TestAnalyzeFixture(t *testing.T) {
 	t.Parallel()
 
-	result, err := analyzer.NewAnalyzer().Analyze(context.Background(), inbound.Options{
+	result, err := analyzer.NewAnalyzer().Analyze(t.Context(), &inbound.Options{
 		Directory:       filepath.Join("..", "..", "..", "testdata", "fixture"),
 		Patterns:        []string{"./..."},
 		DependencyScope: "module",
@@ -30,6 +32,7 @@ func TestAnalyzeFixture(t *testing.T) {
 	if len(result.Packages) < 7 {
 		t.Fatalf("packages = %d, want >= 7", len(result.Packages))
 	}
+
 	// Packages come back sorted by import path.
 	for i := 1; i < len(result.Packages); i++ {
 		if result.Packages[i-1].Path > result.Packages[i].Path {

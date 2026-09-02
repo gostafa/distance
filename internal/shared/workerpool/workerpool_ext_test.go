@@ -1,7 +1,9 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package workerpool_test
 
 import (
-	"context"
 	"errors"
 	"sync/atomic"
 	"testing"
@@ -15,11 +17,15 @@ func TestRunAllTasks(t *testing.T) {
 
 	var count atomic.Int64
 
-	err := workerpool.Run(context.Background(), 4, 100, func(int) error {
-		count.Add(1)
+	err := workerpool.Run(
+		t.Context(),
+		&workerpool.Config{Workers: 4, Tasks: 100},
+		func(int) error {
+			count.Add(1)
 
-		return nil
-	})
+			return nil
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,13 +41,18 @@ func TestRunPropagatesError(t *testing.T) {
 
 	sentinel := errors.New("boom")
 
-	err := workerpool.Run(context.Background(), 2, 10, func(i int) error {
-		if i == 3 {
-			return sentinel
-		}
+	err := workerpool.Run(
+		t.Context(),
+		&workerpool.Config{Workers: 2, Tasks: 10},
+		func(i int) error {
+			if i == 3 {
+				return sentinel
+			}
 
-		return nil
-	})
+			return nil
+		},
+	)
+
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("error = %v, want sentinel", err)
 	}

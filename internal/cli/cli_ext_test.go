@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package cli_test
 
 import (
@@ -22,6 +25,7 @@ func TestRunFixtureJSON(t *testing.T) {
 	out := filepath.Join(tmp, "report.json")
 	cpuProfile := filepath.Join(tmp, "cpu.prof")
 	memoryProfile := filepath.Join(tmp, "memory.prof")
+
 	t.Chdir(fixture)
 
 	if code := cli.Run([]string{
@@ -33,8 +37,10 @@ func TestRunFixtureJSON(t *testing.T) {
 	}); code != 0 {
 		t.Fatalf("exit code = %d, want 0", code)
 	}
+
 	for _, profile := range []string{cpuProfile, memoryProfile} {
 		info, err := os.Stat(profile)
+
 		if err != nil || info.Size() == 0 {
 			t.Fatalf("profile %q was not written: info=%v err=%v", profile, info, err)
 		}
@@ -46,6 +52,7 @@ func TestRunFixtureJSON(t *testing.T) {
 	}
 
 	var got map[string]any
+
 	if err := json.Unmarshal(data, &got); err != nil {
 		t.Fatalf("invalid JSON report: %v", err)
 	}
@@ -55,25 +62,31 @@ func TestRunFixtureJSON(t *testing.T) {
 	}
 
 	pkgs := got["packages"].([]any)
+
 	if len(pkgs) < 7 {
 		t.Errorf("packages = %d, want >= 7", len(pkgs))
 	}
 
 	first := pkgs[0].(map[string]any)
+
 	for _, key := range []string{"afferent", "efferent", "metrics"} {
 		if _, ok := first[key]; !ok {
 			t.Errorf("package is missing %q", key)
 		}
 	}
+
 	metricsMap, ok := first["metrics"].(map[string]any)
+
 	if !ok {
 		t.Fatal("package metrics missing")
 	}
+
 	for _, name := range []string{"abstractness", "instability", "distance"} {
 		if _, present := metricsMap[name]; !present {
 			t.Errorf("package metrics missing %q", name)
 		}
 	}
+
 	for _, gone := range []string{"funcs", "vars", "consts", "functions", "variables", "constants", "types"} {
 		if _, ok := first[gone]; ok {
 			t.Errorf("package still has removed field %q", gone)
@@ -102,6 +115,7 @@ func TestRunFixtureWeb(t *testing.T) {
 	}
 
 	html := string(data)
+
 	if !strings.HasPrefix(html, "<!doctype html>") {
 		t.Errorf("report does not start with a doctype: %.40q", html)
 	}
@@ -164,6 +178,7 @@ func TestRunHelpWeb(t *testing.T) {
 			}
 
 			html := string(data)
+
 			if !strings.HasPrefix(html, "<!doctype html>") {
 				t.Errorf("guide does not start with a doctype: %.40q", html)
 			}
@@ -205,7 +220,13 @@ func TestRunCheckFailsExitsThree(t *testing.T) {
 	chdirFixture(t)
 
 	if code := cli.Run(
-		[]string{"--check", "--max-distance=0", "--output", filepath.Join(t.TempDir(), "r.txt"), "./..."},
+		[]string{
+			"--check",
+			"--max-distance=0",
+			"--output",
+			filepath.Join(t.TempDir(), "r.txt"),
+			"./...",
+		},
 	); code != 3 {
 		t.Fatalf("exit code = %d, want 3", code)
 	}

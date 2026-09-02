@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package inbound
 
 import (
@@ -17,6 +20,7 @@ func TestPackageResultString(t *testing.T) {
 	}
 
 	s := pr.String()
+
 	for _, want := range []string{"example.com/m/p", "2 package metrics"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("String()=%q missing %q", s, want)

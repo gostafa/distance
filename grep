@@ -1,0 +1,2298 @@
+::group::taskotter:golangci-lint:_lint
+internal/cli/consts.go:8:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const (
+^
+internal/cli/consts.go:17:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const exitIO = exitFail
+^
+internal/cli/consts.go:19:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const (
+^
+internal/cli/consts.go:25:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const (
+^
+internal/cli/types.go:33:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type cliOptions struct {
+^
+internal/cli/types.go:54:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type runSession struct {
+^
+internal/features/packagemetrics/domain/funcs.go:57:1: type must not be placed after func (desired order: type,const,var,func) (decorder)
+type couplingPass struct {
+^
+internal/features/projectanalysis/application/funcs.go:91:1: type must not be placed after func (desired order: type,const,var,func) (decorder)
+type analyzePackageInput struct {
+^
+internal/features/projectanalysis/application/vars.go:13:1: multiple "var" declarations are not allowed; use parentheses instead (decorder)
+var _ inbound.Analyzer = (*Pipeline)(nil)
+^
+internal/features/reporting/application/consts.go:11:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const webDataPlaceholder = "__REPORT_DATA__"
+^
+internal/features/reporting/application/consts.go:13:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const (
+^
+internal/features/reporting/application/types.go:22:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type jsonMetricDoc struct {
+^
+internal/features/reporting/application/types.go:41:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type jsonReport struct {
+^
+internal/features/reporting/application/types.go:50:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type jsonTool struct {
+^
+internal/features/reporting/application/types.go:57:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type jsonPackage struct {
+^
+internal/features/reporting/application/types.go:66:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type jsonMetric struct {
+^
+internal/features/reporting/application/types.go:76:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type orderedMetrics []metrics.MetricResult
+^
+internal/features/reporting/application/types.go:80:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type webPayload struct {
+^
+internal/features/reporting/application/types.go:88:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type WriteOptions struct {
+^
+internal/features/reporting/application/types.go:93:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type renderOptions struct {
+^
+internal/features/reporting/application/types.go:99:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type placeholderSwap struct {
+^
+internal/features/reporting/application/vars.go:18:1: multiple "var" declarations are not allowed; use parentheses instead (decorder)
+var jsonMarshal = json.Marshal
+^
+internal/features/reporting/application/vars.go:24:1: multiple "var" declarations are not allowed; use parentheses instead (decorder)
+var webTemplate string
+^
+internal/features/reporting/domain/consts.go:13:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const (
+^
+internal/features/reporting/domain/consts.go:22:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const formulaAbstractness = `<math display="block" ` +
+^
+internal/features/reporting/domain/consts.go:29:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const formulaInstability = `<math display="block" ` +
+^
+internal/features/reporting/domain/consts.go:37:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const formulaDistance = `<math display="block" alttext="D = |A + I - 1|">` +
+^
+internal/features/reporting/domain/consts.go:42:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const (
+^
+internal/features/reporting/domain/consts.go:53:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const (
+^
+internal/features/reporting/domain/consts.go:62:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const (
+^
+internal/features/reporting/domain/consts.go:91:1: multiple "const" declarations are not allowed; use parentheses instead (decorder)
+const (
+^
+internal/features/reporting/domain/types.go:12:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type MetricDoc struct {
+^
+internal/features/reporting/domain/types.go:30:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type Format string
+^
+internal/features/reporting/domain/types.go:33:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type TextOptions struct {
+^
+internal/features/reporting/domain/types.go:42:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type metricQuality struct {
+^
+internal/features/reporting/domain/types.go:47:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type tableCell struct {
+^
+internal/features/reporting/domain/types.go:53:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type treeNode struct {
+^
+internal/features/reporting/domain/types.go:59:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type treeSummary struct {
+^
+internal/features/reporting/domain/types.go:64:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type textTable struct {
+^
+internal/features/reporting/domain/types.go:71:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type columnStats struct {
+^
+internal/features/reporting/domain/types.go:76:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type walkFrame struct {
+^
+internal/features/reporting/domain/types.go:81:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type footerInput struct {
+^
+internal/features/reporting/domain/types.go:87:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type packageNotesInput struct {
+^
+internal/features/reporting/domain/types.go:93:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type noteBlockInput struct {
+^
+internal/features/reporting/domain/types.go:99:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type rowWriteInput struct {
+^
+internal/features/reporting/domain/types.go:105:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type cellsWriteInput struct {
+^
+internal/features/reporting/domain/types.go:111:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type cellPadInput struct {
+^
+internal/features/reporting/domain/vars.go:12:1: multiple "var" declarations are not allowed; use parentheses instead (decorder)
+var columnAbbrev = map[string]string{
+^
+internal/features/typefacts/application/funcs.go:84:1: type must not be placed after func (desired order: type,const,var,func) (decorder)
+type packageAssemble struct {
+^
+internal/infrastructure/goloader/funcs.go:289:1: type must not be placed after func (desired order: type,const,var,func) (decorder)
+type filterOut struct {
+^
+internal/infrastructure/goloader/types.go:19:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type Loader struct{}
+^
+internal/infrastructure/goloader/types.go:21:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type skipFilter struct {
+^
+internal/infrastructure/goloader/types.go:27:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type extractJob struct {
+^
+internal/infrastructure/goloader/vars.go:17:1: multiple "var" declarations are not allowed; use parentheses instead (decorder)
+var _ outbound.FactSource = (*Loader)(nil)
+^
+internal/infrastructure/sinks/types.go:11:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type stdoutStream struct {
+^
+internal/infrastructure/sinks/types.go:16:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type FileSink struct {
+^
+internal/shared/metrics/types.go:10:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type MetricResult struct {
+^
+internal/shared/metrics/types.go:19:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type metricSpec struct {
+^
+internal/shared/workerpool/types.go:14:1: multiple "type" declarations are not allowed; use parentheses instead (decorder)
+type runState struct {
+^
+distance/consts.go:4:1: github.com/gostafa/distance/distance (package): distance 0.56 exceeds max 0.50 (distance)
+package distance
+^
+internal/features/packagemetrics/domain/consts.go:4:1: github.com/gostafa/distance/internal/features/packagemetrics/domain (package): distance 0.52 exceeds max 0.20 (distance)
+package domain
+^
+internal/features/policy/domain/consts.go:4:1: github.com/gostafa/distance/internal/features/policy/domain (package): distance 0.50 exceeds max 0.20 (distance)
+package domain
+^
+internal/features/reporting/domain/consts.go:4:1: github.com/gostafa/distance/internal/features/reporting/domain (package): distance 0.50 exceeds max 0.20 (distance)
+package domain
+^
+internal/features/typefacts/domain/consts.go:4:1: github.com/gostafa/distance/internal/features/typefacts/domain (package): distance 0.80 exceeds max 0.20 (distance)
+package domain
+^
+internal/features/typefacts/domain/model/consts.go:4:1: github.com/gostafa/distance/internal/features/typefacts/domain/model (package): distance 1 exceeds max 0.20 (distance)
+package model
+^
+internal/shared/metrics/consts.go:4:1: github.com/gostafa/distance/internal/shared/metrics (package): distance 1 exceeds max 0.50 (distance)
+package metrics
+^
+internal/shared/workerpool/consts.go:4:1: github.com/gostafa/distance/internal/shared/workerpool (package): distance 1 exceeds max 0.50 (distance)
+package workerpool
+^
+tools/splitpkg/consts.go:4:1: github.com/gostafa/distance/tools/splitpkg (package): distance 1 exceeds max 0.50 (distance)
+package main
+^
+analyzer/funcs.go:157:2: declaration has 1 blank identifiers (dogsled)
+	_, err = s.policy()
+	^
+internal/cli/funcs.go:154:2: declaration has 1 blank identifiers (dogsled)
+	_, err := fmt.Fprint(os.Stderr, s)
+	^
+internal/features/packagemetrics/domain/funcs.go:92:2: declaration has 1 blank identifiers (dogsled)
+	_, ok := check.analyzed[check.path]
+	^
+internal/features/policy/domain/funcs.go:100:2: declaration has 1 blank identifiers (dogsled)
+	_, err := fmt.Fprintf(builder, format, args...)
+	^
+internal/features/reporting/application/funcs.go:76:2: declaration has 1 blank identifiers (dogsled)
+	_, err = io.WriteString(w, page)
+	^
+internal/features/reporting/application/funcs.go:130:2: declaration has 1 blank identifiers (dogsled)
+	_, err := io.WriteString(w, domain.Text(o.report, o.text))
+	^
+internal/features/reporting/application/funcs.go:176:2: declaration has 1 blank identifiers (dogsled)
+	_ = buf.WriteByte('{')
+	^
+internal/features/reporting/application/funcs.go:184:2: declaration has 1 blank identifiers (dogsled)
+	_ = buf.WriteByte('}')
+	^
+internal/features/reporting/application/funcs.go:209:2: declaration has 1 blank identifiers (dogsled)
+	_, err = buf.Write(encoded)
+	^
+internal/features/reporting/application/funcs.go:220:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = buf.Write(key)
+	^
+internal/features/reporting/application/funcs.go:221:2: declaration has 1 blank identifiers (dogsled)
+	_ = buf.WriteByte(':')
+	^
+internal/features/reporting/application/funcs.go:285:2: declaration has 1 blank identifiers (dogsled)
+	_, err = io.WriteString(w, page)
+	^
+internal/features/reporting/domain/funcs.go:329:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+internal/features/reporting/domain/funcs.go:338:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(report.Tool.Name)
+	^
+internal/features/reporting/domain/funcs.go:339:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(spaceSep)
+	^
+internal/features/reporting/domain/funcs.go:340:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(report.Tool.Version)
+	^
+internal/features/reporting/domain/funcs.go:341:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(schemaLabel)
+	^
+internal/features/reporting/domain/funcs.go:342:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(report.SchemaVersion)
+	^
+internal/features/reporting/domain/funcs.go:343:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+internal/features/reporting/domain/funcs.go:352:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(modulePrefix)
+	^
+internal/features/reporting/domain/funcs.go:353:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(opts.paint(report.Module, ansiBold))
+	^
+internal/features/reporting/domain/funcs.go:354:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+internal/features/reporting/domain/funcs.go:441:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+internal/features/reporting/domain/funcs.go:470:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(strings.Repeat(spaceSep, pad))
+	^
+internal/features/reporting/domain/funcs.go:484:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+internal/features/reporting/domain/funcs.go:485:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(opts.paint(naCell+naLegendSuffix, ansiDim))
+	^
+internal/features/reporting/domain/funcs.go:486:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+internal/features/reporting/domain/funcs.go:683:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+internal/features/reporting/domain/funcs.go:684:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(opts.paint(notesTitle, ansiDim))
+	^
+internal/features/reporting/domain/funcs.go:685:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+internal/features/reporting/domain/funcs.go:689:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(notePkgIndent)
+	^
+internal/features/reporting/domain/funcs.go:690:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(in.opts.paint(in.pkg.Path, ansiDim))
+	^
+internal/features/reporting/domain/funcs.go:691:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+internal/features/reporting/domain/funcs.go:699:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(noteLineIndent)
+	^
+internal/features/reporting/domain/funcs.go:700:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(opts.paint(note, ansiDim))
+	^
+internal/features/reporting/domain/funcs.go:701:2: declaration has 2 blank identifiers (dogsled)
+	_, _ = b.WriteString(newline)
+	^
+tools/splitpkg/main.go:45:2: declaration has 1 blank identifiers (dogsled)
+	_, err := fmt.Fprintln(w, args...)
+	^
+tools/splitpkg/main.go:52:2: declaration has 1 blank identifiers (dogsled)
+	_, err := fmt.Fprintf(w, layout, args...)
+	^
+tools/splitpkg/write.go:299:2: declaration has 1 blank identifiers (dogsled)
+	_, err := buf.WriteString(s)
+	^
+analyzer/funcs.go:169:10: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\n\t\"invalid dependency-scope %q (want project, module, or all)\",\n\tvalue,\n)" (err113)
+		return fmt.Errorf(
+		       ^
+distance/funcs.go:97:10: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\n\t\"invalid dependency scope %q (want project, module, or all)\",\n\tconfig.DependencyScope,\n)" (err113)
+		return fmt.Errorf(
+		       ^
+distance/funcs.go:104:10: do not define dynamic errors, use wrapped static errors instead: "errors.New(\"empty package pattern\")" (err113)
+		return errors.New("empty package pattern")
+		       ^
+internal/features/policy/domain/funcs.go:118:11: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"packages[%d]: pattern must not be empty\", i)" (err113)
+			return fmt.Errorf("packages[%d]: pattern must not be empty", i)
+			       ^
+internal/features/policy/domain/funcs.go:122:11: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"packages[%d]: max-distance must be a finite number\", i)" (err113)
+			return fmt.Errorf("packages[%d]: max-distance must be a finite number", i)
+			       ^
+internal/features/reporting/application/funcs.go:144:10: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"unknown report format %q\", o.format)" (err113)
+		return fmt.Errorf("unknown report format %q", o.format)
+		       ^
+internal/features/reporting/application/funcs.go:332:23: do not define dynamic errors, use wrapped static errors instead: "errors.New(s.errMsg)" (err113)
+		return emptyString, errors.New(s.errMsg)
+		                    ^
+internal/infrastructure/goloader/funcs.go:188:15: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"no packages matched patterns %v\", patterns)" (err113)
+		return nil, fmt.Errorf("no packages matched patterns %v", patterns)
+		            ^
+internal/infrastructure/goloader/funcs.go:197:15: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"no loadable packages matched patterns %v\", patterns)" (err113)
+		return nil, fmt.Errorf("no loadable packages matched patterns %v", patterns)
+		            ^
+internal/infrastructure/goloader/funcs.go:335:9: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"package load errors (use ContinueOnError to skip):\\n%s%s\",\n\tstrings.Join(shown, \"\\n\"), suffix)" (err113)
+	return fmt.Errorf("package load errors (use ContinueOnError to skip):\n%s%s",
+	       ^
+tools/splitpkg/split.go:145:10: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"%s: package name %q != %q\", path, name, split.pkgName)" (err113)
+		return fmt.Errorf("%s: package name %q != %q", path, name, split.pkgName)
+		       ^
+tools/splitpkg/split.go:183:10: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"%s: unsupported decl %T\", in.path, decl)" (err113)
+		return fmt.Errorf("%s: unsupported decl %T", in.path, decl)
+		       ^
+tools/splitpkg/split.go:194:10: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"%s: unsupported GenDecl %v\", in.path, tok)" (err113)
+		return fmt.Errorf("%s: unsupported GenDecl %v", in.path, tok)
+		       ^
+internal/features/reporting/application/funcs.go:91:3: Error return value of `(io.Closer).Close` is not checked (errcheck)
+		_ = w.Close()
+		^
+internal/features/reporting/application/funcs.go:113:3: Error return value of `(io.Closer).Close` is not checked (errcheck)
+		_ = w.Close()
+		^
+internal/features/reporting/application/funcs.go:176:2: Error return value of `(*bytes.Buffer).WriteByte` is not checked (errcheck)
+	_ = buf.WriteByte('{')
+	^
+internal/features/reporting/application/funcs.go:184:2: Error return value of `(*bytes.Buffer).WriteByte` is not checked (errcheck)
+	_ = buf.WriteByte('}')
+	^
+internal/features/reporting/application/funcs.go:191:3: Error return value of `(*bytes.Buffer).WriteByte` is not checked (errcheck)
+		_ = buf.WriteByte(',')
+		^
+internal/features/reporting/application/funcs.go:220:5: Error return value of `(*bytes.Buffer).Write` is not checked (errcheck)
+	_, _ = buf.Write(key)
+	   ^
+internal/features/reporting/application/funcs.go:221:2: Error return value of `(*bytes.Buffer).WriteByte` is not checked (errcheck)
+	_ = buf.WriteByte(':')
+	^
+internal/features/reporting/domain/funcs.go:329:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/features/reporting/domain/funcs.go:338:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(report.Tool.Name)
+	   ^
+internal/features/reporting/domain/funcs.go:339:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(spaceSep)
+	   ^
+internal/features/reporting/domain/funcs.go:340:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(report.Tool.Version)
+	   ^
+internal/features/reporting/domain/funcs.go:341:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(schemaLabel)
+	   ^
+internal/features/reporting/domain/funcs.go:342:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(report.SchemaVersion)
+	   ^
+internal/features/reporting/domain/funcs.go:343:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/features/reporting/domain/funcs.go:352:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(modulePrefix)
+	   ^
+internal/features/reporting/domain/funcs.go:353:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(opts.paint(report.Module, ansiBold))
+	   ^
+internal/features/reporting/domain/funcs.go:354:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/features/reporting/domain/funcs.go:430:6: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+		_, _ = b.WriteString(newline)
+		   ^
+internal/features/reporting/domain/funcs.go:441:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/features/reporting/domain/funcs.go:458:6: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+		_, _ = b.WriteString(cell.prefix)
+		   ^
+internal/features/reporting/domain/funcs.go:459:6: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+		_, _ = b.WriteString(in.opts.paint(cell.text, cell.style))
+		   ^
+internal/features/reporting/domain/funcs.go:470:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(strings.Repeat(spaceSep, pad))
+	   ^
+internal/features/reporting/domain/funcs.go:484:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/features/reporting/domain/funcs.go:485:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(opts.paint(naCell+naLegendSuffix, ansiDim))
+	   ^
+internal/features/reporting/domain/funcs.go:486:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/features/reporting/domain/funcs.go:683:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/features/reporting/domain/funcs.go:684:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(opts.paint(notesTitle, ansiDim))
+	   ^
+internal/features/reporting/domain/funcs.go:685:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/features/reporting/domain/funcs.go:689:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(notePkgIndent)
+	   ^
+internal/features/reporting/domain/funcs.go:690:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(in.opts.paint(in.pkg.Path, ansiDim))
+	   ^
+internal/features/reporting/domain/funcs.go:691:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/features/reporting/domain/funcs.go:699:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(noteLineIndent)
+	   ^
+internal/features/reporting/domain/funcs.go:700:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(opts.paint(note, ansiDim))
+	   ^
+internal/features/reporting/domain/funcs.go:701:5: Error return value of `(*strings.Builder).WriteString` is not checked (errcheck)
+	_, _ = b.WriteString(newline)
+	   ^
+internal/infrastructure/profiling/funcs.go:21:3: Error return value is not checked (errcheck)
+		_ = closeFile(f)
+		^
+internal/infrastructure/profiling/funcs.go:46:3: Error return value is not checked (errcheck)
+		_ = closeFile(f)
+		^
+internal/infrastructure/profiling/funcs.go:71:3: Error return value of `(*os.Root).Close` is not checked (errcheck)
+		_ = root.Close()
+		^
+internal/features/reporting/application/funcs.go:136:2: missing cases in switch of type domain.Format: domain.FormatText (exhaustive)
+	switch o.format {
+	^
+internal/features/reporting/domain/funcs.go:145:2: missing default case in switch of type domain.Format (exhaustive)
+	switch Format(name) {
+	^
+tools/splitpkg/split.go:203:2: missing cases in switch of type token.Token: token.ILLEGAL, token.EOF, token.COMMENT, token.IDENT, token.INT, token.FLOAT, token.IMAG, token.CHAR, token.STRING, token.ADD, token.SUB, token.MUL, token.QUO, token.REM, token.AND, token.OR, token.XOR, token.SHL, token.SHR, token.AND_NOT, token.ADD_ASSIGN, token.SUB_ASSIGN, token.MUL_ASSIGN, token.QUO_ASSIGN, token.REM_ASSIGN, token.AND_ASSIGN, token.OR_ASSIGN, token.XOR_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.AND_NOT_ASSIGN, token.LAND, token.LOR, token.ARROW, token.INC, token.DEC, token.EQL, token.LSS, token.GTR, token.ASSIGN, token.NOT, token.NEQ, token.LEQ, token.GEQ, token.DEFINE, token.ELLIPSIS, token.LPAREN, token.LBRACK, token.LBRACE, token.COMMA, token.PERIOD, token.RPAREN, token.RBRACK, token.RBRACE, token.SEMICOLON, token.COLON, token.BREAK, token.CASE, token.CHAN, token.CONTINUE, token.DEFAULT, token.DEFER, token.ELSE, token.FALLTHROUGH, token.FOR, token.FUNC, token.GO, token.GOTO, token.IF, token.IMPORT, token.INTERFACE, token.MAP, token.PACKAGE, token.RANGE, token.RETURN, token.SELECT, token.STRUCT, token.SWITCH, token.TILDE (exhaustive)
+	switch tok {
+	^
+internal/cli/funcs.go:168:15: use of `fmt.Println` forbidden because "use structured logging" (forbidigo)
+	if _, err := fmt.Println(versionPrefix + version.Version); err != nil {
+	             ^
+internal/features/policy/domain/funcs.go:102:3: use of `panic` forbidden because "return an error instead of panicking" (forbidigo)
+		panic(err)
+		^
+tools/splitpkg/main.go:47:3: use of `panic` forbidden because "return an error instead of panicking" (forbidigo)
+		panic(err)
+		^
+tools/splitpkg/main.go:54:3: use of `panic` forbidden because "return an error instead of panicking" (forbidigo)
+		panic(err)
+		^
+internal/cli/funcs.go:57:6: Function 'bindFlags' is too long (54 > 20) (funlen)
+func bindFlags(fs *flag.FlagSet) *flagBindings {
+     ^
+internal/features/projectanalysis/application/funcs.go:47:6: Function 'buildPackageResults' is too long (29 > 20) (funlen)
+func buildPackageResults(
+     ^
+internal/features/reporting/domain/funcs.go:26:6: Function 'abstractnessDoc' is too long (21 > 20) (funlen)
+func abstractnessDoc() MetricDoc {
+     ^
+internal/features/reporting/domain/funcs.go:50:6: Function 'instabilityDoc' is too long (21 > 20) (funlen)
+func instabilityDoc() MetricDoc {
+     ^
+internal/features/reporting/domain/funcs.go:74:6: Function 'distanceDoc' is too long (27 > 20) (funlen)
+func distanceDoc() MetricDoc {
+     ^
+internal/features/typefacts/application/funcs.go:91:6: Function 'packageFromExtract' is too long (23 > 20) (funlen)
+func packageFromExtract(in packageAssemble) domain.PackageFacts {
+     ^
+internal/infrastructure/goloader/funcs.go:203:6: Function 'extractAll' is too long (26 > 20) (funlen)
+func extractAll(ctx context.Context, job extractJob) ([]model.PackageExtract, error) {
+     ^
+internal/infrastructure/profiling/funcs.go:14:6: Function 'StartCPU' is too long (21 > 20) (funlen)
+func StartCPU(path string) (stop func() error, err error) {
+     ^
+cmd/distance/vars.go:13:2: run is a global variable (gochecknoglobals)
+	run  = cli.Run
+	^
+cmd/distance/vars.go:14:2: exit is a global variable (gochecknoglobals)
+	exit = os.Exit
+	^
+internal/cli/vars.go:16:2: analyze is a global variable (gochecknoglobals)
+	analyze        = distance.Analyze
+	^
+internal/cli/vars.go:17:2: isTerminal is a global variable (gochecknoglobals)
+	isTerminal     = stdoutIsTerminal
+	^
+internal/cli/vars.go:18:2: createHelpTemp is a global variable (gochecknoglobals)
+	createHelpTemp = os.CreateTemp
+	^
+internal/cli/vars.go:19:2: closeHelpFile is a global variable (gochecknoglobals)
+	closeHelpFile  = func(f *os.File) error { return f.Close() }
+	^
+internal/cli/vars.go:20:2: writeDocs is a global variable (gochecknoglobals)
+	writeDocs      = reporting.WriteDocs
+	^
+internal/cli/vars.go:21:2: openBrowser is a global variable (gochecknoglobals)
+	openBrowser    = browser.Open
+	^
+internal/cli/vars.go:22:2: startCPU is a global variable (gochecknoglobals)
+	startCPU       = profiling.StartCPU
+	^
+internal/cli/vars.go:23:2: writeHeap is a global variable (gochecknoglobals)
+	writeHeap      = profiling.WriteHeap
+	^
+internal/features/projectanalysis/application/vars.go:11:5: runWorkers is a global variable (gochecknoglobals)
+var runWorkers = workerpool.Run
+    ^
+internal/features/reporting/application/vars.go:18:5: jsonMarshal is a global variable (gochecknoglobals)
+var jsonMarshal = json.Marshal
+    ^
+internal/features/reporting/domain/vars.go:8:5: qualityByMetric is a global variable (gochecknoglobals)
+var qualityByMetric = map[string]metricQuality{
+    ^
+internal/features/reporting/domain/vars.go:12:5: columnAbbrev is a global variable (gochecknoglobals)
+var columnAbbrev = map[string]string{
+    ^
+internal/infrastructure/browser/vars.go:8:5: startCommand is a global variable (gochecknoglobals)
+var startCommand = func(cmd *exec.Cmd) error { return cmd.Start() }
+    ^
+internal/infrastructure/goloader/vars.go:13:2: packagesLoad is a global variable (gochecknoglobals)
+	packagesLoad      = packages.Load
+	^
+internal/infrastructure/goloader/vars.go:14:2: runExtractWorkers is a global variable (gochecknoglobals)
+	runExtractWorkers = workerpool.Run
+	^
+internal/infrastructure/profiling/vars.go:12:2: writeHeapProfile is a global variable (gochecknoglobals)
+	writeHeapProfile = pprof.WriteHeapProfile
+	^
+internal/infrastructure/profiling/vars.go:13:2: closeFile is a global variable (gochecknoglobals)
+	closeFile        = func(f *os.File) error { return f.Close() }
+	^
+internal/shared/metrics/vars.go:6:5: reportedMetricOrder is a global variable (gochecknoglobals)
+var reportedMetricOrder = []string{MetricAbstractness, MetricInstability, MetricDistance}
+    ^
+internal/shared/version/vars.go:7:5: Version is a global variable (gochecknoglobals)
+var Version = "dev"
+    ^
+vars.go:13:2: run is a global variable (gochecknoglobals)
+	run  = cli.Run
+	^
+vars.go:14:2: exit is a global variable (gochecknoglobals)
+	exit = os.Exit
+	^
+plugin/funcs.go:12:1: don't use `init` function (gochecknoinits)
+func init() {
+^
+analyzer/consts.go:23:21: This constant is a duplicate of `signedInfSignBit` at analyzer/consts.go:22:21 (goconst)
+	zeroLen          = 0
+	                   ^
+distance/consts.go:30:13: This constant is a duplicate of `MetricDistance` at distance/consts.go:24:30 (goconst)
+	ToolName = "distance"
+	           ^
+internal/cli/consts.go:17:16: This constant is a duplicate of `exitFail` at internal/cli/consts.go:10:20 (goconst)
+const exitIO = exitFail
+               ^
+internal/cli/consts.go:22:17: This constant is a duplicate of `exitOK` at internal/cli/consts.go:9:20 (goconst)
+	zero         = 0
+	               ^
+internal/cli/funcs.go:45:24: string `distance` has 2 occurrences, make it a constant (goconst)
+	fs := flag.NewFlagSet("distance", flag.ContinueOnError)
+	                      ^
+internal/cli/funcs.go:254:16: string `cpu profiling failed` has 2 occurrences, make it a constant (goconst)
+		logger.Error("cpu profiling failed", slogKeyError, err)
+		             ^
+internal/cli/funcs.go:409:32: string `path` has 2 occurrences, make it a constant (goconst)
+	logger.Info("report written", "path", path)
+	                              ^
+internal/cli/funcs.go:416:46: string `source` has 2 occurrences, make it a constant (goconst)
+		session.logger.Info("policy check passed", "source", session.policySource)
+		                                           ^
+internal/features/policy/domain/consts.go:24:23: This constant is a duplicate of `signedInfSignBit` at internal/features/policy/domain/consts.go:21:23 (goconst)
+	zeroLen            = 0
+	                     ^
+internal/features/policy/domain/consts.go:26:23: This constant is a duplicate of `oneCount` at internal/features/policy/domain/consts.go:25:23 (goconst)
+	unitScale          = 1.0
+	                     ^
+internal/features/reporting/domain/consts.go:79:21: This constant is a duplicate of `noteLineIndent` at internal/features/reporting/domain/consts.go:75:21 (goconst)
+	indentLast       = "    "
+	                   ^
+internal/features/reporting/domain/consts.go:81:21: This constant is a duplicate of `DocScopePackage` at internal/features/reporting/domain/consts.go:8:29 (goconst)
+	csvColPackage    = "package"
+	                   ^
+internal/features/reporting/domain/consts.go:94:25: This constant is a duplicate of `indexOne` at internal/features/reporting/domain/consts.go:93:25 (goconst)
+	countOne             = 1
+	                       ^
+internal/features/reporting/domain/consts.go:95:25: This constant is a duplicate of `indexOne` at internal/features/reporting/domain/consts.go:93:25 (goconst)
+	pathColumnCount      = 1
+	                       ^
+internal/features/reporting/domain/consts.go:98:25: This constant is a duplicate of `cellPadSpaces` at internal/features/reporting/domain/consts.go:96:25 (goconst)
+	cellDecimals         = 2
+	                       ^
+internal/features/reporting/domain/consts.go:99:25: This constant is a duplicate of `indexOne` at internal/features/reporting/domain/consts.go:93:25 (goconst)
+	qualityInvertBase    = 1.0
+	                       ^
+internal/shared/workerpool/consts.go:9:20: This constant is a duplicate of `zeroCount` at internal/shared/workerpool/consts.go:7:20 (goconst)
+	gomaxprocsQuery = 0
+	                  ^
+tools/splitpkg/consts.go:23:15: This constant is a duplicate of `exitUsage` at tools/splitpkg/consts.go:20:15 (goconst)
+	minArgs    = 2
+	             ^
+tools/splitpkg/consts.go:29:16: This constant is a duplicate of `exitOK` at tools/splitpkg/consts.go:22:15 (goconst)
+	zeroLen     = 0
+	              ^
+tools/splitpkg/consts.go:30:16: This constant is a duplicate of `exitFailed` at tools/splitpkg/consts.go:21:15 (goconst)
+	oneOffset   = 1
+	              ^
+analyzer/funcs.go:20:10: hugeParam: settings is heavy (96 bytes); consider passing it by pointer (gocritic)
+func New(settings Settings) (*analysis.Analyzer, error) {
+         ^
+analyzer/funcs.go:39:2: hugeParam: cfg is heavy (96 bytes); consider passing it by pointer (gocritic)
+	cfg distance.Config,
+	^
+analyzer/funcs.go:44:16: hugeParam: settings is heavy (96 bytes); consider passing it by pointer (gocritic)
+func newRunner(settings Settings) *runner {
+               ^
+analyzer/funcs.go:77:2: hugeParam: settings is heavy (96 bytes); consider passing it by pointer (gocritic)
+	settings Settings,
+	^
+analyzer/funcs.go:107:40: hugeParam: _ is heavy (64 bytes); consider passing it by pointer (gocritic)
+func violationPos(pass *analysis.Pass, _ policydomain.Violation) token.Pos {
+                                       ^
+analyzer/funcs.go:111:22: hugeParam: violation is heavy (64 bytes); consider passing it by pointer (gocritic)
+func formatViolation(violation policydomain.Violation) string {
+                     ^
+analyzer/funcs.go:129:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for _, file := range pass.Files {
+	^
+analyzer/funcs.go:138:7: hugeParam: s is heavy (96 bytes); consider passing it by pointer (gocritic)
+func (s Settings) withDefaults() Settings {
+      ^
+analyzer/funcs.go:151:7: hugeParam: s is heavy (96 bytes); consider passing it by pointer (gocritic)
+func (s Settings) validate() error {
+      ^
+analyzer/funcs.go:176:7: hugeParam: s is heavy (96 bytes); consider passing it by pointer (gocritic)
+func (s Settings) toConfig() distance.Config {
+      ^
+analyzer/funcs.go:189:7: hugeParam: s is heavy (96 bytes); consider passing it by pointer (gocritic)
+func (s Settings) policy() (policydomain.Policy, error) {
+      ^
+distance/funcs.go:19:35: hugeParam: config is heavy (96 bytes); consider passing it by pointer (gocritic)
+func Analyze(ctx context.Context, config Config) (Report, error) {
+                                  ^
+distance/funcs.go:30:44: hugeParam: cfg is heavy (96 bytes); consider passing it by pointer (gocritic)
+func analyzeValidated(ctx context.Context, cfg Config) (Report, error) {
+                                           ^
+distance/funcs.go:48:18: hugeParam: result is heavy (40 bytes); consider passing it by pointer (gocritic)
+func buildReport(result inbound.Result) Report {
+                 ^
+distance/funcs.go:74:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for i, name := range names {
+	^
+distance/funcs.go:81:25: hugeParam: config is heavy (96 bytes); consider passing it by pointer (gocritic)
+func configWithDefaults(config Config) Config {
+                        ^
+distance/funcs.go:93:21: hugeParam: config is heavy (96 bytes); consider passing it by pointer (gocritic)
+func validateConfig(config Config) error {
+                    ^
+internal/cli/funcs.go:44:1: unnamedResult: consider giving a name to these results (gocritic)
+func parseCLI(args []string) (*cliOptions, int) {
+^
+internal/cli/funcs.go:194:1: unnamedResult: consider giving a name to these results (gocritic)
+func resolveReportFormat(opts *cliOptions, logger *slog.Logger) (reportingdomain.Format, int) {
+^
+internal/cli/funcs.go:247:1: unnamedResult: consider giving a name to these results (gocritic)
+func maybeStartCPU(path string, logger *slog.Logger) (func(), int) {
+^
+internal/cli/funcs.go:316:1: unnamedResult: consider giving a name to these results (gocritic)
+func runAnalyze(
+^
+internal/cli/funcs.go:318:2: hugeParam: config is heavy (96 bytes); consider passing it by pointer (gocritic)
+	config distance.Config,
+	^
+internal/cli/funcs.go:339:19: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func finishReport(report distance.Report, session *runSession) int {
+                  ^
+internal/cli/funcs.go:385:18: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func writeReport(report distance.Report, session *runSession) int {
+                 ^
+internal/cli/funcs.go:413:20: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func enforcePolicy(report distance.Report, session *runSession) int {
+                   ^
+internal/cli/funcs.go:442:41: hugeParam: a is heavy (40 bytes); consider passing it by pointer (gocritic)
+func stripTimeAndLevel(groups []string, a slog.Attr) slog.Attr {
+                                        ^
+internal/cli/funcs.go:458:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, arg := range args {
+	^
+internal/cli/funcs.go:553:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, part := range parts {
+	^
+internal/features/packagemetrics/domain/funcs.go:64:25: hugeParam: pass is heavy (96 bytes); consider passing it by pointer (gocritic)
+func accumulateCoupling(pass couplingPass) {
+                        ^
+internal/features/packagemetrics/domain/funcs.go:65:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, path := range pass.imports {
+	^
+internal/features/packagemetrics/domain/funcs.go:78:14: hugeParam: check is heavy (56 bytes); consider passing it by pointer (gocritic)
+func inScope(check scopeCheck) bool {
+             ^
+internal/features/packagemetrics/domain/funcs.go:91:17: hugeParam: check is heavy (56 bytes); consider passing it by pointer (gocritic)
+func isAnalyzed(check scopeCheck) bool {
+                ^
+internal/features/packagemetrics/domain/funcs.go:101:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for _, id := range pkg.TypeIDs {
+	^
+internal/features/policy/domain/funcs.go:17:15: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func Evaluate(report distance.Report, policy Policy) []Violation {
+              ^
+internal/features/policy/domain/funcs.go:116:2: rangeValCopy: each iteration copies 24 bytes (consider pointers or indexing) (gocritic)
+	for i, rule := range p.Packages {
+	^
+internal/features/policy/domain/funcs.go:137:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for i, pattern := range patterns {
+	^
+internal/features/projectanalysis/application/funcs.go:25:49: hugeParam: opts is heavy (96 bytes); consider passing it by pointer (gocritic)
+func (p *Pipeline) Analyze(ctx context.Context, opts inbound.Options) (inbound.Result, error) {
+                                                ^
+internal/features/projectanalysis/application/funcs.go:37:2: hugeParam: opts is heavy (96 bytes); consider passing it by pointer (gocritic)
+	opts inbound.Options,
+	^
+internal/features/projectanalysis/application/funcs.go:50:2: hugeParam: opts is heavy (96 bytes); consider passing it by pointer (gocritic)
+	opts inbound.Options,
+	^
+internal/features/projectanalysis/application/funcs.go:79:21: hugeParam: opts is heavy (96 bytes); consider passing it by pointer (gocritic)
+func collectOptions(opts inbound.Options) tfoutbound.FactOptions {
+                    ^
+internal/features/projectanalysis/application/funcs.go:98:21: hugeParam: in is heavy (56 bytes); consider passing it by pointer (gocritic)
+func analyzePackage(in analyzePackageInput) inbound.PackageResult {
+                    ^
+internal/features/projectanalysis/application/funcs.go:109:21: hugeParam: result is heavy (240 bytes); consider passing it by pointer (gocritic)
+func packageMetrics(result pkgmetrics.Result) []metrics.MetricResult {
+                    ^
+internal/features/reporting/application/funcs.go:32:2: rangeValCopy: each iteration copies 216 bytes (consider pointers or indexing) (gocritic)
+	for i, d := range entries {
+	^
+internal/features/reporting/application/funcs.go:39:22: hugeParam: d is heavy (216 bytes); consider passing it by pointer (gocritic)
+func toJSONMetricDoc(d domain.MetricDoc) jsonMetricDoc {
+                     ^
+internal/features/reporting/application/funcs.go:101:12: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func Write(report distance.Report, sink outbound.Sink, opts WriteOptions) error {
+           ^
+internal/features/reporting/application/funcs.go:121:26: hugeParam: o is heavy (112 bytes); consider passing it by pointer (gocritic)
+func render(w io.Writer, o renderOptions) error {
+                         ^
+internal/features/reporting/application/funcs.go:129:30: hugeParam: o is heavy (112 bytes); consider passing it by pointer (gocritic)
+func renderText(w io.Writer, o renderOptions) error {
+                             ^
+internal/features/reporting/application/funcs.go:135:33: hugeParam: o is heavy (112 bytes); consider passing it by pointer (gocritic)
+func renderNonText(w io.Writer, o renderOptions) error {
+                                ^
+internal/features/reporting/application/funcs.go:148:29: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func renderCSV(w io.Writer, report distance.Report) error {
+                            ^
+internal/features/reporting/application/funcs.go:178:2: rangeValCopy: each iteration copies 80 bytes (consider pointers or indexing) (gocritic)
+	for i, r := range results {
+	^
+internal/features/reporting/application/funcs.go:189:54: hugeParam: r is heavy (80 bytes); consider passing it by pointer (gocritic)
+func writeOrderedEntry(buf *bytes.Buffer, index int, r metrics.MetricResult) error {
+                                                     ^
+internal/features/reporting/application/funcs.go:199:43: hugeParam: r is heavy (80 bytes); consider passing it by pointer (gocritic)
+func encodeMetricEntry(buf *bytes.Buffer, r metrics.MetricResult) error {
+                                          ^
+internal/features/reporting/application/funcs.go:226:17: hugeParam: r is heavy (80 bytes); consider passing it by pointer (gocritic)
+func metricJSON(r metrics.MetricResult) jsonMetric {
+                ^
+internal/features/reporting/application/funcs.go:244:22: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func buildJSONReport(report distance.Report) jsonReport {
+                     ^
+internal/features/reporting/application/funcs.go:251:2: rangeValCopy: each iteration copies 56 bytes (consider pointers or indexing) (gocritic)
+	for i, pkg := range report.Packages {
+	^
+internal/features/reporting/application/funcs.go:258:20: hugeParam: pkg is heavy (56 bytes); consider passing it by pointer (gocritic)
+func toJSONPackage(pkg distance.PackageReport) jsonPackage {
+                   ^
+internal/features/reporting/application/funcs.go:267:30: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func renderJSON(w io.Writer, report distance.Report) error {
+                             ^
+internal/features/reporting/application/funcs.go:279:29: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func renderWeb(w io.Writer, report distance.Report) error {
+                            ^
+internal/features/reporting/application/funcs.go:290:19: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func buildWebPage(report distance.Report) (string, error) {
+                  ^
+internal/features/reporting/application/funcs.go:304:24: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func marshalWebPayload(report distance.Report) ([]byte, error) {
+                       ^
+internal/features/reporting/application/funcs.go:330:25: hugeParam: s is heavy (64 bytes); consider passing it by pointer (gocritic)
+func replacePlaceholder(s placeholderSwap) (string, error) {
+                        ^
+internal/features/reporting/domain/funcs.go:166:7: hugeParam: c is heavy (48 bytes); consider passing it by pointer (gocritic)
+func (c tableCell) width() int {
+      ^
+internal/features/reporting/domain/funcs.go:179:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for _, c := range n.children {
+	^
+internal/features/reporting/domain/funcs.go:202:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for _, c := range n.children {
+	^
+internal/features/reporting/domain/funcs.go:213:2: rangeValCopy: each iteration copies 80 bytes (consider pointers or indexing) (gocritic)
+	for _, r := range pkg.Metrics {
+	^
+internal/features/reporting/domain/funcs.go:233:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for name, s := range src {
+	^
+internal/features/reporting/domain/funcs.go:258:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for _, c := range n.children {
+	^
+internal/features/reporting/domain/funcs.go:263:16: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func buildTree(report distance.Report) *treeNode {
+               ^
+internal/features/reporting/domain/funcs.go:298:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for _, c := range root.children {
+	^
+internal/features/reporting/domain/funcs.go:320:11: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func Text(report distance.Report, opts TextOptions) string {
+          ^
+internal/features/reporting/domain/funcs.go:337:42: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func writeTextHeader(b *strings.Builder, report distance.Report, opts TextOptions) {
+                                         ^
+internal/features/reporting/domain/funcs.go:347:42: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func writeModuleLine(b *strings.Builder, report distance.Report, opts TextOptions) {
+                                         ^
+internal/features/reporting/domain/funcs.go:357:19: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func newTextTable(report distance.Report) *textTable {
+                  ^
+internal/features/reporting/domain/funcs.go:375:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, name := range t.pkgCols {
+	^
+internal/features/reporting/domain/funcs.go:387:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for i, section := range root.children {
+	^
+internal/features/reporting/domain/funcs.go:399:2: rangeValCopy: each iteration copies 24 bytes (consider pointers or indexing) (gocritic)
+	for _, row := range table.rows {
+	^
+internal/features/reporting/domain/funcs.go:407:2: rangeValCopy: each iteration copies 24 bytes (consider pointers or indexing) (gocritic)
+	for _, row := range t.rows {
+	^
+internal/features/reporting/domain/funcs.go:415:2: rangeValCopy: each iteration copies 48 bytes (consider pointers or indexing) (gocritic)
+	for c, cell := range row {
+	^
+internal/features/reporting/domain/funcs.go:428:40: hugeParam: in is heavy (40 bytes); consider passing it by pointer (gocritic)
+func writeTableRow(b *strings.Builder, in rowWriteInput) {
+                                       ^
+internal/features/reporting/domain/funcs.go:454:40: hugeParam: in is heavy (56 bytes); consider passing it by pointer (gocritic)
+func writeRowCells(b *strings.Builder, in cellsWriteInput) {
+                                       ^
+internal/features/reporting/domain/funcs.go:457:2: rangeValCopy: each iteration copies 48 bytes (consider pointers or indexing) (gocritic)
+	for c, cell := range in.cells {
+	^
+internal/features/reporting/domain/funcs.go:464:39: hugeParam: in is heavy (88 bytes); consider passing it by pointer (gocritic)
+func writeCellPad(b *strings.Builder, in cellPadInput) {
+                                      ^
+internal/features/reporting/domain/funcs.go:473:44: hugeParam: in is heavy (104 bytes); consider passing it by pointer (gocritic)
+func writeTableFooters(b *strings.Builder, in footerInput) {
+                                           ^
+internal/features/reporting/domain/funcs.go:500:2: hugeParam: frame is heavy (32 bytes); consider passing it by pointer (gocritic)
+	frame walkFrame,
+	^
+internal/features/reporting/domain/funcs.go:513:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for i, child := range node.children {
+	^
+internal/features/reporting/domain/funcs.go:564:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, name := range pkgCols {
+	^
+internal/features/reporting/domain/funcs.go:574:2: rangeValCopy: each iteration copies 80 bytes (consider pointers or indexing) (gocritic)
+	for _, r := range results {
+	^
+internal/features/reporting/domain/funcs.go:585:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, name := range cols {
+	^
+internal/features/reporting/domain/funcs.go:622:21: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func packageColumns(report distance.Report) []string {
+                    ^
+internal/features/reporting/domain/funcs.go:626:25: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func metricNamesPresent(report distance.Report) map[string]bool {
+                        ^
+internal/features/reporting/domain/funcs.go:637:2: rangeValCopy: each iteration copies 80 bytes (consider pointers or indexing) (gocritic)
+	for _, r := range results {
+	^
+internal/features/reporting/domain/funcs.go:645:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, name := range metrics.ReportedMetricOrder() {
+	^
+internal/features/reporting/domain/funcs.go:654:37: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func writeNotes(b *strings.Builder, report distance.Report, opts TextOptions) {
+                                    ^
+internal/features/reporting/domain/funcs.go:688:48: hugeParam: in is heavy (40 bytes); consider passing it by pointer (gocritic)
+func writePackageNoteBlock(b *strings.Builder, in noteBlockInput) {
+                                               ^
+internal/features/reporting/domain/funcs.go:693:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, note := range in.notes {
+	^
+internal/features/reporting/domain/funcs.go:707:2: rangeValCopy: each iteration copies 80 bytes (consider pointers or indexing) (gocritic)
+	for _, r := range pkg.Metrics {
+	^
+internal/features/reporting/domain/funcs.go:760:17: hugeParam: report is heavy (88 bytes); consider passing it by pointer (gocritic)
+func CSVRecords(report distance.Report) [][]string {
+                ^
+internal/features/reporting/domain/funcs.go:774:2: rangeValCopy: each iteration copies 80 bytes (consider pointers or indexing) (gocritic)
+	for _, r := range results {
+	^
+internal/features/reporting/domain/funcs.go:781:45: hugeParam: r is heavy (80 bytes); consider passing it by pointer (gocritic)
+func metricCSVRow(pkgPath, typeName string, r metrics.MetricResult) []string {
+                                            ^
+internal/features/typefacts/application/funcs.go:24:2: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+	opts outbound.FactOptions,
+	^
+internal/features/typefacts/application/funcs.go:91:25: hugeParam: in is heavy (32 bytes); consider passing it by pointer (gocritic)
+func packageFromExtract(in packageAssemble) domain.PackageFacts {
+                        ^
+internal/features/typefacts/application/funcs.go:135:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, path := range imports {
+	^
+internal/features/typefacts/application/funcs.go:147:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for i, path := range sorted {
+	^
+internal/infrastructure/goloader/funcs.go:41:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, name := range scope.Names() { // already sorted
+	^
+internal/infrastructure/goloader/funcs.go:53:2: hugeParam: filter is heavy (40 bytes); consider passing it by pointer (gocritic)
+	filter skipFilter,
+	^
+internal/infrastructure/goloader/funcs.go:75:2: rangeValCopy: each iteration copies 8 bytes (consider pointers or indexing) (gocritic)
+	for _, file := range pkg.Syntax {
+	^
+internal/infrastructure/goloader/funcs.go:83:14: hugeParam: filter is heavy (40 bytes); consider passing it by pointer (gocritic)
+func skipPos(filter skipFilter, pos token.Pos) bool {
+             ^
+internal/infrastructure/goloader/funcs.go:128:2: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+	opts outbound.FactOptions,
+	^
+internal/infrastructure/goloader/funcs.go:133:32: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+func load(ctx context.Context, opts outbound.FactOptions) (string, []model.PackageExtract, error) {
+                               ^
+internal/infrastructure/goloader/funcs.go:149:40: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+func loadPackages(ctx context.Context, opts outbound.FactOptions) ([]*packages.Package, error) {
+                                       ^
+internal/infrastructure/goloader/funcs.go:159:19: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+func loadPatterns(opts outbound.FactOptions) []string {
+                  ^
+internal/infrastructure/goloader/funcs.go:167:42: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+func packagesConfig(ctx context.Context, opts outbound.FactOptions) *packages.Config {
+                                         ^
+internal/infrastructure/goloader/funcs.go:185:2: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+	opts outbound.FactOptions,
+	^
+internal/infrastructure/goloader/funcs.go:203:38: hugeParam: job is heavy (120 bytes); consider passing it by pointer (gocritic)
+func extractAll(ctx context.Context, job extractJob) ([]model.PackageExtract, error) {
+                                     ^
+internal/infrastructure/goloader/funcs.go:234:2: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+	opts outbound.FactOptions,
+	^
+internal/infrastructure/goloader/funcs.go:246:1: unnamedResult: consider giving a name to these results (gocritic)
+func indexPackages(loaded []*packages.Package) (map[string]*packages.Package, []string) {
+^
+internal/infrastructure/goloader/funcs.go:275:1: unnamedResult: consider giving a name to these results (gocritic)
+func filterPackages(
+^
+internal/infrastructure/goloader/funcs.go:278:2: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+	opts outbound.FactOptions,
+	^
+internal/infrastructure/goloader/funcs.go:282:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, path := range order {
+	^
+internal/infrastructure/goloader/funcs.go:294:64: hugeParam: opts is heavy (80 bytes); consider passing it by pointer (gocritic)
+func (out *filterOut) absorb(p *packages.Package, path string, opts outbound.FactOptions) {
+                                                               ^
+internal/infrastructure/goloader/funcs.go:315:2: rangeValCopy: each iteration copies 40 bytes (consider pointers or indexing) (gocritic)
+	for _, e := range p.Errors {
+	^
+internal/shared/metrics/funcs.go:24:15: hugeParam: abstractness is heavy (80 bytes); consider passing it by pointer (gocritic)
+func Distance(abstractness, instability MetricResult) MetricResult {
+              ^
+internal/shared/metrics/funcs.go:24:29: hugeParam: instability is heavy (80 bytes); consider passing it by pointer (gocritic)
+func Distance(abstractness, instability MetricResult) MetricResult {
+                            ^
+internal/shared/metrics/funcs.go:66:20: hugeParam: spec is heavy (48 bytes); consider passing it by pointer (gocritic)
+func notApplicable(spec metricSpec, reason string) MetricResult {
+                   ^
+internal/shared/metrics/funcs.go:76:17: hugeParam: spec is heavy (48 bytes); consider passing it by pointer (gocritic)
+func applicable(spec metricSpec, value float64) MetricResult {
+                ^
+internal/shared/workerpool/funcs.go:79:2: rangeValCopy: each iteration copies 16 bytes (consider pointers or indexing) (gocritic)
+	for _, err := range errs {
+	^
+tools/splitpkg/split.go:106:60: hugeParam: in is heavy (48 bytes); consider passing it by pointer (gocritic)
+func acceptParsedFile(fset *token.FileSet, file *ast.File, in declCollect) error {
+                                                           ^
+tools/splitpkg/split.go:161:40: hugeParam: in is heavy (48 bytes); consider passing it by pointer (gocritic)
+func collectDecls(fset *token.FileSet, in declCollect, decls []ast.Decl) error {
+                                       ^
+tools/splitpkg/split.go:172:39: hugeParam: in is heavy (48 bytes); consider passing it by pointer (gocritic)
+func collectDecl(fset *token.FileSet, in declCollect, decl ast.Decl) error {
+                                      ^
+tools/splitpkg/split.go:187:21: hugeParam: in is heavy (48 bytes); consider passing it by pointer (gocritic)
+func collectGenDecl(in declCollect, tok token.Token, entry declEntry) error {
+                    ^
+tools/splitpkg/write.go:20:17: hugeParam: split is heavy (176 bytes); consider passing it by pointer (gocritic)
+func writeSplit(split packageSplit) error {
+                ^
+tools/splitpkg/write.go:34:22: hugeParam: split is heavy (176 bytes); consider passing it by pointer (gocritic)
+func writeCategories(split packageSplit) error {
+                     ^
+tools/splitpkg/write.go:48:19: hugeParam: split is heavy (176 bytes); consider passing it by pointer (gocritic)
+func categoryList(split packageSplit) []categoryFile {
+                  ^
+tools/splitpkg/write.go:67:23: hugeParam: split is heavy (176 bytes); consider passing it by pointer (gocritic)
+func writeOneCategory(split packageSplit, cf categoryFile, firstCategory string) error {
+                      ^
+tools/splitpkg/write.go:67:43: hugeParam: cf is heavy (40 bytes); consider passing it by pointer (gocritic)
+func writeOneCategory(split packageSplit, cf categoryFile, firstCategory string) error {
+                                          ^
+tools/splitpkg/write.go:86:29: hugeParam: split is heavy (176 bytes); consider passing it by pointer (gocritic)
+func removeNonCategoryFiles(split packageSplit) error {
+                            ^
+tools/splitpkg/write.go:133:22: hugeParam: in is heavy (88 bytes); consider passing it by pointer (gocritic)
+func writeCategoryGo(in categoryWrite) error {
+                     ^
+tools/splitpkg/write.go:142:26: hugeParam: in is heavy (88 bytes); consider passing it by pointer (gocritic)
+func buildCategorySource(in categoryWrite) ([]byte, error) {
+                         ^
+tools/splitpkg/write.go:158:45: hugeParam: in is heavy (88 bytes); consider passing it by pointer (gocritic)
+func writeCategoryHeader(buf *bytes.Buffer, in categoryWrite) error {
+                                            ^
+tools/splitpkg/write.go:208:25: hugeParam: in is heavy (88 bytes); consider passing it by pointer (gocritic)
+func finishCategoryFile(in categoryWrite, raw []byte) error {
+                        ^
+internal/features/reporting/application/funcs.go:21:1: text "json.Marshal" should be replaced with "[json.Marshal]" to link to stdlib function (godoclint)
+// marshalDocs builds the guide JSON shared by the standalone page and the
+^
+internal/features/reporting/application/funcs.go:274:1: text "json.Marshal" should be replaced with "[json.Marshal]" to link to stdlib function (godoclint)
+// renderWeb writes the interactive HTML report: the embedded template with
+^
+go.mod:3:1: go directive (1.26.5) doesn't match the pattern '^1\.26(\.0)?$' (gomoddirectives)
+go 1.26.5
+^
+internal/features/reporting/application/funcs.go:91:3: G104: Errors unhandled (gosec)
+		_ = w.Close()
+		^
+internal/features/reporting/application/funcs.go:113:3: G104: Errors unhandled (gosec)
+		_ = w.Close()
+		^
+internal/infrastructure/profiling/funcs.go:21:3: G104: Errors unhandled (gosec)
+		_ = closeFile(f)
+		^
+internal/infrastructure/profiling/funcs.go:46:3: G104: Errors unhandled (gosec)
+		_ = closeFile(f)
+		^
+internal/infrastructure/profiling/funcs.go:71:3: G104: Errors unhandled (gosec)
+		_ = root.Close()
+		^
+tools/splitpkg/split.go:118:14: G304: Potential file inclusion via variable (gosec)
+	src, err := os.ReadFile(
+		path,
+	) // #nosec G304 -- paths come from os.ReadDir of the target package.
+internal/cli/funcs.go:528:5: shadow: declaration of "err" shadows declaration at line 521 (govet)
+	if err := closeHelpFile(file); err != nil {
+	   ^
+internal/cli/funcs.go:532:5: shadow: declaration of "err" shadows declaration at line 521 (govet)
+	if err := writeDocs(sinks.FileSink{Path: path}, version.Version); err != nil {
+	   ^
+cmd/distance/funcs.go:6:1: should only use grouped 'import' declarations (grouper)
+import "os"
+^
+distance/consts.go:6:1: should only use grouped 'import' declarations (grouper)
+import "github.com/gostafa/distance/internal/shared/metrics"
+^
+distance/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import "github.com/gostafa/distance/internal/shared/metrics"
+^
+funcs.go:6:1: should only use grouped 'import' declarations (grouper)
+import "os"
+^
+internal/cli/consts.go:6:1: should only use grouped global 'const' declarations (grouper)
+const defaultWebReportName = "distance-report.html"
+^
+internal/cli/consts.go:8:1: should only use a single global 'const' declaration, 5 found (grouper)
+const (
+^
+internal/cli/consts.go:17:1: grouper(related information): found here (grouper)
+const exitIO = exitFail
+^
+internal/cli/consts.go:17:1: grouper(related information): found here (grouper)
+const exitIO = exitFail
+^
+internal/cli/consts.go:19:1: grouper(related information): found here (grouper)
+const (
+^
+internal/cli/consts.go:25:1: grouper(related information): found here (grouper)
+const (
+^
+internal/cli/types.go:14:1: should only use grouped global 'type' declarations (grouper)
+type flagBindings struct {
+^
+internal/cli/types.go:33:1: should only use a single global 'type' declaration, 3 found (grouper)
+type cliOptions struct {
+^
+internal/cli/types.go:33:1: grouper(related information): found here (grouper)
+type cliOptions struct {
+^
+internal/cli/types.go:54:1: grouper(related information): found here (grouper)
+type runSession struct {
+^
+internal/cli/types.go:54:1: grouper(related information): found here (grouper)
+type runSession struct {
+^
+internal/features/packagemetrics/application/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import "github.com/gostafa/distance/internal/shared/metrics"
+^
+internal/features/packagemetrics/application/types.go:9:1: should only use grouped global 'type' declarations (grouper)
+type Result struct {
+^
+internal/features/packagemetrics/domain/funcs.go:57:1: should only use grouped global 'type' declarations (grouper)
+type couplingPass struct {
+^
+internal/features/projectanalysis/application/funcs.go:91:1: should only use grouped global 'type' declarations (grouper)
+type analyzePackageInput struct {
+^
+internal/features/projectanalysis/application/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
+^
+internal/features/projectanalysis/application/types.go:9:1: should only use grouped global 'type' declarations (grouper)
+type Pipeline struct {
+^
+internal/features/projectanalysis/application/vars.go:13:1: should only use a single global 'var' declaration, 2 found (grouper)
+var _ inbound.Analyzer = (*Pipeline)(nil)
+^
+internal/features/projectanalysis/ports/inbound/funcs.go:6:1: should only use grouped 'import' declarations (grouper)
+import "fmt"
+^
+internal/features/reporting/application/consts.go:8:1: should only use grouped global 'const' declarations (grouper)
+const docsDataPlaceholder = "__DOCS_DATA__"
+^
+internal/features/reporting/application/consts.go:11:1: should only use a single global 'const' declaration, 3 found (grouper)
+const webDataPlaceholder = "__REPORT_DATA__"
+^
+internal/features/reporting/application/consts.go:11:1: grouper(related information): found here (grouper)
+const webDataPlaceholder = "__REPORT_DATA__"
+^
+internal/features/reporting/application/consts.go:13:1: grouper(related information): found here (grouper)
+const (
+^
+internal/features/reporting/application/types.go:14:1: should only use grouped global 'type' declarations (grouper)
+type docsPayload struct {
+^
+internal/features/reporting/application/types.go:22:1: grouper(related information): found here (grouper)
+type jsonMetricDoc struct {
+^
+internal/features/reporting/application/types.go:22:1: should only use a single global 'type' declaration, 11 found (grouper)
+type jsonMetricDoc struct {
+^
+internal/features/reporting/application/types.go:41:1: grouper(related information): found here (grouper)
+type jsonReport struct {
+^
+internal/features/reporting/application/types.go:41:1: grouper(related information): found here (grouper)
+type jsonReport struct {
+^
+internal/features/reporting/application/types.go:50:1: grouper(related information): found here (grouper)
+type jsonTool struct {
+^
+internal/features/reporting/application/types.go:50:1: grouper(related information): found here (grouper)
+type jsonTool struct {
+^
+internal/features/reporting/application/types.go:57:1: grouper(related information): found here (grouper)
+type jsonPackage struct {
+^
+internal/features/reporting/application/types.go:57:1: grouper(related information): found here (grouper)
+type jsonPackage struct {
+^
+internal/features/reporting/application/types.go:66:1: grouper(related information): found here (grouper)
+type jsonMetric struct {
+^
+internal/features/reporting/application/types.go:66:1: grouper(related information): found here (grouper)
+type jsonMetric struct {
+^
+internal/features/reporting/application/types.go:76:1: grouper(related information): found here (grouper)
+type orderedMetrics []metrics.MetricResult
+^
+internal/features/reporting/application/types.go:76:1: grouper(related information): found here (grouper)
+type orderedMetrics []metrics.MetricResult
+^
+internal/features/reporting/application/types.go:80:1: grouper(related information): found here (grouper)
+type webPayload struct {
+^
+internal/features/reporting/application/types.go:80:1: grouper(related information): found here (grouper)
+type webPayload struct {
+^
+internal/features/reporting/application/types.go:88:1: grouper(related information): found here (grouper)
+type WriteOptions struct {
+^
+internal/features/reporting/application/types.go:88:1: grouper(related information): found here (grouper)
+type WriteOptions struct {
+^
+internal/features/reporting/application/types.go:93:1: grouper(related information): found here (grouper)
+type renderOptions struct {
+^
+internal/features/reporting/application/types.go:93:1: grouper(related information): found here (grouper)
+type renderOptions struct {
+^
+internal/features/reporting/application/types.go:99:1: grouper(related information): found here (grouper)
+type placeholderSwap struct {
+^
+internal/features/reporting/application/types.go:99:1: grouper(related information): found here (grouper)
+type placeholderSwap struct {
+^
+internal/features/reporting/application/vars.go:18:1: should only use a single global 'var' declaration, 3 found (grouper)
+var jsonMarshal = json.Marshal
+^
+internal/features/reporting/application/vars.go:24:1: grouper(related information): found here (grouper)
+var webTemplate string
+^
+internal/features/reporting/domain/consts.go:13:1: should only use a single global 'const' declaration, 9 found (grouper)
+const (
+^
+internal/features/reporting/domain/consts.go:22:1: grouper(related information): found here (grouper)
+const formulaAbstractness = `<math display="block" ` +
+^
+internal/features/reporting/domain/consts.go:22:1: should only use grouped global 'const' declarations (grouper)
+const formulaAbstractness = `<math display="block" ` +
+^
+internal/features/reporting/domain/consts.go:29:1: grouper(related information): found here (grouper)
+const formulaInstability = `<math display="block" ` +
+^
+internal/features/reporting/domain/consts.go:29:1: grouper(related information): found here (grouper)
+const formulaInstability = `<math display="block" ` +
+^
+internal/features/reporting/domain/consts.go:37:1: grouper(related information): found here (grouper)
+const formulaDistance = `<math display="block" alttext="D = |A + I - 1|">` +
+^
+internal/features/reporting/domain/consts.go:37:1: grouper(related information): found here (grouper)
+const formulaDistance = `<math display="block" alttext="D = |A + I - 1|">` +
+^
+internal/features/reporting/domain/consts.go:42:1: grouper(related information): found here (grouper)
+const (
+^
+internal/features/reporting/domain/consts.go:53:1: grouper(related information): found here (grouper)
+const (
+^
+internal/features/reporting/domain/consts.go:62:1: grouper(related information): found here (grouper)
+const (
+^
+internal/features/reporting/domain/consts.go:91:1: grouper(related information): found here (grouper)
+const (
+^
+internal/features/reporting/domain/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import "github.com/gostafa/distance/distance"
+^
+internal/features/reporting/domain/types.go:9:1: should only use grouped global 'type' declarations (grouper)
+type DocScope string
+^
+internal/features/reporting/domain/types.go:12:1: grouper(related information): found here (grouper)
+type MetricDoc struct {
+^
+internal/features/reporting/domain/types.go:12:1: should only use a single global 'type' declaration, 17 found (grouper)
+type MetricDoc struct {
+^
+internal/features/reporting/domain/types.go:30:1: grouper(related information): found here (grouper)
+type Format string
+^
+internal/features/reporting/domain/types.go:30:1: grouper(related information): found here (grouper)
+type Format string
+^
+internal/features/reporting/domain/types.go:33:1: grouper(related information): found here (grouper)
+type TextOptions struct {
+^
+internal/features/reporting/domain/types.go:33:1: grouper(related information): found here (grouper)
+type TextOptions struct {
+^
+internal/features/reporting/domain/types.go:42:1: grouper(related information): found here (grouper)
+type metricQuality struct {
+^
+internal/features/reporting/domain/types.go:42:1: grouper(related information): found here (grouper)
+type metricQuality struct {
+^
+internal/features/reporting/domain/types.go:47:1: grouper(related information): found here (grouper)
+type tableCell struct {
+^
+internal/features/reporting/domain/types.go:47:1: grouper(related information): found here (grouper)
+type tableCell struct {
+^
+internal/features/reporting/domain/types.go:53:1: grouper(related information): found here (grouper)
+type treeNode struct {
+^
+internal/features/reporting/domain/types.go:53:1: grouper(related information): found here (grouper)
+type treeNode struct {
+^
+internal/features/reporting/domain/types.go:59:1: grouper(related information): found here (grouper)
+type treeSummary struct {
+^
+internal/features/reporting/domain/types.go:59:1: grouper(related information): found here (grouper)
+type treeSummary struct {
+^
+internal/features/reporting/domain/types.go:64:1: grouper(related information): found here (grouper)
+type textTable struct {
+^
+internal/features/reporting/domain/types.go:64:1: grouper(related information): found here (grouper)
+type textTable struct {
+^
+internal/features/reporting/domain/types.go:71:1: grouper(related information): found here (grouper)
+type columnStats struct {
+^
+internal/features/reporting/domain/types.go:71:1: grouper(related information): found here (grouper)
+type columnStats struct {
+^
+internal/features/reporting/domain/types.go:76:1: grouper(related information): found here (grouper)
+type walkFrame struct {
+^
+internal/features/reporting/domain/types.go:76:1: grouper(related information): found here (grouper)
+type walkFrame struct {
+^
+internal/features/reporting/domain/types.go:81:1: grouper(related information): found here (grouper)
+type footerInput struct {
+^
+internal/features/reporting/domain/types.go:81:1: grouper(related information): found here (grouper)
+type footerInput struct {
+^
+internal/features/reporting/domain/types.go:87:1: grouper(related information): found here (grouper)
+type packageNotesInput struct {
+^
+internal/features/reporting/domain/types.go:87:1: grouper(related information): found here (grouper)
+type packageNotesInput struct {
+^
+internal/features/reporting/domain/types.go:93:1: grouper(related information): found here (grouper)
+type noteBlockInput struct {
+^
+internal/features/reporting/domain/types.go:93:1: grouper(related information): found here (grouper)
+type noteBlockInput struct {
+^
+internal/features/reporting/domain/types.go:99:1: grouper(related information): found here (grouper)
+type rowWriteInput struct {
+^
+internal/features/reporting/domain/types.go:99:1: grouper(related information): found here (grouper)
+type rowWriteInput struct {
+^
+internal/features/reporting/domain/types.go:105:1: grouper(related information): found here (grouper)
+type cellsWriteInput struct {
+^
+internal/features/reporting/domain/types.go:105:1: grouper(related information): found here (grouper)
+type cellsWriteInput struct {
+^
+internal/features/reporting/domain/types.go:111:1: grouper(related information): found here (grouper)
+type cellPadInput struct {
+^
+internal/features/reporting/domain/types.go:111:1: grouper(related information): found here (grouper)
+type cellPadInput struct {
+^
+internal/features/reporting/domain/vars.go:6:1: should only use grouped 'import' declarations (grouper)
+import "github.com/gostafa/distance/internal/shared/metrics"
+^
+internal/features/reporting/domain/vars.go:12:1: should only use a single global 'var' declaration, 2 found (grouper)
+var columnAbbrev = map[string]string{
+^
+internal/features/reporting/ports/outbound/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import "io"
+^
+internal/features/reporting/ports/outbound/types.go:9:1: should only use grouped global 'type' declarations (grouper)
+type Sink interface {
+^
+internal/features/typefacts/application/funcs.go:84:1: should only use grouped global 'type' declarations (grouper)
+type packageAssemble struct {
+^
+internal/features/typefacts/domain/consts.go:6:1: should only use grouped 'import' declarations (grouper)
+import factmodel "github.com/gostafa/distance/internal/features/typefacts/domain/model"
+^
+internal/features/typefacts/domain/funcs.go:6:1: should only use grouped 'import' declarations (grouper)
+import "fmt"
+^
+internal/features/typefacts/domain/model/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import "fmt"
+^
+internal/features/typefacts/domain/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import factmodel "github.com/gostafa/distance/internal/features/typefacts/domain/model"
+^
+internal/infrastructure/browser/vars.go:6:1: should only use grouped 'import' declarations (grouper)
+import "os/exec"
+^
+internal/infrastructure/goloader/consts.go:6:1: should only use grouped 'import' declarations (grouper)
+import "golang.org/x/tools/go/packages"
+^
+internal/infrastructure/goloader/funcs.go:289:1: should only use grouped global 'type' declarations (grouper)
+type filterOut struct {
+^
+internal/infrastructure/goloader/types.go:13:1: should only use grouped global 'type' declarations (grouper)
+type extractorOptions struct {
+^
+internal/infrastructure/goloader/types.go:19:1: grouper(related information): found here (grouper)
+type Loader struct{}
+^
+internal/infrastructure/goloader/types.go:19:1: should only use a single global 'type' declaration, 4 found (grouper)
+type Loader struct{}
+^
+internal/infrastructure/goloader/types.go:21:1: grouper(related information): found here (grouper)
+type skipFilter struct {
+^
+internal/infrastructure/goloader/types.go:21:1: grouper(related information): found here (grouper)
+type skipFilter struct {
+^
+internal/infrastructure/goloader/types.go:27:1: grouper(related information): found here (grouper)
+type extractJob struct {
+^
+internal/infrastructure/goloader/types.go:27:1: grouper(related information): found here (grouper)
+type extractJob struct {
+^
+internal/infrastructure/goloader/vars.go:17:1: should only use a single global 'var' declaration, 2 found (grouper)
+var _ outbound.FactSource = (*Loader)(nil)
+^
+internal/infrastructure/sinks/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import "bufio"
+^
+internal/infrastructure/sinks/types.go:9:1: should only use grouped global 'type' declarations (grouper)
+type StdoutSink struct{}
+^
+internal/infrastructure/sinks/types.go:11:1: grouper(related information): found here (grouper)
+type stdoutStream struct {
+^
+internal/infrastructure/sinks/types.go:11:1: should only use a single global 'type' declaration, 3 found (grouper)
+type stdoutStream struct {
+^
+internal/infrastructure/sinks/types.go:16:1: grouper(related information): found here (grouper)
+type FileSink struct {
+^
+internal/infrastructure/sinks/types.go:16:1: grouper(related information): found here (grouper)
+type FileSink struct {
+^
+internal/infrastructure/sinks/vars.go:6:1: should only use grouped 'import' declarations (grouper)
+import "github.com/gostafa/distance/internal/features/reporting/ports/outbound"
+^
+internal/shared/metrics/funcs.go:6:1: should only use grouped 'import' declarations (grouper)
+import "math"
+^
+internal/shared/metrics/types.go:7:1: should only use grouped global 'type' declarations (grouper)
+type MetricScope string
+^
+internal/shared/metrics/types.go:10:1: should only use a single global 'type' declaration, 3 found (grouper)
+type MetricResult struct {
+^
+internal/shared/metrics/types.go:10:1: grouper(related information): found here (grouper)
+type MetricResult struct {
+^
+internal/shared/metrics/types.go:19:1: grouper(related information): found here (grouper)
+type metricSpec struct {
+^
+internal/shared/metrics/types.go:19:1: grouper(related information): found here (grouper)
+type metricSpec struct {
+^
+internal/shared/workerpool/types.go:7:1: should only use grouped global 'type' declarations (grouper)
+type Config struct {
+^
+internal/shared/workerpool/types.go:14:1: grouper(related information): found here (grouper)
+type runState struct {
+^
+internal/shared/workerpool/types.go:14:1: should only use a single global 'type' declaration, 2 found (grouper)
+type runState struct {
+^
+plugin/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import "github.com/gostafa/distance/analyzer"
+^
+plugin/vars.go:6:1: should only use grouped 'import' declarations (grouper)
+import "github.com/golangci/plugin-module-register/register"
+^
+tools/splitpkg/types.go:6:1: should only use grouped 'import' declarations (grouper)
+import "go/ast"
+^
+analyzer/funcs.go:48:1: run returns interface (any) (ireturn)
+func (r *runner) run(pass *analysis.Pass) (any, error) {
+^
+internal/cli/funcs.go:370:1: openSink returns interface (github.com/gostafa/distance/internal/features/reporting/ports/outbound.Sink) (ireturn)
+func openSink(outputPath string, format reportingdomain.Format) (outbound.Sink, string, bool) {
+^
+internal/infrastructure/analyzer/funcs.go:14:1: NewAnalyzer returns interface (github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound.Analyzer) (ireturn)
+func NewAnalyzer() inbound.Analyzer {
+^
+internal/infrastructure/sinks/funcs.go:13:1: Open returns interface (io.WriteCloser) (ireturn)
+func (StdoutSink) Open() (io.WriteCloser, error) {
+^
+internal/infrastructure/sinks/funcs.go:22:1: Open returns interface (io.WriteCloser) (ireturn)
+func (s FileSink) Open() (io.WriteCloser, error) {
+^
+plugin/funcs.go:21:1: New returns interface (github.com/golangci/plugin-module-register/register.LinterPlugin) (ireturn)
+func New(raw any) (register.LinterPlugin, error) {
+^
+internal/cli/funcs.go:57:1: Function name: bindFlags, Cyclomatic Complexity: 1, Halstead Volume: 879.41, Maintainability Index: 41 (maintidx)
+func bindFlags(fs *flag.FlagSet) *flagBindings {
+^
+internal/features/projectanalysis/application/funcs.go:47:1: Function name: buildPackageResults, Cyclomatic Complexity: 2, Halstead Volume: 701.84, Maintainability Index: 47 (maintidx)
+func buildPackageResults(
+^
+internal/features/reporting/domain/funcs.go:74:1: Function name: distanceDoc, Cyclomatic Complexity: 1, Halstead Volume: 422.15, Maintainability Index: 49 (maintidx)
+func distanceDoc() MetricDoc {
+^
+internal/features/typefacts/application/funcs.go:91:1: Function name: packageFromExtract, Cyclomatic Complexity: 2, Halstead Volume: 580.09, Maintainability Index: 49 (maintidx)
+func packageFromExtract(in packageAssemble) domain.PackageFacts {
+^
+internal/infrastructure/goloader/funcs.go:203:1: Function name: extractAll, Cyclomatic Complexity: 2, Halstead Volume: 562.54, Maintainability Index: 48 (maintidx)
+func extractAll(ctx context.Context, job extractJob) ([]model.PackageExtract, error) {
+^
+distance/funcs.go:72:2: slice `out` does not have non-zero initial length (makezero)
+	out := make([]MetricName, len(names))
+	^
+internal/features/packagemetrics/application/funcs.go:14:2: slice `results` does not have non-zero initial length (makezero)
+	results := make([]Result, len(facts.Packages))
+	^
+internal/features/policy/domain/funcs.go:135:2: slice `rules` does not have non-zero initial length (makezero)
+	rules := make([]PackageRule, len(patterns))
+	^
+internal/features/projectanalysis/application/funcs.go:56:2: slice `packageResults` does not have non-zero initial length (makezero)
+	packageResults := make([]inbound.PackageResult, len(facts.Packages))
+	^
+internal/features/reporting/domain/funcs.go:405:2: slice `widths` does not have non-zero initial length (makezero)
+	widths := make([]int, pathColumnCount+len(t.pkgCols))
+	^
+internal/infrastructure/goloader/funcs.go:204:2: slice `extracts` does not have non-zero initial length (makezero)
+	extracts := make([]model.PackageExtract, len(job.pkgs))
+	^
+internal/cli/funcs.go:323:1: `if err != nil` has complex nested blocks (complexity: 1) (nestif)
+	if err != nil {
+^
+analyzer/funcs.go:57:2: return both a `nil` error and an invalid value: use a sentinel error instead (nilnil)
+	return nil, nil
+	^
+internal/cli/funcs.go:168:8: avoid inline error handling using `if err := ...; err != nil`; use plain assignment `err := ...` (noinlineerr)
+	if _, err := fmt.Println(versionPrefix + version.Version); err != nil {
+	      ^
+internal/cli/funcs.go:429:8: avoid inline error handling using `if err := ...; err != nil`; use plain assignment `err := ...` (noinlineerr)
+	if _, err := fmt.Fprint(os.Stderr, policydomain.FormatViolations(violations)); err != nil {
+	      ^
+internal/cli/funcs.go:528:5: avoid inline error handling using `if err := ...; err != nil`; use plain assignment `err := ...` (noinlineerr)
+	if err := closeHelpFile(file); err != nil {
+	   ^
+internal/cli/funcs.go:532:5: avoid inline error handling using `if err := ...; err != nil`; use plain assignment `err := ...` (noinlineerr)
+	if err := writeDocs(sinks.FileSink{Path: path}, version.Version); err != nil {
+	   ^
+internal/features/reporting/application/funcs.go:200:5: avoid inline error handling using `if err := ...; err != nil`; use plain assignment `err := ...` (noinlineerr)
+	if err := writeJSONKey(buf, r.Name); err != nil {
+	   ^
+internal/infrastructure/browser/funcs.go:30:15: avoid inline error handling using `if err := ...; err != nil`; use plain assignment `err := ...` (noinlineerr)
+	if resolved, err := exec.LookPath(name); err == nil {
+	             ^
+internal/features/policy/domain/funcs.go:18:6: Consider preallocating violations (prealloc)
+	var violations []Violation
+	    ^
+internal/features/reporting/domain/funcs.go:761:6: Consider preallocating records (prealloc)
+	var records [][]string
+	    ^
+distance/types.go:4:1: max-public-structs: you have exceeded the maximum number (5) of public struct declarations (revive)
+package distance
+
+import "github.com/gostafa/distance/internal/shared/metrics"
+
+type (
+	// DependencyScope selects which imports count toward efferent coupling.
+	DependencyScope string
+
+	// MetricName identifies a reported package metric.
+	MetricName string
+
+	// Config controls a single Analyze run.
+	Config struct {
+		Directory        string
+		DependencyScope  DependencyScope
+		Patterns         []string
+		BuildTags        []string
+		Workers          int
+		IncludeTests     bool
+		IncludeGenerated bool
+		ContinueOnError  bool
+	}
+
+	// PackageReport holds metrics and coupling for one analyzed package.
+	PackageReport struct {
+		Path     string
+		Metrics  []metrics.MetricResult
+		Afferent int
+		Efferent int
+	}
+
+	// Report is the complete analysis result for one configuration.
+	Report struct {
+		// SchemaVersion identifies the report schema; it equals the
+		// SchemaVersion constant for reports this build produces.
+		SchemaVersion string
+		// Tool records the tool name and version that produced the report.
+		Tool ToolInfo
+		// Module is the analyzed main module's path, when known. Renderers
+		// use it to show package paths relative to the module root.
+		Module string
+		// Packages holds one entry per analyzed package, sorted by import path.
+		Packages []PackageReport
+	}
+
+	// ToolInfo names the binary that produced a Report.
+	ToolInfo struct {
+		// Name is the tool name embedded in reports; equals ToolName for this build.
+		Name string
+		// Version is the tool version string at analysis time.
+		Version string
+	}
+)
+internal/cli/funcs.go:201:10: ErrorContext should be used instead (sloglint)
+		logger.Error(
+		       ^
+internal/cli/funcs.go:203:4: key-value pairs should not be used (sloglint)
+			flagNameFormat,
+			^
+internal/cli/funcs.go:205:4: the "want" key should be a constant (sloglint)
+			"want",
+			^
+internal/cli/funcs.go:221:10: ErrorContext should be used instead (sloglint)
+		logger.Error("conflicting flags: -web implies -format=web", flagNameFormat, opts.format)
+		       ^
+internal/cli/funcs.go:221:63: key-value pairs should not be used (sloglint)
+		logger.Error("conflicting flags: -web implies -format=web", flagNameFormat, opts.format)
+		                                                            ^
+internal/cli/funcs.go:254:10: ErrorContext should be used instead (sloglint)
+		logger.Error("cpu profiling failed", slogKeyError, err)
+		       ^
+internal/cli/funcs.go:254:40: key-value pairs should not be used (sloglint)
+		logger.Error("cpu profiling failed", slogKeyError, err)
+		                                     ^
+internal/cli/funcs.go:268:11: ErrorContext should be used instead (sloglint)
+			logger.Error("cpu profiling failed", slogKeyError, err)
+			       ^
+internal/cli/funcs.go:268:41: key-value pairs should not be used (sloglint)
+			logger.Error("cpu profiling failed", slogKeyError, err)
+			                                     ^
+internal/cli/funcs.go:294:18: ErrorContext should be used instead (sloglint)
+		session.logger.Error("policy configuration failed", slogKeyError, err)
+		               ^
+internal/cli/funcs.go:294:55: key-value pairs should not be used (sloglint)
+		session.logger.Error("policy configuration failed", slogKeyError, err)
+		                                                    ^
+internal/cli/funcs.go:324:10: ErrorContext should be used instead (sloglint)
+		logger.Error("analysis failed", slogKeyError, err)
+		       ^
+internal/cli/funcs.go:324:35: key-value pairs should not be used (sloglint)
+		logger.Error("analysis failed", slogKeyError, err)
+		                                ^
+internal/cli/funcs.go:333:9: DebugContext should be used instead (sloglint)
+	logger.Debug("analysis complete",
+	       ^
+internal/cli/funcs.go:334:3: the "packages" key should be a constant (sloglint)
+		"packages", len(report.Packages), "duration", time.Since(start))
+		^
+internal/cli/funcs.go:334:3: key-value pairs should not be used (sloglint)
+		"packages", len(report.Packages), "duration", time.Since(start))
+		^
+internal/cli/funcs.go:334:37: the "duration" key should be a constant (sloglint)
+		"packages", len(report.Packages), "duration", time.Since(start))
+		                                  ^
+internal/cli/funcs.go:334:37: arguments should be put on separate lines (sloglint)
+		"packages", len(report.Packages), "duration", time.Since(start))
+		                                  ^
+internal/cli/funcs.go:362:10: ErrorContext should be used instead (sloglint)
+		logger.Error("memory profiling failed", slogKeyError, err)
+		       ^
+internal/cli/funcs.go:362:43: key-value pairs should not be used (sloglint)
+		logger.Error("memory profiling failed", slogKeyError, err)
+		                                        ^
+internal/cli/funcs.go:396:18: ErrorContext should be used instead (sloglint)
+		session.logger.Error("writing report failed", slogKeyError, err)
+		               ^
+internal/cli/funcs.go:396:49: key-value pairs should not be used (sloglint)
+		session.logger.Error("writing report failed", slogKeyError, err)
+		                                              ^
+internal/cli/funcs.go:409:9: InfoContext should be used instead (sloglint)
+	logger.Info("report written", "path", path)
+	       ^
+internal/cli/funcs.go:409:32: key-value pairs should not be used (sloglint)
+	logger.Info("report written", "path", path)
+	                              ^
+internal/cli/funcs.go:409:32: the "path" key should be a constant (sloglint)
+	logger.Info("report written", "path", path)
+	                              ^
+internal/cli/funcs.go:416:18: InfoContext should be used instead (sloglint)
+		session.logger.Info("policy check passed", "source", session.policySource)
+		               ^
+internal/cli/funcs.go:416:46: the "source" key should be a constant (sloglint)
+		session.logger.Info("policy check passed", "source", session.policySource)
+		                                           ^
+internal/cli/funcs.go:416:46: the "source" key is forbidden and should not be used (sloglint)
+		session.logger.Info("policy check passed", "source", session.policySource)
+		                                           ^
+internal/cli/funcs.go:416:46: key-value pairs should not be used (sloglint)
+		session.logger.Info("policy check passed", "source", session.policySource)
+		                                           ^
+internal/cli/funcs.go:421:17: ErrorContext should be used instead (sloglint)
+	session.logger.Error(
+	               ^
+internal/cli/funcs.go:423:3: key-value pairs should not be used (sloglint)
+		"source",
+		^
+internal/cli/funcs.go:423:3: the "source" key should be a constant (sloglint)
+		"source",
+		^
+internal/cli/funcs.go:423:3: the "source" key is forbidden and should not be used (sloglint)
+		"source",
+		^
+internal/cli/funcs.go:425:3: the "violations" key should be a constant (sloglint)
+		"violations",
+		^
+internal/cli/funcs.go:498:10: ErrorContext should be used instead (sloglint)
+		logger.Error("writing the metrics guide failed", slogKeyError, err)
+		       ^
+internal/cli/funcs.go:498:52: key-value pairs should not be used (sloglint)
+		logger.Error("writing the metrics guide failed", slogKeyError, err)
+		                                                 ^
+internal/cli/funcs.go:503:9: InfoContext should be used instead (sloglint)
+	logger.Info("metrics guide written", "path", path)
+	       ^
+internal/cli/funcs.go:503:39: the "path" key should be a constant (sloglint)
+	logger.Info("metrics guide written", "path", path)
+	                                     ^
+internal/cli/funcs.go:503:39: key-value pairs should not be used (sloglint)
+	logger.Info("metrics guide written", "path", path)
+	                                     ^
+internal/cli/funcs.go:516:10: WarnContext should be used instead (sloglint)
+		logger.Warn(warnMsg, slogKeyError, err)
+		       ^
+internal/cli/funcs.go:516:15: message should be a string literal or a constant (sloglint)
+		logger.Warn(warnMsg, slogKeyError, err)
+		            ^
+internal/cli/funcs.go:516:24: key-value pairs should not be used (sloglint)
+		logger.Warn(warnMsg, slogKeyError, err)
+		                     ^
+analyzer/types.go:33:46: json(snake): got 'dependency-scope' want 'dependency_scope' (tagliatelle)
+		DependencyScope string                     `json:"dependency-scope"`
+		                                           ^
+analyzer/types.go:35:46: json(snake): got 'build-tags' want 'build_tags' (tagliatelle)
+		BuildTags       []string                   `json:"build-tags"`
+		                                           ^
+analyzer/types.go:39:46: json(snake): got 'continue-on-error' want 'continue_on_error' (tagliatelle)
+		ContinueOnError bool                       `json:"continue-on-error"`
+		                                           ^
+internal/features/policy/domain/types.go:26:23: json(snake): got 'max-distance' want 'max_distance' (tagliatelle)
+		MaxDistance float64 `json:"max-distance"`
+		                    ^
+analyzer/funcs.go:48:7: parameter name 'r' is too short for the scope of its usage (varnamelen)
+func (r *runner) run(pass *analysis.Pass) (any, error) {
+      ^
+analyzer/funcs.go:138:7: parameter name 's' is too short for the scope of its usage (varnamelen)
+func (s Settings) withDefaults() Settings {
+      ^
+analyzer/funcs.go:151:7: parameter name 's' is too short for the scope of its usage (varnamelen)
+func (s Settings) validate() error {
+      ^
+analyzer/funcs.go:176:7: parameter name 's' is too short for the scope of its usage (varnamelen)
+func (s Settings) toConfig() distance.Config {
+      ^
+internal/cli/funcs.go:45:2: variable name 'fs' is too short for the scope of its usage (varnamelen)
+	fs := flag.NewFlagSet("distance", flag.ContinueOnError)
+	^
+internal/cli/funcs.go:57:16: parameter name 'fs' is too short for the scope of its usage (varnamelen)
+func bindFlags(fs *flag.FlagSet) *flagBindings {
+               ^
+internal/cli/funcs.go:114:18: parameter name 'fs' is too short for the scope of its usage (varnamelen)
+func optionsFrom(fs *flag.FlagSet, b *flagBindings) *cliOptions {
+                 ^
+internal/cli/funcs.go:114:36: parameter name 'b' is too short for the scope of its usage (varnamelen)
+func optionsFrom(fs *flag.FlagSet, b *flagBindings) *cliOptions {
+                                   ^
+internal/features/projectanalysis/application/funcs.go:98:21: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func analyzePackage(in analyzePackageInput) inbound.PackageResult {
+                    ^
+internal/features/reporting/application/funcs.go:39:22: parameter name 'd' is too short for the scope of its usage (varnamelen)
+func toJSONMetricDoc(d domain.MetricDoc) jsonMetricDoc {
+                     ^
+internal/features/reporting/application/funcs.go:60:17: parameter name 'w' is too short for the scope of its usage (varnamelen)
+func renderDocs(w io.Writer, toolVersion string) error {
+                ^
+internal/features/reporting/application/funcs.go:84:2: variable name 'w' is too short for the scope of its usage (varnamelen)
+	w, err := sink.Open()
+	^
+internal/features/reporting/application/funcs.go:102:2: variable name 'w' is too short for the scope of its usage (varnamelen)
+	w, err := sink.Open()
+	^
+internal/features/reporting/application/funcs.go:135:20: parameter name 'w' is too short for the scope of its usage (varnamelen)
+func renderNonText(w io.Writer, o renderOptions) error {
+                   ^
+internal/features/reporting/application/funcs.go:135:33: parameter name 'o' is too short for the scope of its usage (varnamelen)
+func renderNonText(w io.Writer, o renderOptions) error {
+                                ^
+internal/features/reporting/application/funcs.go:226:17: parameter name 'r' is too short for the scope of its usage (varnamelen)
+func metricJSON(r metrics.MetricResult) jsonMetric {
+                ^
+internal/features/reporting/application/funcs.go:279:16: parameter name 'w' is too short for the scope of its usage (varnamelen)
+func renderWeb(w io.Writer, report distance.Report) error {
+               ^
+internal/features/reporting/domain/funcs.go:178:7: parameter name 'n' is too short for the scope of its usage (varnamelen)
+func (n *treeNode) child(name string) *treeNode {
+      ^
+internal/features/reporting/domain/funcs.go:192:20: parameter name 'n' is too short for the scope of its usage (varnamelen)
+func aggregateTree(n *treeNode, summaries map[*treeNode]*treeSummary) *treeSummary {
+                   ^
+internal/features/reporting/domain/funcs.go:221:2: variable name 'st' is too short for the scope of its usage (varnamelen)
+	st := m[name]
+	^
+internal/features/reporting/domain/funcs.go:233:6: variable name 's' is too short for the scope of its usage (varnamelen)
+	for name, s := range src {
+	    ^
+internal/features/reporting/domain/funcs.go:234:3: variable name 'd' is too short for the scope of its usage (varnamelen)
+		d := dst[name]
+		^
+internal/features/reporting/domain/funcs.go:249:7: parameter name 'n' is too short for the scope of its usage (varnamelen)
+func (n *treeNode) compress() {
+      ^
+internal/features/reporting/domain/funcs.go:321:6: variable name 'b' is too short for the scope of its usage (varnamelen)
+	var b strings.Builder
+	    ^
+internal/features/reporting/domain/funcs.go:337:22: parameter name 'b' is too short for the scope of its usage (varnamelen)
+func writeTextHeader(b *strings.Builder, report distance.Report, opts TextOptions) {
+                     ^
+internal/features/reporting/domain/funcs.go:347:22: parameter name 'b' is too short for the scope of its usage (varnamelen)
+func writeModuleLine(b *strings.Builder, report distance.Report, opts TextOptions) {
+                     ^
+internal/features/reporting/domain/funcs.go:428:20: parameter name 'b' is too short for the scope of its usage (varnamelen)
+func writeTableRow(b *strings.Builder, in rowWriteInput) {
+                   ^
+internal/features/reporting/domain/funcs.go:428:40: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func writeTableRow(b *strings.Builder, in rowWriteInput) {
+                                       ^
+internal/features/reporting/domain/funcs.go:454:20: parameter name 'b' is too short for the scope of its usage (varnamelen)
+func writeRowCells(b *strings.Builder, in cellsWriteInput) {
+                   ^
+internal/features/reporting/domain/funcs.go:454:40: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func writeRowCells(b *strings.Builder, in cellsWriteInput) {
+                                       ^
+internal/features/reporting/domain/funcs.go:464:19: parameter name 'b' is too short for the scope of its usage (varnamelen)
+func writeCellPad(b *strings.Builder, in cellPadInput) {
+                  ^
+internal/features/reporting/domain/funcs.go:473:24: parameter name 'b' is too short for the scope of its usage (varnamelen)
+func writeTableFooters(b *strings.Builder, in footerInput) {
+                       ^
+internal/features/reporting/domain/funcs.go:473:44: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func writeTableFooters(b *strings.Builder, in footerInput) {
+                                           ^
+internal/features/reporting/domain/funcs.go:593:2: variable name 'r' is too short for the scope of its usage (varnamelen)
+	r, ok := byName[name]
+	^
+internal/features/reporting/domain/funcs.go:666:24: parameter name 'b' is too short for the scope of its usage (varnamelen)
+func writePackageNotes(b *strings.Builder, in packageNotesInput) bool {
+                       ^
+internal/features/reporting/domain/funcs.go:666:44: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func writePackageNotes(b *strings.Builder, in packageNotesInput) bool {
+                                           ^
+internal/features/reporting/domain/funcs.go:688:28: parameter name 'b' is too short for the scope of its usage (varnamelen)
+func writePackageNoteBlock(b *strings.Builder, in noteBlockInput) {
+                           ^
+internal/features/reporting/domain/funcs.go:688:48: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func writePackageNoteBlock(b *strings.Builder, in noteBlockInput) {
+                                               ^
+internal/features/reporting/domain/funcs.go:721:2: variable name 'q' is too short for the scope of its usage (varnamelen)
+	q, ok := qualityByMetric[name]
+	^
+internal/features/reporting/domain/funcs.go:781:45: parameter name 'r' is too short for the scope of its usage (varnamelen)
+func metricCSVRow(pkgPath, typeName string, r metrics.MetricResult) []string {
+                                            ^
+internal/features/typefacts/application/funcs.go:91:25: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func packageFromExtract(in packageAssemble) domain.PackageFacts {
+                        ^
+internal/infrastructure/goloader/funcs.go:55:2: variable name 'tn' is too short for the scope of its usage (varnamelen)
+	tn, ok := scope.Lookup(name).(*types.TypeName)
+	^
+internal/infrastructure/goloader/funcs.go:257:74: parameter name 'p' is too short for the scope of its usage (varnamelen)
+func recordPackage(byPath map[string]*packages.Package, order *[]string, p *packages.Package) {
+                                                                         ^
+internal/infrastructure/goloader/funcs.go:294:30: parameter name 'p' is too short for the scope of its usage (varnamelen)
+func (out *filterOut) absorb(p *packages.Package, path string, opts outbound.FactOptions) {
+                             ^
+internal/infrastructure/goloader/funcs.go:312:36: parameter name 'p' is too short for the scope of its usage (varnamelen)
+func packageErrorMsgs(path string, p *packages.Package) []string {
+                                   ^
+internal/infrastructure/profiling/funcs.go:15:2: variable name 'f' is too short for the scope of its usage (varnamelen)
+	f, err := createProfileFile(path)
+	^
+internal/infrastructure/profiling/funcs.go:40:2: variable name 'f' is too short for the scope of its usage (varnamelen)
+	f, err := createProfileFile(path)
+	^
+internal/shared/workerpool/funcs.go:24:43: parameter name 'fn' is too short for the scope of its usage (varnamelen)
+func Run(ctx context.Context, cfg Config, fn func(i int) error) error {
+                                          ^
+internal/shared/workerpool/funcs.go:30:2: variable name 'st' is too short for the scope of its usage (varnamelen)
+	st := &runState{
+	^
+internal/shared/workerpool/funcs.go:44:26: parameter name 'st' is too short for the scope of its usage (varnamelen)
+func spawnWorkers(n int, st *runState) *sync.WaitGroup {
+                         ^
+internal/shared/workerpool/funcs.go:45:6: variable name 'wg' is too short for the scope of its usage (varnamelen)
+	var wg sync.WaitGroup
+	    ^
+tools/splitpkg/split.go:106:60: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func acceptParsedFile(fset *token.FileSet, file *ast.File, in declCollect) error {
+                                                           ^
+tools/splitpkg/split.go:172:39: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func collectDecl(fset *token.FileSet, in declCollect, decl ast.Decl) error {
+                                      ^
+tools/splitpkg/split.go:187:21: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func collectGenDecl(in declCollect, tok token.Token, entry declEntry) error {
+                    ^
+tools/splitpkg/write.go:67:43: parameter name 'cf' is too short for the scope of its usage (varnamelen)
+func writeOneCategory(split packageSplit, cf categoryFile, firstCategory string) error {
+                                          ^
+tools/splitpkg/write.go:133:22: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func writeCategoryGo(in categoryWrite) error {
+                     ^
+tools/splitpkg/write.go:142:26: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func buildCategorySource(in categoryWrite) ([]byte, error) {
+                         ^
+tools/splitpkg/write.go:158:45: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func writeCategoryHeader(buf *bytes.Buffer, in categoryWrite) error {
+                                            ^
+tools/splitpkg/write.go:208:25: parameter name 'in' is too short for the scope of its usage (varnamelen)
+func finishCategoryFile(in categoryWrite, raw []byte) error {
+                        ^
+analyzer/funcs.go:25:15: package-internal error should be wrapped: sig: func (github.com/gostafa/distance/analyzer.Settings).validate() error (wrapcheck)
+		return nil, err
+		            ^
+analyzer/funcs.go:41:9: package-internal error should be wrapped: sig: var f github.com/gostafa/distance/analyzer.analyzeFunc (wrapcheck)
+	return f(ctx, cfg)
+	       ^
+analyzer/funcs.go:154:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/analyzer.validateDependencyScope(value string) error (wrapcheck)
+		return err
+		       ^
+analyzer/funcs.go:159:9: package-internal error should be wrapped: sig: func (github.com/gostafa/distance/analyzer.Settings).policy() (github.com/gostafa/distance/internal/features/policy/domain.Policy, error) (wrapcheck)
+	return err
+	       ^
+analyzer/funcs.go:194:33: error returned from external package is unwrapped: sig: func github.com/gostafa/distance/internal/features/policy/domain.Validate(p github.com/gostafa/distance/internal/features/policy/domain.Policy) error (wrapcheck)
+		return policydomain.Policy{}, err
+		                              ^
+distance/funcs.go:24:20: package-internal error should be wrapped: sig: func github.com/gostafa/distance/distance.validateConfig(config github.com/gostafa/distance/distance.Config) error (wrapcheck)
+		return Report{}, err
+		                 ^
+distance/funcs.go:27:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/distance.analyzeValidated(ctx context.Context, cfg github.com/gostafa/distance/distance.Config) (github.com/gostafa/distance/distance.Report, error) (wrapcheck)
+	return analyzeValidated(ctx, cfg)
+	       ^
+distance/funcs.go:42:20: error returned from interface method should be wrapped: sig: func (github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound.Analyzer).Analyze(ctx context.Context, opts github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound.Options) (github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound.Result, error) (wrapcheck)
+		return Report{}, err
+		                 ^
+internal/cli/funcs.go:156:9: error returned from external package is unwrapped: sig: func fmt.Fprint(w io.Writer, a ...any) (n int, err error) (wrapcheck)
+	return err
+	       ^
+internal/cli/funcs.go:523:23: package-internal error should be wrapped: sig: var github.com/gostafa/distance/internal/cli.createHelpTemp func(dir string, pattern string) (*os.File, error) (wrapcheck)
+		return emptyString, err
+		                    ^
+internal/cli/funcs.go:529:23: package-internal error should be wrapped: sig: var github.com/gostafa/distance/internal/cli.closeHelpFile func(f *os.File) error (wrapcheck)
+		return emptyString, err
+		                    ^
+internal/cli/funcs.go:533:23: package-internal error should be wrapped: sig: var github.com/gostafa/distance/internal/cli.writeDocs func(sink github.com/gostafa/distance/internal/features/reporting/ports/outbound.Sink, toolVersion string) error (wrapcheck)
+		return emptyString, err
+		                    ^
+internal/cli/funcs.go:565:46: error returned from external package is unwrapped: sig: func github.com/gostafa/distance/internal/features/policy/domain.PolicyFromPatterns(patterns []string, maxDistance float64) (github.com/gostafa/distance/internal/features/policy/domain.Policy, error) (wrapcheck)
+		return policydomain.Policy{}, emptyString, err
+		                                           ^
+internal/features/policy/domain/funcs.go:141:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/policy/domain.validatedPolicy(policy github.com/gostafa/distance/internal/features/policy/domain.Policy) (github.com/gostafa/distance/internal/features/policy/domain.Policy, error) (wrapcheck)
+	return validatedPolicy(Policy{Packages: rules})
+	       ^
+internal/features/policy/domain/funcs.go:147:20: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/policy/domain.Validate(p github.com/gostafa/distance/internal/features/policy/domain.Policy) error (wrapcheck)
+		return Policy{}, err
+		                 ^
+internal/features/projectanalysis/application/funcs.go:28:28: error returned from interface method should be wrapped: sig: func (github.com/gostafa/distance/internal/features/typefacts/application.Collector).Collect(ctx context.Context, opts github.com/gostafa/distance/internal/features/typefacts/ports/outbound.FactOptions) (github.com/gostafa/distance/internal/features/typefacts/domain.ProjectFacts, error) (wrapcheck)
+		return inbound.Result{}, err
+		                         ^
+internal/features/projectanalysis/application/funcs.go:31:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/projectanalysis/application.assembleResult(ctx context.Context, facts *github.com/gostafa/distance/internal/features/typefacts/domain.ProjectFacts, opts github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound.Options) (github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound.Result, error) (wrapcheck)
+	return assembleResult(ctx, &facts, opts)
+	       ^
+internal/features/projectanalysis/application/funcs.go:41:28: error returned from interface method should be wrapped: sig: func (context.Context).Err() error (wrapcheck)
+		return inbound.Result{}, err
+		                         ^
+internal/features/projectanalysis/application/funcs.go:44:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/projectanalysis/application.buildPackageResults(ctx context.Context, facts *github.com/gostafa/distance/internal/features/typefacts/domain.ProjectFacts, opts github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound.Options) (github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound.Result, error) (wrapcheck)
+	return buildPackageResults(ctx, facts, opts)
+	       ^
+internal/features/projectanalysis/application/funcs.go:73:28: package-internal error should be wrapped: sig: var github.com/gostafa/distance/internal/features/projectanalysis/application.runWorkers func(ctx context.Context, cfg github.com/gostafa/distance/internal/shared/workerpool.Config, fn func(i int) error) error (wrapcheck)
+		return inbound.Result{}, err
+		                         ^
+internal/features/reporting/application/funcs.go:36:9: package-internal error should be wrapped: sig: var github.com/gostafa/distance/internal/features/reporting/application.jsonMarshal func(v any) ([]byte, error) (wrapcheck)
+	return jsonMarshal(out)
+	       ^
+internal/features/reporting/application/funcs.go:63:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.marshalDocs(toolVersion string) ([]byte, error) (wrapcheck)
+		return err
+		       ^
+internal/features/reporting/application/funcs.go:73:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.replacePlaceholder(s github.com/gostafa/distance/internal/features/reporting/application.placeholderSwap) (string, error) (wrapcheck)
+		return err
+		       ^
+internal/features/reporting/application/funcs.go:78:9: error returned from external package is unwrapped: sig: func io.WriteString(w io.Writer, s string) (n int, err error) (wrapcheck)
+	return err
+	       ^
+internal/features/reporting/application/funcs.go:86:10: error returned from interface method should be wrapped: sig: func (github.com/gostafa/distance/internal/features/reporting/ports/outbound.Sink).Open() (io.WriteCloser, error) (wrapcheck)
+		return err
+		       ^
+internal/features/reporting/application/funcs.go:93:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.renderDocs(w io.Writer, toolVersion string) error (wrapcheck)
+		return renderErr
+		       ^
+internal/features/reporting/application/funcs.go:96:9: error returned from interface method should be wrapped: sig: func (io.Closer).Close() error (wrapcheck)
+	return w.Close()
+	       ^
+internal/features/reporting/application/funcs.go:104:10: error returned from interface method should be wrapped: sig: func (github.com/gostafa/distance/internal/features/reporting/ports/outbound.Sink).Open() (io.WriteCloser, error) (wrapcheck)
+		return err
+		       ^
+internal/features/reporting/application/funcs.go:115:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.render(w io.Writer, o github.com/gostafa/distance/internal/features/reporting/application.renderOptions) error (wrapcheck)
+		return renderErr
+		       ^
+internal/features/reporting/application/funcs.go:118:9: error returned from interface method should be wrapped: sig: func (io.Closer).Close() error (wrapcheck)
+	return w.Close()
+	       ^
+internal/features/reporting/application/funcs.go:123:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.renderText(w io.Writer, o github.com/gostafa/distance/internal/features/reporting/application.renderOptions) error (wrapcheck)
+		return renderText(w, o)
+		       ^
+internal/features/reporting/application/funcs.go:126:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.renderNonText(w io.Writer, o github.com/gostafa/distance/internal/features/reporting/application.renderOptions) error (wrapcheck)
+	return renderNonText(w, o)
+	       ^
+internal/features/reporting/application/funcs.go:132:9: error returned from external package is unwrapped: sig: func io.WriteString(w io.Writer, s string) (n int, err error) (wrapcheck)
+	return err
+	       ^
+internal/features/reporting/application/funcs.go:138:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.renderJSON(w io.Writer, report github.com/gostafa/distance/distance.Report) error (wrapcheck)
+		return renderJSON(w, o.report)
+		       ^
+internal/features/reporting/application/funcs.go:140:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.renderCSV(w io.Writer, report github.com/gostafa/distance/distance.Report) error (wrapcheck)
+		return renderCSV(w, o.report)
+		       ^
+internal/features/reporting/application/funcs.go:142:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.renderWeb(w io.Writer, report github.com/gostafa/distance/distance.Report) error (wrapcheck)
+		return renderWeb(w, o.report)
+		       ^
+internal/features/reporting/application/funcs.go:153:9: error returned from external package is unwrapped: sig: func (*encoding/csv.Writer).WriteAll(records [][]string) error (wrapcheck)
+	return csv.NewWriter(w).WriteAll(rows)
+	       ^
+internal/features/reporting/application/funcs.go:168:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.encodeOrderedMetrics(results []github.com/gostafa/distance/internal/shared/metrics.MetricResult) ([]byte, error) (wrapcheck)
+	return encodeOrderedMetrics(m)
+	       ^
+internal/features/reporting/application/funcs.go:180:16: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.writeOrderedEntry(buf *bytes.Buffer, index int, r github.com/gostafa/distance/internal/shared/metrics.MetricResult) error (wrapcheck)
+			return nil, err
+			            ^
+internal/features/reporting/application/funcs.go:194:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.encodeMetricEntry(buf *bytes.Buffer, r github.com/gostafa/distance/internal/shared/metrics.MetricResult) error (wrapcheck)
+	return encodeMetricEntry(buf, r)
+	       ^
+internal/features/reporting/application/funcs.go:201:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.writeJSONKey(buf *bytes.Buffer, name string) error (wrapcheck)
+		return err
+		       ^
+internal/features/reporting/application/funcs.go:206:10: package-internal error should be wrapped: sig: var github.com/gostafa/distance/internal/features/reporting/application.jsonMarshal func(v any) ([]byte, error) (wrapcheck)
+		return err
+		       ^
+internal/features/reporting/application/funcs.go:211:9: error returned from external package is unwrapped: sig: func (*bytes.Buffer).Write(p []byte) (n int, err error) (wrapcheck)
+	return err
+	       ^
+internal/features/reporting/application/funcs.go:217:10: package-internal error should be wrapped: sig: var github.com/gostafa/distance/internal/features/reporting/application.jsonMarshal func(v any) ([]byte, error) (wrapcheck)
+		return err
+		       ^
+internal/features/reporting/application/funcs.go:271:9: error returned from external package is unwrapped: sig: func (*encoding/json.Encoder).Encode(v any) error (wrapcheck)
+	return enc.Encode(buildJSONReport(report))
+	       ^
+internal/features/reporting/application/funcs.go:282:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.buildWebPage(report github.com/gostafa/distance/distance.Report) (string, error) (wrapcheck)
+		return err
+		       ^
+internal/features/reporting/application/funcs.go:287:9: error returned from external package is unwrapped: sig: func io.WriteString(w io.Writer, s string) (n int, err error) (wrapcheck)
+	return err
+	       ^
+internal/features/reporting/application/funcs.go:293:23: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.marshalWebPayload(report github.com/gostafa/distance/distance.Report) ([]byte, error) (wrapcheck)
+		return emptyString, err
+		                    ^
+internal/features/reporting/application/funcs.go:298:23: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.marshalDocs(toolVersion string) ([]byte, error) (wrapcheck)
+		return emptyString, err
+		                    ^
+internal/features/reporting/application/funcs.go:301:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.injectWebPayloads(docs string, payload string) (string, error) (wrapcheck)
+	return injectWebPayloads(string(docs), string(payload))
+	       ^
+internal/features/reporting/application/funcs.go:305:9: package-internal error should be wrapped: sig: var github.com/gostafa/distance/internal/features/reporting/application.jsonMarshal func(v any) ([]byte, error) (wrapcheck)
+	return jsonMarshal(webPayload{
+	       ^
+internal/features/reporting/application/funcs.go:319:23: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.replacePlaceholder(s github.com/gostafa/distance/internal/features/reporting/application.placeholderSwap) (string, error) (wrapcheck)
+		return emptyString, err
+		                    ^
+internal/features/reporting/application/funcs.go:322:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/features/reporting/application.replacePlaceholder(s github.com/gostafa/distance/internal/features/reporting/application.placeholderSwap) (string, error) (wrapcheck)
+	return replacePlaceholder(placeholderSwap{
+	       ^
+internal/features/typefacts/application/funcs.go:28:33: error returned from interface method should be wrapped: sig: func (github.com/gostafa/distance/internal/features/typefacts/ports/outbound.FactSource).Load(ctx context.Context, opts github.com/gostafa/distance/internal/features/typefacts/ports/outbound.FactOptions) (modulePath string, packages []github.com/gostafa/distance/internal/features/typefacts/domain/model.PackageExtract, err error) (wrapcheck)
+		return domain.ProjectFacts{}, err
+		                              ^
+internal/infrastructure/goloader/funcs.go:130:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/infrastructure/goloader.load(ctx context.Context, opts github.com/gostafa/distance/internal/features/typefacts/ports/outbound.FactOptions) (string, []github.com/gostafa/distance/internal/features/typefacts/domain/model.PackageExtract, error) (wrapcheck)
+	return load(ctx, opts)
+	       ^
+internal/infrastructure/goloader/funcs.go:136:28: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/infrastructure/goloader.loadPackages(ctx context.Context, opts github.com/gostafa/distance/internal/features/typefacts/ports/outbound.FactOptions) ([]*golang.org/x/tools/go/packages.Package, error) (wrapcheck)
+		return emptyString, nil, err
+		                         ^
+internal/infrastructure/goloader/funcs.go:143:28: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/infrastructure/goloader.extractAll(ctx context.Context, job github.com/gostafa/distance/internal/infrastructure/goloader.extractJob) ([]github.com/gostafa/distance/internal/features/typefacts/domain/model.PackageExtract, error) (wrapcheck)
+		return emptyString, nil, err
+		                         ^
+internal/infrastructure/goloader/funcs.go:156:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/infrastructure/goloader.finishLoad(loaded []*golang.org/x/tools/go/packages.Package, patterns []string, opts github.com/gostafa/distance/internal/features/typefacts/ports/outbound.FactOptions) ([]*golang.org/x/tools/go/packages.Package, error) (wrapcheck)
+	return finishLoad(loaded, patterns, opts)
+	       ^
+internal/infrastructure/goloader/funcs.go:193:15: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/infrastructure/goloader.selectPackages(loaded []*golang.org/x/tools/go/packages.Package, opts github.com/gostafa/distance/internal/features/typefacts/ports/outbound.FactOptions) ([]*golang.org/x/tools/go/packages.Package, error) (wrapcheck)
+		return nil, err
+		            ^
+internal/infrastructure/goloader/funcs.go:226:15: package-internal error should be wrapped: sig: var github.com/gostafa/distance/internal/infrastructure/goloader.runExtractWorkers func(ctx context.Context, cfg github.com/gostafa/distance/internal/shared/workerpool.Config, fn func(i int) error) error (wrapcheck)
+		return nil, err
+		            ^
+internal/infrastructure/goloader/funcs.go:240:15: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/infrastructure/goloader.packageLoadError(errs []string) error (wrapcheck)
+		return nil, packageLoadError(errs)
+		            ^
+internal/infrastructure/profiling/funcs.go:74:9: error returned from external package is unwrapped: sig: func (*os.Root).Create(name string) (*os.File, error) (wrapcheck)
+	return root.Create(name)
+	       ^
+internal/infrastructure/sinks/funcs.go:17:61: error returned from external package is unwrapped: sig: func (*bufio.Writer).Write(p []byte) (nn int, err error) (wrapcheck)
+func (s stdoutStream) Write(p []byte) (int, error) { return s.w.Write(p) }
+                                                            ^
+internal/infrastructure/sinks/funcs.go:19:46: error returned from external package is unwrapped: sig: func (*bufio.Writer).Flush() error (wrapcheck)
+func (s stdoutStream) Close() error { return s.w.Flush() }
+                                             ^
+internal/infrastructure/sinks/funcs.go:23:9: error returned from external package is unwrapped: sig: func os.Create(name string) (*os.File, error) (wrapcheck)
+	return os.Create(s.Path)
+	       ^
+internal/shared/workerpool/funcs.go:26:10: error returned from interface method should be wrapped: sig: func (context.Context).Err() error (wrapcheck)
+		return ctx.Err()
+		       ^
+internal/shared/workerpool/funcs.go:41:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/internal/shared/workerpool.foldErrors(ctx context.Context, errs []error) error (wrapcheck)
+	return foldErrors(ctx, st.errs)
+	       ^
+internal/shared/workerpool/funcs.go:76:10: error returned from interface method should be wrapped: sig: func (context.Context).Err() error (wrapcheck)
+		return err
+		       ^
+plugin/funcs.go:34:15: error returned from external package is unwrapped: sig: func github.com/gostafa/distance/analyzer.New(settings github.com/gostafa/distance/analyzer.Settings) (*golang.org/x/tools/go/analysis.Analyzer, error) (wrapcheck)
+		return nil, err
+		            ^
+tools/splitpkg/split.go:31:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.parsePackageFiles(dir string, goFiles []string) (github.com/gostafa/distance/tools/splitpkg.packageSplit, error) (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/split.go:34:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeSplit(split github.com/gostafa/distance/tools/splitpkg.packageSplit) error (wrapcheck)
+	return writeSplit(split)
+	       ^
+tools/splitpkg/split.go:72:27: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.ingestGoFile(fset *go/token.FileSet, split *github.com/gostafa/distance/tools/splitpkg.packageSplit, path string) error (wrapcheck)
+			return packageSplit{}, err
+			                       ^
+tools/splitpkg/split.go:84:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.readGoSource(path string) ([]byte, error) (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/split.go:91:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.parseGoFile(fset *go/token.FileSet, path string, src []byte) (*go/ast.File, error) (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/split.go:94:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.acceptParsedFile(fset *go/token.FileSet, file *go/ast.File, in github.com/gostafa/distance/tools/splitpkg.declCollect) error (wrapcheck)
+	return acceptParsedFile(fset, file, declCollect{split: split, path: path, src: src})
+	       ^
+tools/splitpkg/split.go:109:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.acceptPackageName(split *github.com/gostafa/distance/tools/splitpkg.packageSplit, path string, name string) error (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/split.go:114:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.collectDecls(fset *go/token.FileSet, in github.com/gostafa/distance/tools/splitpkg.declCollect, decls []go/ast.Decl) error (wrapcheck)
+	return collectDecls(fset, in, file.Decls)
+	       ^
+tools/splitpkg/split.go:165:11: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.collectDecl(fset *go/token.FileSet, in github.com/gostafa/distance/tools/splitpkg.declCollect, decl go/ast.Decl) error (wrapcheck)
+			return err
+			       ^
+tools/splitpkg/split.go:177:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.collectGenDecl(in github.com/gostafa/distance/tools/splitpkg.declCollect, tok go/token.Token, entry github.com/gostafa/distance/tools/splitpkg.declEntry) error (wrapcheck)
+		return collectGenDecl(in, d.Tok, entry)
+		       ^
+tools/splitpkg/write.go:23:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeDocGo(dir string, pkgName string, doc *go/ast.CommentGroup) error (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/write.go:28:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeCategories(split github.com/gostafa/distance/tools/splitpkg.packageSplit) error (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/write.go:31:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.removeNonCategoryFiles(split github.com/gostafa/distance/tools/splitpkg.packageSplit) error (wrapcheck)
+	return removeNonCategoryFiles(split)
+	       ^
+tools/splitpkg/write.go:41:11: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeOneCategory(split github.com/gostafa/distance/tools/splitpkg.packageSplit, cf github.com/gostafa/distance/tools/splitpkg.categoryFile, firstCategory string) error (wrapcheck)
+			return err
+			       ^
+tools/splitpkg/write.go:77:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeCategoryGo(in github.com/gostafa/distance/tools/splitpkg.categoryWrite) error (wrapcheck)
+	return writeCategoryGo(categoryWrite{
+	       ^
+tools/splitpkg/write.go:111:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeCommentGroup(buf *bytes.Buffer, doc *go/ast.CommentGroup) error (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/write.go:116:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writePackageClause(buf *bytes.Buffer, pkgName string) error (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/write.go:119:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.formatAndWrite(path string, src []byte) error (wrapcheck)
+	return formatAndWrite(filepath.Join(dir, fileDoc), buf.Bytes())
+	       ^
+tools/splitpkg/write.go:126:11: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeString(buf *bytes.Buffer, s string) error (wrapcheck)
+			return err
+			       ^
+tools/splitpkg/write.go:136:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.buildCategorySource(in github.com/gostafa/distance/tools/splitpkg.categoryWrite) ([]byte, error) (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/write.go:139:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.finishCategoryFile(in github.com/gostafa/distance/tools/splitpkg.categoryWrite, raw []byte) error (wrapcheck)
+	return finishCategoryFile(in, raw)
+	       ^
+tools/splitpkg/write.go:147:15: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeCategoryHeader(buf *bytes.Buffer, in github.com/gostafa/distance/tools/splitpkg.categoryWrite) error (wrapcheck)
+		return nil, err
+		            ^
+tools/splitpkg/write.go:152:15: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeDecls(buf *bytes.Buffer, decls []github.com/gostafa/distance/tools/splitpkg.declEntry) error (wrapcheck)
+		return nil, err
+		            ^
+tools/splitpkg/write.go:161:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeGeneratedMarker(buf *bytes.Buffer, marker string) error (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/write.go:166:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writePackageClause(buf *bytes.Buffer, pkgName string) error (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/write.go:169:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeString(buf *bytes.Buffer, s string) error (wrapcheck)
+	return writeString(buf, newline)
+	       ^
+tools/splitpkg/write.go:177:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeString(buf *bytes.Buffer, s string) error (wrapcheck)
+	return writeString(buf, marker+newline+newline)
+	       ^
+tools/splitpkg/write.go:181:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeString(buf *bytes.Buffer, s string) error (wrapcheck)
+	return writeString(buf, packagePrefix+pkgName+newline)
+	       ^
+tools/splitpkg/write.go:188:11: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeDeclAt(buf *bytes.Buffer, decls []github.com/gostafa/distance/tools/splitpkg.declEntry, i int) error (wrapcheck)
+			return err
+			       ^
+tools/splitpkg/write.go:192:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeString(buf *bytes.Buffer, s string) error (wrapcheck)
+	return writeString(buf, newline)
+	       ^
+tools/splitpkg/write.go:198:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeString(buf *bytes.Buffer, s string) error (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/write.go:205:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeString(buf *bytes.Buffer, s string) error (wrapcheck)
+	return writeString(buf, newline+newline)
+	       ^
+tools/splitpkg/write.go:216:10: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.maybeEmbedImport(out []byte, decls []github.com/gostafa/distance/tools/splitpkg.declEntry, filename string) ([]byte, error) (wrapcheck)
+		return err
+		       ^
+tools/splitpkg/write.go:219:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.formatAndWrite(path string, src []byte) error (wrapcheck)
+	return formatAndWrite(filepath.Join(in.dir, in.filename), out)
+	       ^
+tools/splitpkg/write.go:282:9: package-internal error should be wrapped: sig: func github.com/gostafa/distance/tools/splitpkg.writeFile(path string, data []byte) error (wrapcheck)
+	return writeFile(path, formatted)
+	       ^
+738 issues:
+* decorder: 59
+* distance: 9
+* dogsled: 39
+* err113: 13
+* errcheck: 37
+* exhaustive: 3
+* forbidigo: 4
+* funlen: 8
+* gochecknoglobals: 23
+* gochecknoinits: 1
+* goconst: 20
+* gocritic: 140
+* godoclint: 2
+* gomoddirectives: 1
+* gosec: 6
+* govet: 2
+* grouper: 134
+* ireturn: 6
+* maintidx: 5
+* makezero: 6
+* nestif: 1
+* nilnil: 1
+* noinlineerr: 6
+* prealloc: 2
+* revive: 1
+* sloglint: 42
+* tagliatelle: 4
+* varnamelen: 59
+* wrapcheck: 104
+::endgroup::

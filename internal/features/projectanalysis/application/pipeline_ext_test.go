@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package application_test
 
 import (
@@ -8,6 +11,7 @@ import (
 	"github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
 	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
+	tfmodel "github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
 	"github.com/gostafa/distance/internal/shared/metrics"
 )
@@ -16,13 +20,13 @@ import (
 // real packages through go/packages.
 type fakeSource struct {
 	mod  string
-	pkgs []tfdomain.PackageExtract
+	pkgs []tfmodel.PackageExtract
 }
 
 func (f fakeSource) Load(
 	context.Context,
-	tfoutbound.FactOptions,
-) (string, []tfdomain.PackageExtract, error) {
+	*tfoutbound.FactOptions,
+) (string, []tfmodel.PackageExtract, error) {
 	return f.mod, f.pkgs, nil
 }
 
@@ -47,10 +51,10 @@ func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 
 	src := fakeSource{
 		mod: "example.com/m",
-		pkgs: []tfdomain.PackageExtract{
+		pkgs: []tfmodel.PackageExtract{
 			{
 				Path: "example.com/m/a", InModule: true, Imports: []string{"example.com/m/b"},
-				Types: []tfdomain.TypeExtract{
+				Types: []tfmodel.TypeName{
 					{
 						Name: "A",
 						Kind: tfdomain.KindStruct,
@@ -60,7 +64,7 @@ func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 			{
 				Path:     "example.com/m/b",
 				InModule: true,
-				Types: []tfdomain.TypeExtract{
+				Types: []tfmodel.TypeName{
 					{Name: "B", Kind: tfdomain.KindInterface},
 				},
 			},
@@ -68,7 +72,7 @@ func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 	}
 	pipeline := projectanalysis.NewPipeline(typefacts.NewService(src))
 
-	result, err := pipeline.Analyze(context.Background(), inbound.Options{
+	result, err := pipeline.Analyze(t.Context(), &inbound.Options{
 		Patterns:        []string{"./..."},
 		DependencyScope: "project",
 	})
@@ -82,10 +86,12 @@ func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 
 	if len(result.Packages) != 2 || result.Packages[0].Path != "example.com/m/a" ||
 		result.Packages[1].Path != "example.com/m/b" {
+
 		t.Fatalf("packages not sorted by path: %+v", result.Packages)
 	}
 
 	pkgA := result.Packages[0]
+
 	if got := findMetric(t, pkgA.Metrics, metrics.MetricAbstractness); !got.Applicable {
 		t.Errorf("a abstractness = %+v, want applicable", got)
 	}
@@ -103,18 +109,19 @@ func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 	}
 }
 
-// Black-box: a cancelled context aborts before doing work.
+// Black-box: a canceled context aborts before doing work.
 func TestPipelineCancelled(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
 	pipeline := projectanalysis.NewPipeline(typefacts.NewService(fakeSource{mod: "m"}))
+
 	if _, err := pipeline.Analyze(
 		ctx,
-		inbound.Options{Patterns: []string{"./..."}},
+		&inbound.Options{Patterns: []string{"./..."}},
 	); err == nil {
-		t.Fatal("cancelled context should abort")
+		t.Fatal("canceled context should abort")
 	}
 }

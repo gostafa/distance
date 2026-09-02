@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package browser
 
 import (
@@ -10,18 +13,18 @@ import (
 // White-box: Open launches the platform command through the seam with the
 // path as the final argument. (Not parallel — it swaps the seam.)
 func TestOpenLaunchesCommand(t *testing.T) {
-	orig := startCommand
-	t.Cleanup(func() { startCommand = orig })
-
 	var got []string
 
-	startCommand = func(cmd *exec.Cmd) error {
+	runtime := defaultBrowserRuntime()
+
+	runtime.startCommand = func(cmd *exec.Cmd) error {
 		got = cmd.Args
 
 		return nil
 	}
 
-	if err := Open("report.html"); err != nil {
+	err := runtime.open("report.html")
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -33,13 +36,13 @@ func TestOpenLaunchesCommand(t *testing.T) {
 // White-box: a launch failure is wrapped and names the path. (Not parallel —
 // it swaps the seam.)
 func TestOpenWrapsLaunchError(t *testing.T) {
-	orig := startCommand
-	t.Cleanup(func() { startCommand = orig })
-
 	sentinel := errors.New("boom")
-	startCommand = func(*exec.Cmd) error { return sentinel }
+	runtime := defaultBrowserRuntime()
 
-	err := Open("report.html")
+	runtime.startCommand = func(*exec.Cmd) error { return sentinel }
+
+	err := runtime.open("report.html")
+
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("error = %v, want the wrapped launch error", err)
 	}
@@ -51,7 +54,8 @@ func TestOpenWrapsLaunchError(t *testing.T) {
 
 // White-box: the default startCommand body calls cmd.Start().
 func TestDefaultStartCommand(t *testing.T) {
-	if err := startCommand(exec.Command("true")); err != nil {
+	err := defaultBrowserRuntime().startCommand(exec.Command("true"))
+	if err != nil {
 		t.Fatalf("startCommand(true) = %v", err)
 	}
 }

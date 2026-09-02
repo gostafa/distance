@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package domain_test
 
 import (
@@ -55,12 +58,17 @@ func TestEvaluateFirstMatchWins(t *testing.T) {
 		{Pattern: "./...", MaxDistance: 0.5},
 	}}
 
-	got := domain.Evaluate(sampleReport(), policy)
+	got := domain.Evaluate(func() *distance.Report {
+		r := sampleReport()
+		return &r
+	}(), policy)
+
 	if len(got) != 2 {
 		t.Fatalf("violations = %#v, want 2", got)
 	}
 
 	byPkg := map[string]domain.Violation{}
+
 	for _, v := range got {
 		byPkg[v.Package] = v
 	}
@@ -68,9 +76,11 @@ func TestEvaluateFirstMatchWins(t *testing.T) {
 	if v, ok := byPkg["example.com/m/internal/domain"]; !ok || v.Threshold != 0.2 {
 		t.Fatalf("internal/domain = %#v, want first-match max 0.2", v)
 	}
+
 	if v, ok := byPkg["example.com/m/foo"]; !ok || v.Threshold != 0.5 {
 		t.Fatalf("foo = %#v, want ./... max 0.5", v)
 	}
+
 	if _, ok := byPkg["example.com/other"]; ok {
 		t.Fatal("unrelated package should not be gated")
 	}
@@ -85,7 +95,11 @@ func TestEvaluateOverlapPrefersListOrder(t *testing.T) {
 		{Pattern: "./foo", MaxDistance: 0.1},
 	}}
 
-	got := domain.Evaluate(sampleReport(), policy)
+	got := domain.Evaluate(func() *distance.Report {
+		r := sampleReport()
+		return &r
+	}(), policy)
+
 	if len(got) != 1 || got[0].Package != "example.com/m/foo" || got[0].Threshold != 0.8 {
 		t.Fatalf("violations = %#v, want foo against the first ./... rule", got)
 	}
@@ -98,7 +112,11 @@ func TestEvaluateExactImportPath(t *testing.T) {
 		{Pattern: "example.com/m/foo", MaxDistance: 0.5},
 	}}
 
-	got := domain.Evaluate(sampleReport(), policy)
+	got := domain.Evaluate(func() *distance.Report {
+		r := sampleReport()
+		return &r
+	}(), policy)
+
 	if len(got) != 1 || got[0].Package != "example.com/m/foo" {
 		t.Fatalf("violations = %#v, want foo only", got)
 	}
@@ -108,6 +126,7 @@ func TestMatchPatternResolvesRelativeAndPrefix(t *testing.T) {
 	t.Parallel()
 
 	const module = "example.com/m"
+
 	cases := []struct {
 		pattern, path string
 		want          bool
@@ -124,6 +143,7 @@ func TestMatchPatternResolvesRelativeAndPrefix(t *testing.T) {
 		{"example.com/other", "example.com/other", true},
 		{"./...", "example.com/other", false},
 	}
+
 	for _, tc := range cases {
 		if got := domain.MatchPattern(tc.pattern, tc.path, module); got != tc.want {
 			t.Errorf("MatchPattern(%q, %q) = %v, want %v", tc.pattern, tc.path, got, tc.want)
@@ -155,12 +175,13 @@ func TestEvaluateBoundaryTolerance(t *testing.T) {
 		MaxDistance: 0.5,
 	}}}
 
-	if got := domain.Evaluate(report, policy); len(got) != 0 {
+	if got := domain.Evaluate(&report, policy); len(got) != 0 {
 		t.Fatalf("exact boundary should pass: %#v", got)
 	}
 
 	report.Packages[0].Metrics[0].Value = 0.5 + 1e-9
-	if got := domain.Evaluate(report, policy); len(got) != 1 {
+
+	if got := domain.Evaluate(&report, policy); len(got) != 1 {
 		t.Fatalf("over-threshold should fail: %#v", got)
 	}
 }
@@ -199,7 +220,7 @@ func TestEvaluateIgnoresAbstractnessAndInstability(t *testing.T) {
 		MaxDistance: 0.5,
 	}}}
 
-	if got := domain.Evaluate(report, policy); len(got) != 0 {
+	if got := domain.Evaluate(&report, policy); len(got) != 0 {
 		t.Fatalf("A/I must not be gated: %#v", got)
 	}
 }
@@ -218,14 +239,22 @@ func TestFormatViolations(t *testing.T) {
 		Comparator: domain.ComparatorMax,
 		Threshold:  0.5,
 	}})
+
 	if !strings.Contains(got, "1 violation") || !strings.Contains(got, "exceeds max 0.50") {
 		t.Fatalf("FormatViolations = %q", got)
 	}
 
 	got = domain.FormatViolations([]domain.Violation{
 		{Package: "a", Key: "distance", Value: 1, Comparator: domain.ComparatorMax, Threshold: 0},
-		{Package: "b", Key: "distance", Value: math.Pi, Comparator: domain.ComparatorMax, Threshold: 0.5},
+		{
+			Package:    "b",
+			Key:        "distance",
+			Value:      math.Pi,
+			Comparator: domain.ComparatorMax,
+			Threshold:  0.5,
+		},
 	})
+
 	if !strings.Contains(got, "2 violations") {
 		t.Fatalf("plural = %q", got)
 	}

@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package outbound_test
 
 import (
@@ -11,7 +14,7 @@ import (
 // memSink is an external adapter capturing report output in a buffer.
 type memSink struct{ buf *bytes.Buffer }
 
-func (m memSink) Open() (io.WriteCloser, error) { return nopCloser{m.buf}, nil }
+func (m memSink) Open() (outbound.Stream, error) { return outbound.NewStream(nopCloser{m.buf}), nil }
 
 type nopCloser struct{ io.Writer }
 
@@ -30,7 +33,7 @@ func TestSinkImplementable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := io.WriteString(w, "report body"); err != nil {
+	if _, err := io.WriteString(&w, "report body"); err != nil {
 		t.Fatal(err)
 	}
 

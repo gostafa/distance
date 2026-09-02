@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package application_test
 
 import (
@@ -5,7 +8,7 @@ import (
 	"testing"
 
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
-	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
+	tfmodel "github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
 )
 
@@ -13,11 +16,11 @@ type fakeSource struct{}
 
 func (fakeSource) Load(
 	context.Context,
-	tfoutbound.FactOptions,
-) (string, []tfdomain.PackageExtract, error) {
-	return "example.com/m", []tfdomain.PackageExtract{
-		{Path: "example.com/m/b", InModule: true, Types: []tfdomain.TypeExtract{{Name: "B"}}},
-		{Path: "example.com/m/a", InModule: true, Types: []tfdomain.TypeExtract{{Name: "A"}}},
+	*tfoutbound.FactOptions,
+) (string, []tfmodel.PackageExtract, error) {
+	return "example.com/m", []tfmodel.PackageExtract{
+		{Path: "example.com/m/b", InModule: true, Types: []tfmodel.TypeName{{Name: "B"}}},
+		{Path: "example.com/m/a", InModule: true, Types: []tfmodel.TypeName{{Name: "A"}}},
 	}, nil
 }
 
@@ -29,8 +32,8 @@ func TestServiceCollect(t *testing.T) {
 	svc := typefacts.NewService(fakeSource{})
 
 	facts, err := svc.Collect(
-		context.Background(),
-		tfoutbound.FactOptions{Patterns: []string{"./..."}},
+		t.Context(),
+		&tfoutbound.FactOptions{Patterns: []string{"./..."}},
 	)
 	if err != nil {
 		t.Fatal(err)

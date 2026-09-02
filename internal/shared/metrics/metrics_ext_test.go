@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package metrics_test
 
 import (
@@ -14,7 +17,8 @@ func TestDistanceOnMainSequence(t *testing.T) {
 	a := metrics.Abstractness(1, 2) // 0.5
 	i := metrics.Instability(1, 1)  // 0.5
 
-	d := metrics.Distance(a, i)
+	d := metrics.Distance(&a, &i)
+
 	if !d.Applicable || d.Value != 0 {
 		t.Fatalf("distance = %+v, want 0", d)
 	}

@@ -1,7 +1,6 @@
-// Package analyzer provides a go/analysis Analyzer that enforces a distance
-// policy. It reuses the root distance facade for whole-module metrics, then
-// reports policy violations as diagnostics for the package under analysis.
-//
-// This package has no dependency on golangci-lint. Use the sibling plugin
-// package to register the analyzer as a Module Plugin.
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
+// Package analyzer implements the golangci-lint analysis.Analyzer that
+// reports packages whose distance from the main sequence exceeds policy.
 package analyzer

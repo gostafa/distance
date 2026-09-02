@@ -1,28 +1,30 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package application
 
 import (
 	"testing"
 
-	"github.com/gostafa/distance/internal/features/packagemetrics/domain"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/domain"
 	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
-type couplingGraph []domain.Coupling
+type couplingGraph [][2]int
 
-func (g couplingGraph) Coupling(packageID int) domain.Coupling {
-	return g[packageID]
+func (graph couplingGraph) PackageCoupling(packageID int) (int, int) {
+	return graph[packageID][0], graph[packageID][1]
 }
 
-func assertValue(t *testing.T, r metrics.MetricResult, want float64) {
+func assertValue(t *testing.T, result metrics.MetricResult, want float64) {
 	t.Helper()
 
-	if !r.Applicable {
-		t.Fatalf("%s not applicable (%s), want %v", r.Name, r.Reason, want)
+	if !result.Applicable {
+		t.Fatalf("%s not applicable (%s), want %v", result.Name, result.Reason, want)
 	}
 
-	if r.Value != want {
-		t.Fatalf("%s = %v, want %v", r.Name, r.Value, want)
+	if result.Value != want {
+		t.Fatalf("%s = %v, want %v", result.Name, result.Value, want)
 	}
 }
 
@@ -47,9 +49,10 @@ func TestComputeForPackages(t *testing.T) {
 	}
 
 	got := ComputeForPackages(facts, couplingGraph{
-		{Efferent: 1},
-		{Afferent: 1},
+		{0, 1},
+		{1, 0},
 	})
+
 	if len(got) != 2 {
 		t.Fatalf("got %d results", len(got))
 	}

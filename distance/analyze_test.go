@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package distance_test
 
 import (
@@ -8,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/gostafa/distance/distance"
+	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 const epsilon = 1e-12
@@ -28,7 +32,7 @@ func analyzeFixture(t *testing.T, mutate func(*distance.Config)) distance.Report
 	if mutate == nil {
 		defaultOnce.Do(func() {
 			defaultReport, defaultErr = distance.Analyze(
-				context.Background(), distance.Config{Directory: "../testdata/fixture"},
+				t.Context(), &distance.Config{Directory: "../testdata/fixture"},
 			)
 		})
 
@@ -42,7 +46,7 @@ func analyzeFixture(t *testing.T, mutate func(*distance.Config)) distance.Report
 	cfg := distance.Config{Directory: "../testdata/fixture"}
 	mutate(&cfg)
 
-	report, err := distance.Analyze(context.Background(), cfg)
+	report, err := distance.Analyze(t.Context(), &cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,9 +70,9 @@ func findPackage(t *testing.T, report distance.Report, path string) distance.Pac
 
 func metric(
 	t *testing.T,
-	results []distance.MetricResult,
+	results []metrics.MetricResult,
 	name string,
-) distance.MetricResult {
+) metrics.MetricResult {
 	t.Helper()
 
 	for _, r := range results {
@@ -79,13 +83,14 @@ func metric(
 
 	t.Fatalf("metric %s not present in %v", name, results)
 
-	return distance.MetricResult{}
+	return metrics.MetricResult{}
 }
 
-func wantValue(t *testing.T, results []distance.MetricResult, name string, want float64) {
+func wantValue(t *testing.T, results []metrics.MetricResult, name string, want float64) {
 	t.Helper()
 
 	r := metric(t, results, name)
+
 	if !r.Applicable {
 		t.Fatalf("%s not applicable (%s), want %v", name, r.Reason, want)
 	}
@@ -95,10 +100,11 @@ func wantValue(t *testing.T, results []distance.MetricResult, name string, want 
 	}
 }
 
-func wantNotApplicable(t *testing.T, results []distance.MetricResult, name string) {
+func wantNotApplicable(t *testing.T, results []metrics.MetricResult, name string) {
 	t.Helper()
 
 	r := metric(t, results, name)
+
 	if r.Applicable {
 		t.Fatalf("%s applicable with value %v, want n/a", name, r.Value)
 	}
@@ -120,6 +126,7 @@ func TestAnalyzeFixtureOrdering(t *testing.T) {
 		"example.com/fixture/orders",
 		"example.com/fixture/store",
 	}
+
 	if len(report.Packages) != len(wantOrder) {
 		t.Fatalf("got %d packages", len(report.Packages))
 	}
@@ -131,7 +138,8 @@ func TestAnalyzeFixtureOrdering(t *testing.T) {
 	}
 
 	if report.SchemaVersion != distance.SchemaVersion ||
-		report.Tool.Name != distance.ToolName {
+		report.Tool.Name != string(distance.MetricDistance) {
+
 		t.Fatalf("report header = %+v", report)
 	}
 }
@@ -143,6 +151,7 @@ func TestAnalyzePackageMetrics(t *testing.T) {
 	wantValue(t, store.Metrics, "abstractness", 1)
 	wantValue(t, store.Metrics, "instability", 0)
 	wantValue(t, store.Metrics, "distance", 0)
+
 	if len(store.Metrics) != 3 {
 		t.Fatalf("store metrics = %v, want abstractness, instability, distance", store.Metrics)
 	}
@@ -176,36 +185,38 @@ func TestAnalyzeDeterminism(t *testing.T) {
 	first := analyzeFixture(t, func(cfg *distance.Config) { cfg.Workers = 1 })
 
 	second := analyzeFixture(t, func(cfg *distance.Config) { cfg.Workers = 8 })
+
 	if !reflect.DeepEqual(first, second) {
 		t.Fatal("reports differ across worker counts")
 	}
 
 	third := analyzeFixture(t, func(cfg *distance.Config) { cfg.Workers = 8 })
+
 	if !reflect.DeepEqual(second, third) {
 		t.Fatal("repeated runs differ")
 	}
 }
 
 func TestAnalyzeInvalidConfig(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	base := distance.Config{Directory: "../testdata/fixture"}
 
 	bad := base
 
 	bad.DependencyScope = "galaxy"
-	if _, err := distance.Analyze(ctx, bad); err == nil {
+
+	if _, err := distance.Analyze(ctx, &bad); err == nil {
 		t.Fatal("invalid scope accepted")
 	}
 }
 
 func TestAnalyzeCancelledContext(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
 	if _, err := distance.Analyze(
-		ctx,
-		distance.Config{Directory: "../testdata/fixture"},
+		ctx, &distance.Config{Directory: "../testdata/fixture"},
 	); err == nil {
-		t.Fatal("cancelled context accepted")
+		t.Fatal("canceled context accepted")
 	}
 }

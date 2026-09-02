@@ -1,9 +1,13 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package distance
 
 import "testing"
 
 func TestWithDefaults(t *testing.T) {
-	cfg := configWithDefaults(Config{})
+	cfg := configWithDefaults(&Config{})
+
 	if len(cfg.Patterns) != 1 || cfg.Patterns[0] != "./..." {
 		t.Fatalf("patterns = %v", cfg.Patterns)
 	}
@@ -14,7 +18,8 @@ func TestWithDefaults(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	valid := configWithDefaults(Config{})
+	valid := configWithDefaults(&Config{})
+
 	err := validateConfig(valid)
 	if err != nil {
 		t.Fatal(err)
@@ -23,6 +28,7 @@ func TestValidate(t *testing.T) {
 	bad := valid
 
 	bad.DependencyScope = "galaxy"
+
 	err = validateConfig(bad)
 	if err == nil {
 		t.Fatal("invalid scope accepted")
@@ -31,6 +37,7 @@ func TestValidate(t *testing.T) {
 	bad = valid
 
 	bad.Patterns = []string{""}
+
 	err = validateConfig(bad)
 	if err == nil {
 		t.Fatal("empty pattern accepted")
@@ -40,6 +47,7 @@ func TestValidate(t *testing.T) {
 func TestAllMetrics(t *testing.T) {
 	want := []MetricName{MetricAbstractness, MetricInstability, MetricDistance}
 	got := AllMetrics()
+
 	if len(got) != len(want) {
 		t.Fatalf("AllMetrics() = %v, want %v", got, want)
 	}

@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package analyzer
 
 import (
@@ -15,7 +18,7 @@ import (
 func TestNewRejectsInvalidSettings(t *testing.T) {
 	t.Parallel()
 
-	_, err := New(Settings{DependencyScope: "nope"})
+	_, err := New(&Settings{DependencyScope: "nope"})
 	if err == nil {
 		t.Fatal("expected error for invalid dependency-scope")
 	}
@@ -24,7 +27,7 @@ func TestNewRejectsInvalidSettings(t *testing.T) {
 func TestNewAcceptsDefaults(t *testing.T) {
 	t.Parallel()
 
-	a, err := New(Settings{})
+	a, err := New(&Settings{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,20 +40,22 @@ func TestNewAcceptsDefaults(t *testing.T) {
 func TestRunnerLoadGroupsViolations(t *testing.T) {
 	fixtureDir := filepath.Join(repoRoot(t), "testdata", "fixture")
 
-	r := newRunner(Settings{
+	r := newRunner((&Settings{
 		Directory: fixtureDir,
 		Packages: []policydomain.PackageRule{{
 			Pattern:     "./isolated",
 			MaxDistance: 0,
 		}},
-	}.withDefaults())
+	}).withDefaults())
 
 	r.load()
+
 	if r.err != nil {
 		t.Fatal(r.err)
 	}
 
 	got := r.byPkg["example.com/fixture/isolated"]
+
 	if len(got) == 0 {
 		t.Fatal("expected distance violations for isolated with max-distance 0")
 	}
@@ -65,7 +70,7 @@ func TestRunnerLoadGroupsViolations(t *testing.T) {
 func TestFormatViolation(t *testing.T) {
 	t.Parallel()
 
-	msg := formatViolation(policydomain.Violation{
+	msg := formatViolation(&policydomain.Violation{
 		Package:    "example.com/p",
 		Key:        "distance",
 		Value:      0.9,
@@ -74,6 +79,7 @@ func TestFormatViolation(t *testing.T) {
 	})
 
 	want := "example.com/p (package): distance 0.90 exceeds max 0.50"
+
 	if msg != want {
 		t.Fatalf("formatViolation = %q, want %q", msg, want)
 	}
@@ -104,6 +110,7 @@ func repoRoot(t *testing.T) string {
 	t.Helper()
 
 	_, file, _, ok := runtime.Caller(0)
+
 	if !ok {
 		t.Fatal("runtime.Caller failed")
 	}

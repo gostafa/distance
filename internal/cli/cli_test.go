@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package cli
 
 import (
@@ -17,6 +20,7 @@ func TestSplitList(t *testing.T) {
 		{"a,b,c", []string{"a", "b", "c"}},
 		{" a , ,b ", []string{"a", "b"}},
 	}
+
 	for _, tt := range tests {
 		if got := splitList(tt.in); !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("splitList(%q) = %v, want %v", tt.in, got, tt.want)
@@ -43,6 +47,7 @@ func TestWantsWebHelp(t *testing.T) {
 		{[]string{"--help", "--", "--web"}, false},
 		{nil, false},
 	}
+
 	for _, tt := range tests {
 		if got := wantsWebHelp(tt.args); got != tt.want {
 			t.Errorf("wantsWebHelp(%v) = %v, want %v", tt.args, got, tt.want)
@@ -54,11 +59,11 @@ func TestWantsWebHelp(t *testing.T) {
 func TestRunUsageErrors(t *testing.T) {
 	t.Parallel()
 
-	if code := run([]string{"--format=xml"}); code != 2 {
+	if code := execute([]string{"--format=xml"}); code != 2 {
 		t.Errorf("invalid format exit = %d, want 2", code)
 	}
 
-	if code := run([]string{"--this-flag-does-not-exist"}); code != 2 {
+	if code := execute([]string{"--this-flag-does-not-exist"}); code != 2 {
 		t.Errorf("unknown flag exit = %d, want 2", code)
 	}
 }

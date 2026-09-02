@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package domain
 
 import (
@@ -25,7 +28,7 @@ func TestEvaluateSkipsInapplicablePackageMetric(t *testing.T) {
 		MaxDistance: 0,
 	}}}
 
-	if got := Evaluate(report, policy); len(got) != 0 {
+	if got := Evaluate(&report, policy); len(got) != 0 {
 		t.Fatalf("Evaluate() = %#v, want no violations", got)
 	}
 }
@@ -40,7 +43,8 @@ func TestValidateRejectsBadRules(t *testing.T) {
 		{"inf max", Policy{Packages: []PackageRule{{Pattern: "./...", MaxDistance: math.Inf(1)}}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if err := Validate(tc.policy); err == nil {
+			err := Validate(tc.policy)
+			if err == nil {
 				t.Fatal("Validate succeeded, want error")
 			}
 		})

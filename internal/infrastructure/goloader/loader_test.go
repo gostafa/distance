@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package goloader
 
 import (
@@ -6,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -28,7 +32,11 @@ func TestSelectPackages(t *testing.T) {
 	testBin := &packages.Package{PkgPath: "m/a.test"}
 	broken := &packages.Package{PkgPath: "m/b", Errors: []packages.Error{{Msg: "boom"}}}
 
-	got, err := selectPackages([]*packages.Package{base, variant, testBin, broken}, true)
+	got, err := selectPackages(
+		[]*packages.Package{base, variant, testBin, broken}, &outbound.FactOptions{
+			ContinueOnError: true,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,13 +49,19 @@ func TestSelectPackages(t *testing.T) {
 		t.Fatal("did not prefer the test-augmented variant")
 	}
 
-	if _, err := selectPackages([]*packages.Package{base, broken}, false); err == nil {
+	if _, err := selectPackages(
+		[]*packages.Package{base, broken}, &outbound.FactOptions{},
+	); err == nil {
 		t.Fatal("broken package without ContinueOnError should error")
 	}
 
 	missingTypes := &packages.Package{PkgPath: "m/missing-types"}
-	if _, err := selectPackages([]*packages.Package{missingTypes}, false); err == nil ||
+
+	if _, err := selectPackages(
+		[]*packages.Package{missingTypes}, &outbound.FactOptions{},
+	); err == nil ||
 		!strings.Contains(err.Error(), "type information unavailable") {
+
 		t.Fatalf("missing type information error = %v", err)
 	}
 }
@@ -59,6 +73,7 @@ func TestMainModulePath(t *testing.T) {
 	main := &packages.Package{Module: &packages.Module{Path: "example.com/main", Main: true}}
 
 	dep := &packages.Package{Module: &packages.Module{Path: "example.com/dep"}}
+
 	if got := mainModulePath([]*packages.Package{dep, main}); got != "example.com/main" {
 		t.Errorf("got %q, want main", got)
 	}

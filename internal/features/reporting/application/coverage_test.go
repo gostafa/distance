@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package application
 
 import (
@@ -11,6 +14,7 @@ import (
 
 	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/reporting/domain"
+	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
 	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
@@ -18,13 +22,13 @@ type failingSink struct {
 	err error
 }
 
-func (s failingSink) Open() (io.WriteCloser, error) {
-	return nil, s.err
+func (s failingSink) Open() (outbound.Stream, error) {
+	return outbound.Stream{}, s.err
 }
 
 type trackingWriteCloser struct {
-	closed bool
 	err    error
+	closed bool
 }
 
 func (w *trackingWriteCloser) Write([]byte) (int, error) {
@@ -41,36 +45,41 @@ type writerSink struct {
 	w io.WriteCloser
 }
 
-func (s writerSink) Open() (io.WriteCloser, error) {
-	return s.w, nil
+func (s writerSink) Open() (outbound.Stream, error) {
+	return outbound.NewStream(s.w), nil
 }
 
 func TestWriteOpenAndRenderErrors(t *testing.T) {
 	sentinel := errors.New("write failed")
-	if err := Write(
+
+	err := Write(
 		sampleReport(),
-		domain.FormatText,
 		failingSink{err: sentinel},
-		domain.TextOptions{},
-	); !errors.Is(
+		&WriteOptions{Format: domain.FormatText},
+	)
+	if !errors.Is(
 		err,
 		sentinel,
 	) {
+
 		t.Fatalf("open error = %v, want sentinel", err)
 	}
 
 	w := &trackingWriteCloser{err: sentinel}
-	if err := Write(
+
+	err = Write(
 		sampleReport(),
-		domain.FormatText,
 		writerSink{w: w},
-		domain.TextOptions{},
-	); !errors.Is(
+		&WriteOptions{Format: domain.FormatText},
+	)
+	if !errors.Is(
 		err,
 		sentinel,
 	) {
+
 		t.Fatalf("render error = %v, want sentinel", err)
 	}
+
 	if !w.closed {
 		t.Fatal("writer was not closed after a render error")
 	}
@@ -82,12 +91,15 @@ func TestJSONDebugStringsAndMarshalError(t *testing.T) {
 		Tool:          jsonTool{Name: "distance", Version: "test"},
 		Packages:      []jsonPackage{{Path: "example.com/p"}},
 	}).String()
+
 	if !strings.Contains(reportSummary, "schema 3") ||
 		!strings.Contains(reportSummary, "1 packages") {
+
 		t.Fatalf("jsonReport.String() = %q", reportSummary)
 	}
 
 	packageSummary := (jsonPackage{Path: "example.com/p", Metrics: make(orderedMetrics, 2)}).String()
+
 	if packageSummary != "example.com/p: 2 metrics" {
 		t.Fatalf("jsonPackage.String() = %q", packageSummary)
 	}
@@ -105,22 +117,30 @@ func TestJSONDebugStringsAndMarshalError(t *testing.T) {
 
 func TestWriteDocsErrors(t *testing.T) {
 	sentinel := errors.New("open failed")
-	if err := WriteDocs(failingSink{err: sentinel}, "test"); !errors.Is(err, sentinel) {
+
+	err := WriteDocs(failingSink{err: sentinel}, "test")
+	if !errors.Is(err, sentinel) {
 		t.Fatalf("open error = %v, want sentinel", err)
 	}
 
 	original := docsTemplate
+
 	docsTemplate = "missing placeholder"
+
 	t.Cleanup(func() { docsTemplate = original })
 
-	if err := renderDocs(io.Discard, "test"); err == nil {
+	err = renderDocs(io.Discard, "test")
+	if err == nil {
 		t.Fatal("expected a missing docs placeholder error")
 	}
 
 	w := &trackingWriteCloser{}
-	if err := WriteDocs(writerSink{w: w}, "test"); err == nil {
+
+	err = WriteDocs(writerSink{w: w}, "test")
+	if err == nil {
 		t.Fatal("expected WriteDocs to propagate the render error")
 	}
+
 	if !w.closed {
 		t.Fatal("writer was not closed after the docs render error")
 	}
@@ -128,27 +148,33 @@ func TestWriteDocsErrors(t *testing.T) {
 
 func TestRenderWebMissingPlaceholders(t *testing.T) {
 	original := webTemplate
+
 	t.Cleanup(func() { webTemplate = original })
 
 	webTemplate = webDataPlaceholder
-	if err := renderWeb(io.Discard, sampleReport()); err == nil {
+
+	err := renderWeb(io.Discard, sampleReport())
+	if err == nil {
 		t.Fatal("expected a missing docs placeholder error")
 	}
 
 	webTemplate = docsDataPlaceholder
-	if err := renderWeb(io.Discard, sampleReport()); err == nil {
+
+	err = renderWeb(io.Discard, sampleReport())
+	if err == nil {
 		t.Fatal("expected a missing report placeholder error")
 	}
 }
 
 type failWriter struct {
-	allow int
 	err   error
+	allow int
 	n     int
 }
 
 func (w *failWriter) Write(p []byte) (int, error) {
 	w.n++
+
 	if w.n > w.allow {
 		return 0, w.err
 	}
@@ -162,7 +188,8 @@ func TestRenderCSVWriteErrors(t *testing.T) {
 	// csv.Writer buffers through bufio; enough rows force a flush to the
 	// underlying writer during WriteAll.
 	big := sampleReport()
-	for i := 0; i < 200; i++ {
+
+	for i := range 200 {
 		big.Packages = append(big.Packages, distance.PackageReport{
 			Path: fmt.Sprintf("example.com/m/p%d", i),
 			Metrics: []metrics.MetricResult{{
@@ -172,33 +199,37 @@ func TestRenderCSVWriteErrors(t *testing.T) {
 		})
 	}
 
-	if err := render(
+	err := render(
 		&failWriter{allow: 0, err: sentinel},
-		big,
-		domain.FormatCSV,
-		domain.TextOptions{},
-	); !errors.Is(
+		&renderOptions{
+			report: big,
+			format: domain.FormatCSV,
+		},
+	)
+	if !errors.Is(
 		err,
 		sentinel,
 	) {
+
 		t.Fatalf("csv write error = %v, want sentinel", err)
 	}
 }
 
 func TestJSONMarshalSeamErrors(t *testing.T) {
-	original := jsonMarshal
-	t.Cleanup(func() { jsonMarshal = original })
-
 	sentinel := errors.New("marshal failed")
-	jsonMarshal = func(any) ([]byte, error) { return nil, sentinel }
+	runtime := reportingRuntime{jsonMarshal: func(any) ([]byte, error) { return nil, sentinel }}
 
-	if err := renderDocs(io.Discard, "test"); !errors.Is(err, sentinel) {
+	err := renderDocsWith(runtime, io.Discard, "test")
+	if !errors.Is(err, sentinel) {
 		t.Fatalf("renderDocs = %v, want sentinel", err)
 	}
-	if err := renderWeb(io.Discard, sampleReport()); !errors.Is(err, sentinel) {
+
+	err = renderWebWith(runtime, io.Discard, sampleReport())
+	if !errors.Is(err, sentinel) {
 		t.Fatalf("renderWeb = %v, want sentinel", err)
 	}
-	if _, err := encodeOrderedMetrics([]metrics.MetricResult{{
+
+	if _, err := encodeOrderedMetricsWith(runtime, []metrics.MetricResult{{
 		Name: metrics.MetricDistance, Scope: metrics.ScopePackage, Value: 1, Applicable: true,
 	}}); !errors.Is(err, sentinel) {
 		t.Fatalf("encodeOrderedMetrics = %v, want sentinel", err)
@@ -206,19 +237,17 @@ func TestJSONMarshalSeamErrors(t *testing.T) {
 }
 
 func TestMarshalDocsErrorViaRenderWeb(t *testing.T) {
-	original := jsonMarshal
-	t.Cleanup(func() { jsonMarshal = original })
-
 	sentinel := errors.New("docs marshal failed")
-	jsonMarshal = func(v any) ([]byte, error) {
-		if _, ok := v.(docsPayload); ok {
+	runtime := reportingRuntime{jsonMarshal: func(value any) ([]byte, error) {
+		if _, ok := value.(docsPayload); ok {
 			return nil, sentinel
 		}
 
-		return json.Marshal(v)
-	}
+		return json.Marshal(value)
+	}}
 
-	if err := renderWeb(io.Discard, sampleReport()); !errors.Is(err, sentinel) {
+	err := renderWebWith(runtime, io.Discard, sampleReport())
+	if !errors.Is(err, sentinel) {
 		t.Fatalf("renderWeb docs error = %v, want sentinel", err)
 	}
 }

@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package main
 
 import (
@@ -76,6 +79,7 @@ func TestDomainPurity(t *testing.T) {
 		}
 
 		domainDir := filepath.Join("internal/features", feature.Name(), "domain")
+
 		if _, err := os.Stat(domainDir); err == nil {
 			dirs = append(dirs, domainDir)
 		}
@@ -107,6 +111,7 @@ func TestDomainPurity(t *testing.T) {
 
 			for _, imp := range file.Imports {
 				importPath := strings.Trim(imp.Path.Value, `"`)
+
 				for _, prefix := range forbiddenPrefixes {
 					if importPath == prefix || strings.HasPrefix(importPath, prefix+"/") {
 						t.Errorf("%s imports %q, forbidden in pure packages", path, importPath)
@@ -114,5 +119,96 @@ func TestDomainPurity(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+var allowedPackageFiles = map[string]bool{
+	"doc.go":    true,
+	"consts.go": true,
+	"types.go":  true,
+	"vars.go":   true,
+	"funcs.go":  true,
+}
+
+// TestPackageFileLayout enforces the standard per-package file layout.
+func TestPackageFileLayout(t *testing.T) {
+	err := filepath.WalkDir(".", func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !d.IsDir() {
+			return nil
+		}
+
+		name := d.Name()
+
+		if name == ".git" || name == ".qodo" || name == "tools" {
+			if name == "tools" {
+				return filepath.SkipDir
+			}
+
+			return nil
+		}
+
+		entries, err := os.ReadDir(path)
+		if err != nil {
+			return err
+		}
+
+		hasProdGo := false
+
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
+				continue
+			}
+
+			if strings.HasSuffix(entry.Name(), "_test.go") {
+				continue
+			}
+
+			hasProdGo = true
+
+			break
+		}
+
+		if !hasProdGo {
+			return nil
+		}
+
+		hasDoc := false
+
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+
+			name := entry.Name()
+
+			if !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+				continue
+			}
+
+			if name == "doc.go" {
+				hasDoc = true
+			}
+
+			if !allowedPackageFiles[name] {
+				t.Errorf(
+					"%s: non-conforming production file %q (allowed: doc.go, consts.go, types.go, vars.go, funcs.go)",
+					path,
+					name,
+				)
+			}
+		}
+
+		if !hasDoc {
+			t.Errorf("%s: missing doc.go", path)
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

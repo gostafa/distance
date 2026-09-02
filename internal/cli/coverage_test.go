@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package cli
 
 import (
@@ -12,13 +15,31 @@ import (
 	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
 )
 
+func execute(args []string) int {
+	runtime := defaultRuntime()
+
+	return runtime.execute(args)
+}
+
+func stubAnalyze(runtime *cliRuntime) {
+	runtime.analyze = func(context.Context, *distance.Config) (distance.Report, error) {
+		return distance.Report{
+			SchemaVersion: "6",
+			Tool:          distance.ToolIdent("distance", "test"),
+			Module:        "example.com/m",
+		}, nil
+	}
+}
+
 func TestResolvePolicyDefaultsAndPatterns(t *testing.T) {
 	policy, source, err := resolvePolicy(nil, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if source != "flag thresholds" || len(policy.Packages) != 1 ||
 		policy.Packages[0].Pattern != "./..." || policy.Packages[0].MaxDistance != 0.5 {
+
 		t.Fatalf("default policy = %+v source = %q", policy.Packages, source)
 	}
 
@@ -26,6 +47,7 @@ func TestResolvePolicyDefaultsAndPatterns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if len(policy.Packages) != 2 || policy.Packages[0].MaxDistance != 0.3 {
 		t.Fatalf("pattern policy = %+v", policy.Packages)
 	}
@@ -40,99 +62,99 @@ func TestResolvePolicyOverrideSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if !strings.Contains(source, "flag thresholds") {
 		t.Fatalf("source = %q", source)
 	}
 }
 
 func TestRunEarlyErrorPaths(t *testing.T) {
-	if code := run([]string{"--verbose", "--dependency-scope=nope"}); code != 1 {
+	if code := execute([]string{"--verbose", "--dependency-scope=nope"}); code != 1 {
 		t.Fatalf("invalid dependency scope exit = %d, want 1", code)
 	}
 
 	badProfile := filepath.Join(t.TempDir(), "missing", "cpu.prof")
-	if code := run([]string{"--cpu-profile=" + badProfile}); code != 1 {
+
+	if code := execute([]string{"--cpu-profile=" + badProfile}); code != 1 {
 		t.Fatalf("bad CPU profile exit = %d, want 1", code)
 	}
 
 	badTemp := filepath.Join(t.TempDir(), "missing")
 	t.Setenv("TMPDIR", badTemp)
 	t.Setenv("TMP", badTemp)
-	if code := runWebHelp(); code != 1 {
+
+	runtime := defaultRuntime()
+	if code := runtime.runWebHelp(); code != 1 {
 		t.Fatalf("web help with bad temp dir exit = %d, want 1", code)
 	}
 }
 
-func stubAnalyze(t *testing.T) {
-	t.Helper()
-	original := analyze
-	t.Cleanup(func() { analyze = original })
-	analyze = func(context.Context, distance.Config) (distance.Report, error) {
-		return distance.Report{
-			SchemaVersion: "6",
-			Tool:          distance.ToolInfo{Name: "distance", Version: "test"},
-			Module:        "example.com/m",
-		}, nil
-	}
-}
-
 func TestRunCanceledAnalysis(t *testing.T) {
-	original := analyze
-	t.Cleanup(func() { analyze = original })
-	analyze = func(context.Context, distance.Config) (distance.Report, error) {
+	runtime := defaultRuntime()
+
+	runtime.analyze = func(context.Context, *distance.Config) (distance.Report, error) {
 		return distance.Report{}, context.Canceled
 	}
-	if code := run([]string{"./..."}); code != 130 {
+
+	if code := runtime.execute([]string{"./..."}); code != 130 {
 		t.Fatalf("exit = %d, want 130", code)
 	}
 }
 
 func TestRunMemoryProfileAndReportWriteErrors(t *testing.T) {
-	stubAnalyze(t)
+	runtime := defaultRuntime()
+	stubAnalyze(&runtime)
 
 	badHeap := filepath.Join(t.TempDir(), "missing", "heap.prof")
-	if code := run([]string{"--memory-profile=" + badHeap, "./..."}); code != 1 {
+
+	if code := runtime.execute([]string{"--memory-profile=" + badHeap, "./..."}); code != 1 {
 		t.Fatalf("bad memory profile exit = %d", code)
 	}
 
 	outDir := t.TempDir()
-	if err := os.Chmod(outDir, 0o500); err != nil {
+
+	err := os.Chmod(outDir, 0o500)
+	if err != nil {
 		t.Fatal(err)
 	}
+
 	t.Cleanup(func() { _ = os.Chmod(outDir, 0o700) })
+
 	out := filepath.Join(outDir, "report.json")
-	if code := run([]string{"--format=json", "--output=" + out, "./..."}); code != 1 {
+
+	if code := runtime.execute([]string{"--format=json", "--output=" + out, "./..."}); code != 1 {
 		t.Fatalf("unwritable output exit = %d", code)
 	}
 }
 
 func TestRunWebDefaultOpensBrowser(t *testing.T) {
-	stubAnalyze(t)
-	origTerm, origOpen := isTerminal, openBrowser
-	t.Cleanup(func() { isTerminal, openBrowser = origTerm, origOpen })
+	runtime := defaultRuntime()
+	stubAnalyze(&runtime)
 
 	dir := t.TempDir()
 	t.Chdir(dir)
-	isTerminal = func() bool { return true }
-	openBrowser = func(string) error { return errors.New("no browser") }
 
-	if code := run([]string{"--format=web", "./..."}); code != 0 {
+	runtime.isTerminal = func() bool { return true }
+	runtime.openBrowser = func(string) error { return errors.New("no browser") }
+
+	if code := runtime.execute([]string{"--format=web", "./..."}); code != 0 {
 		t.Fatalf("web default exit = %d", code)
 	}
+
 	if _, err := os.Stat(filepath.Join(dir, defaultWebReportName)); err != nil {
 		t.Fatalf("default web report missing: %v", err)
 	}
 }
 
 func TestRunCPUStopProfileError(t *testing.T) {
-	stubAnalyze(t)
-	orig := startCPU
-	t.Cleanup(func() { startCPU = orig })
+	runtime := defaultRuntime()
+	stubAnalyze(&runtime)
 
-	startCPU = func(string) (func() error, error) {
+	runtime.startCPU = func(string) (func() error, error) {
 		return func() error { return errors.New("stop failed") }, nil
 	}
-	if code := run(
+
+	if code := runtime.execute(
 		[]string{"--cpu-profile=" + filepath.Join(t.TempDir(), "cpu.prof"), "./..."},
 	); code != 0 {
 		t.Fatalf("exit = %d, want 0 (stop error is logged only)", code)
@@ -140,29 +162,29 @@ func TestRunCPUStopProfileError(t *testing.T) {
 }
 
 func TestRunWebHelpTerminalBrowserWarn(t *testing.T) {
-	origTerm, origOpen := isTerminal, openBrowser
-	t.Cleanup(func() { isTerminal, openBrowser = origTerm, origOpen })
-	isTerminal = func() bool { return true }
-	openBrowser = func(string) error { return errors.New("open failed") }
-	if code := runWebHelp(); code != 0 {
+	runtime := defaultRuntime()
+
+	runtime.isTerminal = func() bool { return true }
+	runtime.openBrowser = func(string) error { return errors.New("open failed") }
+
+	if code := runtime.runWebHelp(); code != 0 {
 		t.Fatalf("runWebHelp exit = %d", code)
 	}
 }
 
 func TestWriteHelpDocsCloseAndWriteErrors(t *testing.T) {
-	origCreate, origClose, origDocs := createHelpTemp, closeHelpFile, writeDocs
-	t.Cleanup(func() {
-		createHelpTemp, closeHelpFile, writeDocs = origCreate, origClose, origDocs
-	})
+	runtime := defaultRuntime()
 
-	closeHelpFile = func(*os.File) error { return errors.New("close failed") }
-	if _, err := writeHelpDocs(); err == nil {
+	runtime.closeHelpFile = func(*os.File) error { return errors.New("close failed") }
+
+	if _, err := runtime.writeHelpDocs(); err == nil {
 		t.Fatal("want close error")
 	}
 
-	closeHelpFile = origClose
-	writeDocs = func(outbound.Sink, string) error { return errors.New("docs failed") }
-	if _, err := writeHelpDocs(); err == nil {
+	runtime = defaultRuntime()
+	runtime.writeDocs = func(outbound.Sink, string) error { return errors.New("docs failed") }
+
+	if _, err := runtime.writeHelpDocs(); err == nil {
 		t.Fatal("want docs write error")
 	}
 }

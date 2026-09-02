@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package domain_test
 
 import (
@@ -31,7 +34,7 @@ func TestTextAndCSVRendering(t *testing.T) {
 
 	rep := distance.Report{
 		SchemaVersion: "1",
-		Tool:          distance.ToolInfo{Name: "distance", Version: "t"},
+		Tool:          distance.ToolIdent("distance", "t"),
 		Module:        "example.com/m",
 		Packages: []distance.PackageReport{
 			{
@@ -48,7 +51,8 @@ func TestTextAndCSVRendering(t *testing.T) {
 		},
 	}
 
-	text := reporting.Text(rep, reporting.TextOptions{})
+	text := reporting.Text(&rep, &reporting.TextOptions{})
+
 	if !strings.Contains(text, "example.com/m") || !strings.Contains(text, "a") {
 		t.Errorf("text output missing content:\n%s", text)
 	}
@@ -57,7 +61,7 @@ func TestTextAndCSVRendering(t *testing.T) {
 		t.Error("empty CSV header")
 	}
 
-	if len(reporting.CSVRecords(rep)) == 0 {
+	if len(reporting.CSVRecords(&rep)) == 0 {
 		t.Error("no CSV records produced")
 	}
 

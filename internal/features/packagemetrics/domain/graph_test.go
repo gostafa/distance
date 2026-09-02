@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package domain
 
 import (
@@ -23,37 +26,52 @@ func TestBuildDependencyGraphScopes(t *testing.T) {
 	facts := scopedFacts()
 
 	project := BuildDependencyGraph(facts, ScopeProject)
-	if got := project.Couplings[0]; got.Efferent != 1 || got.Afferent != 0 {
-		t.Fatalf("project scope a = %+v", got)
+	afferent, efferent := project.PackageCoupling(0)
+
+	if efferent != 1 || afferent != 0 {
+		t.Fatalf("project scope a = Ca=%d Ce=%d", afferent, efferent)
 	}
 
-	if got := project.Couplings[1]; got.Afferent != 1 || got.Efferent != 0 {
-		t.Fatalf("project scope b = %+v", got)
+	afferent, efferent = project.PackageCoupling(1)
+
+	if afferent != 1 || efferent != 0 {
+		t.Fatalf("project scope b = Ca=%d Ce=%d", afferent, efferent)
 	}
 
 	module := BuildDependencyGraph(facts, ScopeModule)
-	if got := module.Couplings[0].Efferent; got != 1 {
-		t.Fatalf("module scope Ce(a) = %d, want 1 (fmt and external excluded)", got)
+
+	_, efferent = module.PackageCoupling(0)
+
+	if efferent != 1 {
+		t.Fatalf("module scope Ce(a) = %d, want 1 (fmt and external excluded)", efferent)
 	}
 
 	all := BuildDependencyGraph(facts, ScopeAll)
-	if got := all.Couplings[0].Efferent; got != 3 {
-		t.Fatalf("all scope Ce(a) = %d, want 3", got)
+
+	_, efferent = all.PackageCoupling(0)
+
+	if efferent != 3 {
+		t.Fatalf("all scope Ce(a) = %d, want 3", efferent)
 	}
 
 	// Afferent coupling is always measured within the analyzed set.
-	if got := all.Couplings[1].Afferent; got != 1 {
-		t.Fatalf("all scope Ca(b) = %d, want 1", got)
+	afferent, _ = all.PackageCoupling(1)
+
+	if afferent != 1 {
+		t.Fatalf("all scope Ca(b) = %d, want 1", afferent)
 	}
 }
 
 func TestModuleScopeWithoutModuleInfo(t *testing.T) {
 	facts := scopedFacts()
+
 	facts.ModulePath = ""
 
 	graph := BuildDependencyGraph(facts, ScopeModule)
-	if got := graph.Couplings[0].Efferent; got != 1 {
-		t.Fatalf("Ce(a) = %d, want 1 (degrades to project scope)", got)
+	_, efferent := graph.PackageCoupling(0)
+
+	if efferent != 1 {
+		t.Fatalf("Ce(a) = %d, want 1 (degrades to project scope)", efferent)
 	}
 }
 
@@ -67,8 +85,9 @@ func TestCountTypes(t *testing.T) {
 		},
 	}
 
-	counts := CountTypes(facts, &facts.Packages[0])
-	if counts.Interfaces != 1 || counts.Total != 3 {
-		t.Fatalf("counts = %+v", counts)
+	interfaces, total := CountTypes(facts, 0)
+
+	if interfaces != 1 || total != 3 {
+		t.Fatalf("counts = interfaces=%d total=%d", interfaces, total)
 	}
 }

@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package domain_test
 
 import (
@@ -27,17 +30,22 @@ func TestGraphAndCounts(t *testing.T) {
 		},
 	}
 
-	g := architecture.BuildDependencyGraph(facts, architecture.Scope("project"))
-	if g.Couplings[0].Efferent != 1 {
-		t.Errorf("a efferent = %d, want 1", g.Couplings[0].Efferent)
+	graph := architecture.BuildDependencyGraph(facts, architecture.ScopeProject)
+	_, efferent := graph.PackageCoupling(0)
+
+	if efferent != 1 {
+		t.Errorf("a efferent = %d, want 1", efferent)
 	}
 
-	if g.Couplings[1].Afferent != 1 {
-		t.Errorf("b afferent = %d, want 1", g.Couplings[1].Afferent)
+	afferent, _ := graph.PackageCoupling(1)
+
+	if afferent != 1 {
+		t.Errorf("b afferent = %d, want 1", afferent)
 	}
 
-	counts := architecture.CountTypes(facts, &facts.Packages[1])
-	if counts.Total != 2 || counts.Interfaces != 1 {
-		t.Fatalf("b counts = %+v, want {Total:2 Interfaces:1}", counts)
+	interfaces, total := architecture.CountTypes(facts, 1)
+
+	if total != 2 || interfaces != 1 {
+		t.Fatalf("b counts = interfaces=%d total=%d, want 1/2", interfaces, total)
 	}
 }
