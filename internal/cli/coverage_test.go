@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/gostafa/distance/distance"
-	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
+	"io"
 )
 
 func execute(args []string) int {
@@ -25,7 +25,7 @@ func stubAnalyze(runtime *cliRuntime) {
 	runtime.analyze = func(context.Context, *distance.Config) (distance.Report, error) {
 		return distance.Report{
 			SchemaVersion: "6",
-			Tool:          distance.ToolIdent("distance", "test"),
+			ToolName: "distance", ToolVersion: "test",
 			Module:        "example.com/m",
 		}, nil
 	}
@@ -182,7 +182,7 @@ func TestWriteHelpDocsCloseAndWriteErrors(t *testing.T) {
 	}
 
 	runtime = defaultRuntime()
-	runtime.writeDocs = func(outbound.Sink, string) error { return errors.New("docs failed") }
+	runtime.writeDocs = func(io.WriteCloser, string) error { return errors.New("docs failed") }
 
 	if _, err := runtime.writeHelpDocs(); err == nil {
 		t.Fatal("want docs write error")

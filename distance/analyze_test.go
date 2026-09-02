@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/gostafa/distance/distance"
-	"github.com/gostafa/distance/internal/shared/metrics"
+	"github.com/gostafa/distance/distance/wire"
 )
 
 const epsilon = 1e-12
@@ -31,7 +31,7 @@ func analyzeFixture(t *testing.T, mutate func(*distance.Config)) distance.Report
 
 	if mutate == nil {
 		defaultOnce.Do(func() {
-			defaultReport, defaultErr = distance.Analyze(
+			defaultReport, defaultErr = wire.AnalyzeWithDefault(
 				t.Context(), &distance.Config{Directory: "../testdata/fixture"},
 			)
 		})
@@ -46,7 +46,7 @@ func analyzeFixture(t *testing.T, mutate func(*distance.Config)) distance.Report
 	cfg := distance.Config{Directory: "../testdata/fixture"}
 	mutate(&cfg)
 
-	report, err := distance.Analyze(t.Context(), &cfg)
+	report, err := wire.AnalyzeWithDefault(t.Context(), &cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,9 +70,9 @@ func findPackage(t *testing.T, report distance.Report, path string) distance.Pac
 
 func metric(
 	t *testing.T,
-	results []metrics.MetricResult,
+	results []distance.MetricResult,
 	name string,
-) metrics.MetricResult {
+) distance.MetricResult {
 	t.Helper()
 
 	for _, r := range results {
@@ -83,10 +83,10 @@ func metric(
 
 	t.Fatalf("metric %s not present in %v", name, results)
 
-	return metrics.MetricResult{}
+	return distance.MetricResult{}
 }
 
-func wantValue(t *testing.T, results []metrics.MetricResult, name string, want float64) {
+func wantValue(t *testing.T, results []distance.MetricResult, name string, want float64) {
 	t.Helper()
 
 	r := metric(t, results, name)
@@ -100,7 +100,7 @@ func wantValue(t *testing.T, results []metrics.MetricResult, name string, want f
 	}
 }
 
-func wantNotApplicable(t *testing.T, results []metrics.MetricResult, name string) {
+func wantNotApplicable(t *testing.T, results []distance.MetricResult, name string) {
 	t.Helper()
 
 	r := metric(t, results, name)
@@ -138,7 +138,7 @@ func TestAnalyzeFixtureOrdering(t *testing.T) {
 	}
 
 	if report.SchemaVersion != distance.SchemaVersion ||
-		report.Tool.Name != string(distance.MetricDistance) {
+		report.ToolName != string(distance.MetricDistance) {
 
 		t.Fatalf("report header = %+v", report)
 	}
@@ -205,7 +205,7 @@ func TestAnalyzeInvalidConfig(t *testing.T) {
 
 	bad.DependencyScope = "galaxy"
 
-	if _, err := distance.Analyze(ctx, &bad); err == nil {
+	if _, err := wire.AnalyzeWithDefault(ctx, &bad); err == nil {
 		t.Fatal("invalid scope accepted")
 	}
 }
@@ -214,7 +214,7 @@ func TestAnalyzeCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	if _, err := distance.Analyze(
+	if _, err := wire.AnalyzeWithDefault(
 		ctx, &distance.Config{Directory: "../testdata/fixture"},
 	); err == nil {
 		t.Fatal("canceled context accepted")

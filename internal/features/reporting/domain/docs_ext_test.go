@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/reporting/domain"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 // Black-box: every reported metric and structural column has a complete
@@ -28,8 +28,8 @@ func TestMetricDocsCoverEveryMetric(t *testing.T) {
 		byName[d.Name] = d
 	}
 
-	for _, name := range metrics.ReportedMetricOrder() {
-		assertMetricDoc(t, byName, name, domain.DocScopePackage)
+	for _, name := range distance.AllMetrics() {
+		assertMetricDoc(t, byName, string(name), domain.DocScopePackage)
 	}
 
 	for _, name := range []string{"ca", "ce"} {

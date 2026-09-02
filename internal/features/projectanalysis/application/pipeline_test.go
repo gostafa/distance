@@ -6,14 +6,13 @@ package application
 import (
 	"testing"
 
-	"github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound"
 )
 
 // White-box: the request→fact-options mapping.
 func TestCollectOptionsMapping(t *testing.T) {
 	t.Parallel()
 
-	fo := collectOptions(&inbound.Options{
+	fo := collectOptions(&Options{
 		Directory: "d", Patterns: []string{"./..."}, IncludeTests: true,
 		IncludeGenerated: true, BuildTags: []string{"tag"}, Workers: 3, ContinueOnError: true,
 	})

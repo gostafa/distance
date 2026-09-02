@@ -3,8 +3,4 @@
 
 package application
 
-import (
-	"github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound"
-)
-
-var _ inbound.Analyzer = (*Pipeline)(nil)
+var _ Analyzer = (*Pipeline)(nil)

@@ -5,6 +5,11 @@ package domain
 
 import (
 	"errors"
+
+	"github.com/gostafa/distance/internal/shared/version"
 )
 
-var errShortWrite = errors.New("short write")
+var (
+	errShortWrite = errors.New("short write")
+	_             = version.Version
+)

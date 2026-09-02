@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"github.com/gostafa/distance/internal/tooling/splitpkg"
 )
 
 var errShortWrite = errors.New("short write")
@@ -16,24 +18,24 @@ func main() {
 }
 
 func run(args []string) int {
-	if len(args) < two {
+	if len(args) < 2 {
 		return usageExit()
 	}
 
-	if splitDirs(args[one:]) {
-		return one
+	if splitDirs(args[1:]) {
+		return 1
 	}
 
-	return zero
+	return 0
 }
 
 func usageExit() int {
 	err := writeLine(os.Stderr, "usage: splitpkg <dir> [<dir>...]")
 	if err != nil {
-		return one
+		return 1
 	}
 
-	return two
+	return 2
 }
 
 func splitDirs(dirs []string) bool {
@@ -53,7 +55,7 @@ func splitDirs(dirs []string) bool {
 }
 
 func reportSplit(dir string) (abort, failed bool) {
-	err := splitPackage(dir)
+	err := splitpkg.SplitPackage(dir)
 	if err == nil {
 		return false, false
 	}
@@ -66,11 +68,11 @@ func reportSplit(dir string) (abort, failed bool) {
 func writeLine(file *os.File, text string) error {
 	written, err := fmt.Fprintln(file, text)
 	if err != nil {
-		return fmt.Errorf(errWrapWriteLine, err)
+		return fmt.Errorf("splitpkg writeLine: %w", err)
 	}
 
-	if written == zero {
-		return fmt.Errorf(errWrapWriteLine, errShortWrite)
+	if written == 0 {
+		return fmt.Errorf("splitpkg writeLine: %w", errShortWrite)
 	}
 
 	return nil

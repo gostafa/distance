@@ -9,12 +9,14 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"runtime"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
+	tfdom "github.com/gostafa/distance/internal/features/typefacts/domain"
 	fo "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
-	"github.com/gostafa/distance/internal/shared/workerpool"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -111,11 +113,11 @@ func importPaths(pkg *packages.Package) []string {
 func typeKind(named *types.Named) uint8 {
 	switch named.Underlying().(type) {
 	case *types.Struct:
-		return model.KindStruct
+		return tfdom.KindStruct
 	case *types.Interface:
-		return model.KindInterface
+		return tfdom.KindInterface
 	default:
-		return model.KindOther
+		return tfdom.KindOther
 	}
 }
 
@@ -125,7 +127,7 @@ func New() *Loader { return &Loader{} }
 func defaultLoaderRuntime() loaderRuntime {
 	return loaderRuntime{
 		packagesLoad:      packages.Load,
-		runExtractWorkers: workerpool.Run,
+		runExtractWorkers: RunWorkers,
 	}
 }
 
@@ -215,10 +217,12 @@ func finishLoad(loaded loadedPkgs, pats []string, opts *fo.FactOptions) (loadedP
 func (rtm loaderRuntime) extractAll(ctx context.Context, job *extractJob) (pkgExtracts, error) {
 	extracts := emptyExtracts(len(job.pkgs))
 
-	err := rtm.runExtractWorkers(ctx, &workerpool.Config{
-		Workers: workerpool.Workers(job.opts.Workers, len(job.pkgs)),
-		Tasks:   len(job.pkgs),
-	}, extractAt(job, extracts))
+	err := rtm.runExtractWorkers(
+		ctx,
+		Workers(job.opts.Workers, len(job.pkgs)),
+		len(job.pkgs),
+		extractAt(job, extracts),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("goloader extractAll: %w", err)
 	}
@@ -376,4 +380,149 @@ func firstAnyModule(pkgs []*packages.Package) string {
 	}
 
 	return emptyString
+}
+
+// RunWorkers executes task(i) for each i in [0, tasks) using workers goroutines.
+func RunWorkers(ctx context.Context, workers, tasks int, task func(int) error) error {
+	cfg := workerConfig{workers: workers, tasks: tasks}
+
+	runErr := runWorkersEmpty(ctx)
+
+	if cfg.tasks != workerZero {
+		runErr = runWorkersIndexed(ctx, &cfg, task)
+	}
+
+	if runErr != nil {
+		return fmt.Errorf(errWrapRunWorkers, runErr)
+	}
+
+	return nil
+}
+
+// Workers returns how many goroutines to use for taskCount tasks.
+func Workers(configured, taskCount int) int {
+	workers := min(runtime.GOMAXPROCS(workerZero), taskCount)
+
+	if configured > workerZero {
+		workers = min(configured, taskCount)
+	}
+
+	return max(workers, minWorkers)
+}
+
+func runWorkersEmpty(ctx context.Context) error {
+	emptyErr := workerContextError(ctx, "goloader workers")
+	if emptyErr != nil {
+		return fmt.Errorf(errWrapRunWorkers, emptyErr)
+	}
+
+	return nil
+}
+
+func workerContextError(ctx context.Context, prefix string) error {
+	err := ctx.Err()
+	if err != nil {
+		return fmt.Errorf("%s: %w", prefix, err)
+	}
+
+	return nil
+}
+
+func emptyWorkerErrors(count int) []error {
+	errs := make([]error, workerZero, count)
+
+	for range count {
+		errs = append(errs, nil)
+	}
+
+	return errs
+}
+
+func foldWorkerErrors(ctx context.Context, errs []error) error {
+	err := workerContextError(ctx, "goloader workers foldErrors")
+	if err != nil {
+		return fmt.Errorf(errWrapFoldWorkerErrors, err)
+	}
+
+	first := firstWorkerError(errs)
+	if first != nil {
+		return fmt.Errorf(errWrapFoldWorkerErrors, first)
+	}
+
+	return nil
+}
+
+func firstWorkerError(errs []error) error {
+	for i := range errs {
+		if errs[i] != nil {
+			return fmt.Errorf("goloader workers firstError: %w", errs[i])
+		}
+	}
+
+	return nil
+}
+
+func runWorkersIndexed(ctx context.Context, cfg *workerConfig, task func(int) error) error {
+	errs := emptyWorkerErrors(cfg.tasks)
+	tasks := make(chan int)
+
+	waitGroup := startWorkerDraining(cfg, func() {
+		drainWorkerTasks(tasks, errs, task)
+	})
+	sendWorkerTasks(ctx, tasks, cfg.tasks)
+	close(tasks)
+	waitGroup.Wait()
+
+	foldErr := foldWorkerErrors(ctx, errs)
+	if foldErr != nil {
+		return fmt.Errorf("goloader workers runIndexed: %w", foldErr)
+	}
+
+	return nil
+}
+
+func startWorkerDraining(cfg *workerConfig, start func()) *sync.WaitGroup {
+	waitGroup := new(sync.WaitGroup)
+
+	startWorkerPool(waitGroup, Workers(cfg.workers, cfg.tasks), start)
+
+	return waitGroup
+}
+
+func startWorkerPool(waitGroup *sync.WaitGroup, count int, start func()) {
+	waitGroup.Add(count)
+	launchWorkerGoroutines(waitGroup, count, start)
+}
+
+func sendOneWorkerTask(ctx context.Context, tasks chan<- int, index int) bool {
+	select {
+	case tasks <- index:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
+func sendWorkerTasks(ctx context.Context, tasks chan<- int, count int) {
+	for index := range count {
+		if !sendOneWorkerTask(ctx, tasks, index) {
+			return
+		}
+	}
+}
+
+func launchWorkerGoroutines(waitGroup *sync.WaitGroup, count int, start func()) {
+	for range count {
+		go func() {
+			defer waitGroup.Done()
+
+			start()
+		}()
+	}
+}
+
+func drainWorkerTasks(tasks <-chan int, errs []error, task func(int) error) {
+	for index := range tasks {
+		errs[index] = task(index)
+	}
 }

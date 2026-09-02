@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/gostafa/distance/distance"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 // Evaluate returns policy violations for packages in report.
@@ -127,8 +126,8 @@ func comparisonTolerance(value, threshold float64) float64 {
 	return comparisonEpsilon * max(one, math.Abs(value), math.Abs(threshold))
 }
 
-func distanceViolation(pkg string, res *metrics.MetricResult, rule PackageRule) (Violation, bool) {
-	if res.Name != metrics.MetricDistance || !res.Applicable {
+func distanceViolation(pkg string, res *distance.MetricResult, rule PackageRule) (Violation, bool) {
+	if res.Name != string(distance.MetricDistance) || !res.Applicable {
 		return Violation{}, false
 	}
 

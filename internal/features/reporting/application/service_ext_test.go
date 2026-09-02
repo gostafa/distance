@@ -14,15 +14,7 @@ import (
 	"github.com/gostafa/distance/distance"
 	reporting "github.com/gostafa/distance/internal/features/reporting/application"
 	"github.com/gostafa/distance/internal/features/reporting/domain"
-	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
-
-type bufSink struct{ buf *bytes.Buffer }
-
-func (b bufSink) Open() (outbound.Stream, error) {
-	return outbound.NewStream(nopCloser{b.buf}), nil
-}
 
 type nopCloser struct{ io.Writer }
 
@@ -31,31 +23,31 @@ func (nopCloser) Close() error { return nil }
 func report() *distance.Report {
 	return &distance.Report{
 		SchemaVersion: "6",
-		Tool:          distance.ToolIdent("distance", "test"),
+		ToolName: "distance", ToolVersion: "test",
 		Module:        "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path:     "example.com/m/a",
 				Afferent: 1,
 				Efferent: 2,
-				Metrics: []metrics.MetricResult{
+				Metrics: []distance.MetricResult{
 					{
 						Name:       "abstractness",
-						Scope:      metrics.ScopePackage,
+						Scope:      distance.ScopePackage,
 						Value:      0.25,
 						Applicable: true,
 						Definition: "a",
 					},
 					{
 						Name:       "instability",
-						Scope:      metrics.ScopePackage,
+						Scope:      distance.ScopePackage,
 						Value:      0.75,
 						Applicable: true,
 						Definition: "i",
 					},
 					{
 						Name:       "distance",
-						Scope:      metrics.ScopePackage,
+						Scope:      distance.ScopePackage,
 						Value:      0.5,
 						Applicable: true,
 						Definition: "d",
@@ -70,14 +62,14 @@ func report() *distance.Report {
 func TestWriteText(t *testing.T) {
 	t.Parallel()
 
-	sink := bufSink{&bytes.Buffer{}}
+	sink := &bytes.Buffer{}
 
-	err := reporting.Write(report(), sink, &reporting.WriteOptions{Format: domain.FormatText})
+	err := reporting.Write(report(), nopCloser{sink}, &reporting.WriteOptions{Format: domain.FormatText})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	out := sink.buf.String()
+	out := sink.String()
 
 	if !strings.Contains(out, "example.com/m") || !strings.Contains(out, "a") {
 		t.Fatalf("text output missing content:\n%s", out)
@@ -88,16 +80,16 @@ func TestWriteText(t *testing.T) {
 func TestWriteJSON(t *testing.T) {
 	t.Parallel()
 
-	sink := bufSink{&bytes.Buffer{}}
+	sink := &bytes.Buffer{}
 
-	err := reporting.Write(report(), sink, &reporting.WriteOptions{Format: domain.FormatJSON})
+	err := reporting.Write(report(), nopCloser{sink}, &reporting.WriteOptions{Format: domain.FormatJSON})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var got map[string]any
 
-	err = json.Unmarshal(sink.buf.Bytes(), &got)
+	err = json.Unmarshal(sink.Bytes(), &got)
 	if err != nil {
 		t.Fatalf("invalid JSON: %v", err)
 	}
@@ -138,17 +130,17 @@ func TestWriteJSON(t *testing.T) {
 func TestWriteCSV(t *testing.T) {
 	t.Parallel()
 
-	sink := bufSink{&bytes.Buffer{}}
+	sink := &bytes.Buffer{}
 
 	if err := reporting.Write(
 		report(),
-		sink,
+		nopCloser{sink},
 		&reporting.WriteOptions{Format: domain.FormatCSV},
 	); err != nil {
 		t.Fatal(err)
 	}
 
-	records, err := csv.NewReader(sink.buf).ReadAll()
+	records, err := csv.NewReader(sink).ReadAll()
 	if err != nil {
 		t.Fatalf("invalid CSV: %v", err)
 	}

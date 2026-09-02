@@ -14,6 +14,7 @@ import (
 	"strconv"
 
 	"github.com/gostafa/distance/distance"
+	"github.com/gostafa/distance/distance/wire"
 	policydomain "github.com/gostafa/distance/internal/features/policy/domain"
 	"golang.org/x/tools/go/analysis"
 )
@@ -234,7 +235,7 @@ func groupByPackage(violations []policydomain.Violation) map[string][]policydoma
 }
 
 func newRunner(settings *Settings) *runner {
-	return &runner{settings: settings, analyzer: analyzeFunc(distance.Analyze)}
+	return &runner{settings: settings, analyzer: analyzeFunc(wire.AnalyzeWithDefault)}
 }
 
 func packagePos(pass *analysis.Pass) token.Pos {

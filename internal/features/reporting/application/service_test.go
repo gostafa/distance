@@ -11,13 +11,12 @@ import (
 
 	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/reporting/domain"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 func sampleReport() *distance.Report {
-	applicable := metrics.MetricResult{
+	applicable := distance.MetricResult{
 		Name:       "distance",
-		Scope:      metrics.ScopePackage,
+		Scope:      distance.ScopePackage,
 		Value:      0.5,
 		Applicable: true,
 		Definition: "d",
@@ -25,13 +24,13 @@ func sampleReport() *distance.Report {
 
 	return &distance.Report{
 		SchemaVersion: "1",
-		Tool:          distance.ToolIdent("distance", "test"),
+		ToolName: "distance", ToolVersion: "test",
 		Module:        "example.com/m",
 		Packages: []distance.PackageReport{{
 			Path:     "example.com/m/a",
 			Afferent: 1,
 			Efferent: 2,
-			Metrics:  []metrics.MetricResult{applicable},
+			Metrics:  []distance.MetricResult{applicable},
 		}},
 	}
 }
@@ -76,17 +75,17 @@ func TestRenderJSONContract(t *testing.T) {
 func TestEncodeOrderedMetricsPreservesOrder(t *testing.T) {
 	t.Parallel()
 
-	got, err := encodeOrderedMetrics([]metrics.MetricResult{
+	got, err := encodeOrderedMetrics([]distance.MetricResult{
 		{
-			Name:       metrics.MetricAbstractness,
-			Scope:      metrics.ScopePackage,
+			Name:       string(distance.MetricAbstractness),
+			Scope:      distance.ScopePackage,
 			Value:      1,
 			Applicable: true,
 			Definition: "d",
 		},
 		{
-			Name:       metrics.MetricDistance,
-			Scope:      metrics.ScopePackage,
+			Name:       string(distance.MetricDistance),
+			Scope:      distance.ScopePackage,
 			Applicable: false,
 			Reason:     "x",
 			Definition: "d",

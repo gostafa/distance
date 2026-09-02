@@ -9,7 +9,6 @@ import (
 
 	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	"github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
-	"github.com/gostafa/distance/internal/shared/workerpool"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -55,6 +54,11 @@ type (
 
 	loaderRuntime struct {
 		packagesLoad      func(*packages.Config, ...string) ([]*packages.Package, error)
-		runExtractWorkers func(context.Context, workerpool.PoolConfig, func(int) error) error
+		runExtractWorkers func(context.Context, int, int, func(int) error) error
+	}
+
+	workerConfig struct {
+		workers int
+		tasks   int
 	}
 )

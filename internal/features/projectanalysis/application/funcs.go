@@ -6,18 +6,17 @@ package application
 import (
 	"context"
 	"fmt"
+	"math"
 
-	pkgmetrics "github.com/gostafa/distance/internal/features/packagemetrics/application"
 	coupling "github.com/gostafa/distance/internal/features/packagemetrics/domain"
-	"github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
+	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
 	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
-	"github.com/gostafa/distance/internal/shared/metrics"
-	"github.com/gostafa/distance/internal/shared/workerpool"
+	"github.com/gostafa/distance/internal/infrastructure/goloader"
 )
 
 func defaultPipelineRuntime() pipelineRuntime {
-	return pipelineRuntime{runWorkers: workerpool.Run}
+	return pipelineRuntime{runWorkers: goloader.RunWorkers}
 }
 
 // NewPipeline returns a Pipeline that collects facts via facts.
@@ -25,62 +24,68 @@ func NewPipeline(facts typefacts.Collector) *Pipeline {
 	return &Pipeline{facts: facts, runtime: defaultPipelineRuntime()}
 }
 
+// NewDefaultPipeline returns a Pipeline wired with the default goloader fact source.
+func NewDefaultPipeline() *Pipeline {
+	return NewPipeline(typefacts.NewService(goloader.New()))
+}
+
 // Analyze collects type facts and computes package metrics for opts.
-func (pipe *Pipeline) Analyze(ctx context.Context, opts *inbound.Options) (inbound.Result, error) {
+func (pipe *Pipeline) Analyze(ctx context.Context, opts *Options) (Result, error) {
 	facts, err := pipe.facts.Collect(ctx, collectOptions(opts))
 	if err != nil {
-		return inbound.Result{}, fmt.Errorf("application Analyze: %w", err)
+		return Result{}, fmt.Errorf("application Analyze: %w", err)
 	}
 
 	result, err := pipe.assemble(ctx, &assembleIn{facts: &facts, opts: opts})
 	if err != nil {
-		return inbound.Result{}, fmt.Errorf("application assemble: %w", err)
+		return Result{}, fmt.Errorf("application assemble: %w", err)
 	}
 
 	return result, nil
 }
 
-func (pipe *Pipeline) assemble(ctx context.Context, args *assembleIn) (inbound.Result, error) {
+func (pipe *Pipeline) assemble(ctx context.Context, args *assembleIn) (Result, error) {
 	err := ctx.Err()
 	if err != nil {
-		return inbound.Result{}, fmt.Errorf("application assembleResult: %w", err)
+		return Result{}, fmt.Errorf("application assembleResult: %w", err)
 	}
 
 	result, err := pipe.buildResults(ctx, args)
 	if err != nil {
-		return inbound.Result{}, fmt.Errorf("application build packages: %w", err)
+		return Result{}, fmt.Errorf("application build packages: %w", err)
 	}
 
 	return result, nil
 }
 
-func (pipe *Pipeline) buildResults(ctx context.Context, args *assembleIn) (inbound.Result, error) {
+func (pipe *Pipeline) buildResults(ctx context.Context, args *assembleIn) (Result, error) {
 	graph := coupling.BuildDependencyGraph(args.facts, args.opts.DependencyScope)
 	packageResults := emptyPackageResults(args.facts.PackageCount())
 
-	err := pipe.runtime.runWorkers(ctx, &workerpool.Config{
-		Workers: workerpool.Workers(args.opts.Workers, args.facts.PackageCount()),
-		Tasks:   args.facts.PackageCount(),
-	}, fillPackageAt(&fillInput{facts: args.facts, graph: &graph, rows: packageResults}))
+	err := pipe.runtime.runWorkers(ctx,
+		goloader.Workers(args.opts.Workers, args.facts.PackageCount()),
+		args.facts.PackageCount(),
+		fillPackageAt(&fillInput{facts: args.facts, graph: &graph, rows: packageResults}),
+	)
 	if err != nil {
-		return inbound.Result{}, fmt.Errorf("application buildPackageResults: %w", err)
+		return Result{}, fmt.Errorf("application buildPackageResults: %w", err)
 	}
 
-	return inbound.Result{ModulePath: args.facts.ModulePath, Packages: packageResults}, nil
+	return Result{ModulePath: args.facts.ModulePath, Packages: packageResults}, nil
 }
 
-func emptyPackageResults(count int) []inbound.PackageResult {
-	results := make([]inbound.PackageResult, zero, count)
+func emptyPackageResults(count int) []PackageResult {
+	results := make([]PackageResult, zero, count)
 
 	for range count {
-		results = append(results, inbound.PackageResult{})
+		results = append(results, PackageResult{})
 	}
 
 	return results
 }
 
 func fillPackageAt(input *fillInput) func(int) error {
-	pkgResults := pkgmetrics.ComputeForPackages(input.facts, input.graph)
+	pkgResults := computeForPackages(input.facts, input.graph)
 
 	return func(index int) error {
 		afferent, efferent := input.graph.PackageCoupling(index)
@@ -97,7 +102,7 @@ func fillPackageAt(input *fillInput) func(int) error {
 	}
 }
 
-func collectOptions(opts *inbound.Options) *tfoutbound.FactOptions {
+func collectOptions(opts *Options) *tfoutbound.FactOptions {
 	return &tfoutbound.FactOptions{
 		Directory:        opts.Directory,
 		Patterns:         opts.Patterns,
@@ -109,21 +114,113 @@ func collectOptions(opts *inbound.Options) *tfoutbound.FactOptions {
 	}
 }
 
-func analyzePackage(input *analyzePackageInput) inbound.PackageResult {
+func analyzePackage(input *analyzePackageInput) PackageResult {
 	pkg := &input.facts.Packages[input.pkgID]
+	metrics := input.pkgResults[input.pkgID]
 
-	return inbound.PackageResult{
+	return PackageResult{
 		Path:     pkg.Path,
 		Afferent: input.afferent,
 		Efferent: input.efferent,
-		Metrics:  packageMetrics(&input.pkgResults[input.pkgID]),
+		Metrics: []MetricEntry{
+			metrics.abstractness,
+			metrics.instability,
+			metrics.distance,
+		},
 	}
 }
 
-func packageMetrics(result *pkgmetrics.Result) []metrics.MetricResult {
-	return []metrics.MetricResult{
-		result.Abstractness,
-		result.Instability,
-		result.Distance,
+func computeForPackages(facts *tfdomain.ProjectFacts, graph coupling.CouplingGraph) []packageMetrics {
+	results := make([]packageMetrics, zero, facts.PackageCount())
+
+	for pkgID := range facts.Packages {
+		results = append(results, computeOne(facts, graph, pkgID))
+	}
+
+	return results
+}
+
+func computeOne(facts *tfdomain.ProjectFacts, graph coupling.CouplingGraph, pkgID int) packageMetrics {
+	interfaces, total := coupling.CountTypes(facts, pkgID)
+	afferent, efferent := graph.PackageCoupling(pkgID)
+	abstractness := abstractnessMetric(interfaces, total)
+	instability := instabilityMetric(afferent, efferent)
+
+	return packageMetrics{
+		abstractness: abstractness,
+		instability:  instability,
+		distance:     distanceMetric(&abstractness, &instability),
+	}
+}
+
+func abstractnessMetric(namedInterfaceTypes, totalRelevantNamedTypes int) MetricEntry {
+	if totalRelevantNamedTypes == zero {
+		return notApplicableMetric(
+			MetricAbstractness,
+			"package declares no relevant named types",
+		)
+	}
+
+	ratio := float64(namedInterfaceTypes) / float64(totalRelevantNamedTypes)
+
+	return applicableMetric(MetricAbstractness, DefinitionAbstractness, ratio)
+}
+
+func distanceMetric(abstractness, instability *MetricEntry) MetricEntry {
+	if !abstractness.Applicable {
+		return notApplicableMetric(
+			MetricDistance,
+			"abstractness is not applicable: "+abstractness.Reason,
+		)
+	}
+
+	if !instability.Applicable {
+		return notApplicableMetric(
+			MetricDistance,
+			"instability is not applicable: "+instability.Reason,
+		)
+	}
+
+	value := math.Abs(abstractness.Value + instability.Value - mainSequenceBalance)
+
+	return applicableMetric(MetricDistance, DefinitionDistance, value)
+}
+
+func instabilityMetric(afferent, efferent int) MetricEntry {
+	if afferent+efferent == zero {
+		result := applicableMetric(MetricInstability, DefinitionInstability, float64(zero))
+		result.Reason = "package has no dependencies in scope (isolated); defined as 0"
+
+		return result
+	}
+
+	ratio := float64(efferent) / float64(afferent+efferent)
+
+	return applicableMetric(MetricInstability, DefinitionInstability, ratio)
+}
+
+func applicableMetric(name, definition string, value float64) MetricEntry {
+	return MetricEntry{
+		Name:       name,
+		Scope:      ScopePackage,
+		Value:      value,
+		Applicable: true,
+		Definition: definition,
+	}
+}
+
+func notApplicableMetric(name, reason string) MetricEntry {
+	definition := DefinitionAbstractness
+
+	if name == MetricDistance {
+		definition = DefinitionDistance
+	}
+
+	return MetricEntry{
+		Name:       name,
+		Scope:      ScopePackage,
+		Applicable: false,
+		Reason:     reason,
+		Definition: definition,
 	}
 }

@@ -6,17 +6,17 @@ package analyzer
 import (
 	"testing"
 
-	"github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound"
+	"github.com/gostafa/distance/internal/features/projectanalysis/application"
+	"github.com/gostafa/distance/internal/infrastructure/goloader"
 )
 
-// White-box: the composition root wires up an analyzer satisfying the port.
 func TestNewAnalyzerImplementsPort(t *testing.T) {
 	t.Parallel()
 
-	requireAnalyzer(t, NewAnalyzer())
+	requireAnalyzer(t, NewAnalyzer(goloader.New()))
 }
 
-func requireAnalyzer(t *testing.T, a inbound.Analyzer) {
+func requireAnalyzer(t *testing.T, a application.Analyzer) {
 	t.Helper()
 
 	if a == nil {

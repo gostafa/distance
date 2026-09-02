@@ -24,4 +24,9 @@ const (
 	maxShownErrors    = 10
 	errWrapLoad       = "goloader load: %w"
 	errWrapPatterns   = "%w %v"
+	errWrapRunWorkers = "goloader RunWorkers: %w"
+	errWrapFoldWorkerErrors = "goloader foldWorkerErrors: %w"
+
+	workerZero = 0
+	minWorkers = 1
 )

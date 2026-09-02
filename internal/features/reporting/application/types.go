@@ -5,8 +5,7 @@ package application
 
 import (
 	"github.com/gostafa/distance/distance"
-	"github.com/gostafa/distance/internal/features/reporting/domain"
-	"github.com/gostafa/distance/internal/shared/metrics"
+	reportdomain "github.com/gostafa/distance/internal/features/reporting/domain"
 )
 
 type (
@@ -75,7 +74,7 @@ type (
 
 	// orderedMetrics marshals as a JSON object keyed by metric name, preserving
 	// slice order (the fixed metric order).
-	orderedMetrics []metrics.MetricResult
+	orderedMetrics []distance.MetricResult
 
 	// webPayload wraps the versioned JSON report with the module path for the
 	// page header. The v1 JSON schema itself stays untouched.
@@ -88,14 +87,14 @@ type (
 
 	// WriteOptions configures Write: the output format and text-only options.
 	WriteOptions struct {
-		Format domain.Format
-		Text   domain.TextOptions
+		Format reportdomain.Format
+		Text   reportdomain.TextOptions
 	}
 
 	renderOptions struct {
 		report *distance.Report
-		text   *domain.TextOptions
-		format domain.Format
+		text   *reportdomain.TextOptions
+		format reportdomain.Format
 	}
 
 	placeholderSwap struct {
@@ -110,7 +109,7 @@ type (
 	}
 
 	unknownFormatError struct {
-		format domain.Format
+		format reportdomain.Format
 	}
 
 	missingPlaceholderError struct {
@@ -118,7 +117,7 @@ type (
 	}
 
 	orderedEntry struct {
-		result *metrics.MetricResult
+		result *distance.MetricResult
 		index  int
 	}
 )

@@ -6,10 +6,10 @@ package analyzer
 import (
 	"github.com/gostafa/distance/internal/features/projectanalysis/application"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
-	"github.com/gostafa/distance/internal/infrastructure/goloader"
+	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
 )
 
-// NewAnalyzer returns the default analysis pipeline backed by goloader.
-func NewAnalyzer() *application.Pipeline {
-	return application.NewPipeline(typefacts.NewService(goloader.New()))
+// NewAnalyzer returns the default analysis pipeline backed by loader.
+func NewAnalyzer(loader tfoutbound.FactSource) *application.Pipeline {
+	return application.NewPipeline(typefacts.NewService(loader))
 }

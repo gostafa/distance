@@ -9,26 +9,25 @@ import (
 	"testing"
 
 	"github.com/gostafa/distance/distance"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 func tableReport() distance.Report {
 	return distance.Report{
 		SchemaVersion: "1",
-		Tool:          distance.ToolIdent("distance", "test"),
+		ToolName: "distance", ToolVersion: "test",
 		Module:        "example.com/mod",
 		Packages: []distance.PackageReport{{
 			Path: "example.com/mod",
-			Metrics: []metrics.MetricResult{
+			Metrics: []distance.MetricResult{
 				{
-					Name:       metrics.MetricAbstractness,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricAbstractness),
+					Scope:      distance.ScopePackage,
 					Value:      0.25,
 					Applicable: true,
 				},
 				{
-					Name:       metrics.MetricDistance,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricDistance),
+					Scope:      distance.ScopePackage,
 					Value:      0.15,
 					Applicable: true,
 				},
@@ -70,10 +69,10 @@ func TestTextTreeGroupsPackagesUnderSharedPath(t *testing.T) {
 	report.Packages = []distance.PackageReport{
 		{
 			Path: "example.com/mod/internal/a",
-			Metrics: []metrics.MetricResult{
+			Metrics: []distance.MetricResult{
 				{
-					Name:       metrics.MetricDistance,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricDistance),
+					Scope:      distance.ScopePackage,
 					Value:      0.5,
 					Applicable: true,
 				},
@@ -81,10 +80,10 @@ func TestTextTreeGroupsPackagesUnderSharedPath(t *testing.T) {
 		},
 		{
 			Path: "example.com/mod/internal/b/deep",
-			Metrics: []metrics.MetricResult{
+			Metrics: []distance.MetricResult{
 				{
-					Name:       metrics.MetricDistance,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricDistance),
+					Scope:      distance.ScopePackage,
 					Value:      1,
 					Applicable: true,
 				},
@@ -109,35 +108,35 @@ func TestTextParentPackageGroupSkipsNonApplicableMetrics(t *testing.T) {
 	report.Packages = []distance.PackageReport{
 		{
 			Path: "example.com/mod/group",
-			Metrics: []metrics.MetricResult{
-				{Name: metrics.MetricAbstractness, Scope: metrics.ScopePackage},
+			Metrics: []distance.MetricResult{
+				{Name: string(distance.MetricAbstractness), Scope: distance.ScopePackage},
 				{
-					Name:       metrics.MetricInstability,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricInstability),
+					Scope:      distance.ScopePackage,
 					Value:      0.2,
 					Applicable: true,
 				},
-				{Name: metrics.MetricDistance, Scope: metrics.ScopePackage},
+				{Name: string(distance.MetricDistance), Scope: distance.ScopePackage},
 			},
 		},
 		{
 			Path: "example.com/mod/group/child",
-			Metrics: []metrics.MetricResult{
+			Metrics: []distance.MetricResult{
 				{
-					Name:       metrics.MetricAbstractness,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricAbstractness),
+					Scope:      distance.ScopePackage,
 					Value:      0.6,
 					Applicable: true,
 				},
 				{
-					Name:       metrics.MetricInstability,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricInstability),
+					Scope:      distance.ScopePackage,
 					Value:      0.8,
 					Applicable: true,
 				},
 				{
-					Name:       metrics.MetricDistance,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricDistance),
+					Scope:      distance.ScopePackage,
 					Value:      0.4,
 					Applicable: true,
 				},
@@ -159,35 +158,35 @@ func TestTextModuleRootSummarizesApplicablePackageMetrics(t *testing.T) {
 	report.Packages = []distance.PackageReport{
 		{
 			Path: "example.com/mod",
-			Metrics: []metrics.MetricResult{
-				{Name: metrics.MetricAbstractness, Scope: metrics.ScopePackage},
+			Metrics: []distance.MetricResult{
+				{Name: string(distance.MetricAbstractness), Scope: distance.ScopePackage},
 				{
-					Name:       metrics.MetricInstability,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricInstability),
+					Scope:      distance.ScopePackage,
 					Value:      1,
 					Applicable: true,
 				},
-				{Name: metrics.MetricDistance, Scope: metrics.ScopePackage},
+				{Name: string(distance.MetricDistance), Scope: distance.ScopePackage},
 			},
 		},
 		{
 			Path: "example.com/mod/child",
-			Metrics: []metrics.MetricResult{
+			Metrics: []distance.MetricResult{
 				{
-					Name:       metrics.MetricAbstractness,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricAbstractness),
+					Scope:      distance.ScopePackage,
 					Value:      0.6,
 					Applicable: true,
 				},
 				{
-					Name:       metrics.MetricInstability,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricInstability),
+					Scope:      distance.ScopePackage,
 					Value:      0.5,
 					Applicable: true,
 				},
 				{
-					Name:       metrics.MetricDistance,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricDistance),
+					Scope:      distance.ScopePackage,
 					Value:      0.4,
 					Applicable: true,
 				},

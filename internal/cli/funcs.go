@@ -4,26 +4,29 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gostafa/distance/distance"
+	"github.com/gostafa/distance/distance/wire"
 	policydomain "github.com/gostafa/distance/internal/features/policy/domain"
 	reporting "github.com/gostafa/distance/internal/features/reporting/application"
 	reportingdomain "github.com/gostafa/distance/internal/features/reporting/domain"
-	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
-	"github.com/gostafa/distance/internal/infrastructure/browser"
-	"github.com/gostafa/distance/internal/infrastructure/profiling"
-	"github.com/gostafa/distance/internal/infrastructure/sinks"
 	"github.com/gostafa/distance/internal/shared/version"
 )
 
@@ -210,6 +213,10 @@ func (runtime *cliRuntime) runAnalyze(ctx context.Context, args *analyzeArgs) an
 		return analyzeOut{report: rep, code: analyzeExitCode(ctx, args.log, analyzeErr)}
 	}
 
+	if rep.ToolVersion == "" {
+		rep.ToolVersion = version.Version()
+	}
+
 	args.log.DebugContext(
 		ctx,
 		msgAnalysisComplete,
@@ -248,29 +255,6 @@ func (runtime *cliRuntime) runWithOptions(opts *cliOptions) int {
 	return runtime.runJob(&runSession{opts: opts, format: resolved.format, logger: logger})
 }
 
-func (factory sinkFactory) Open() (outbound.Stream, error) {
-	stream, err := pickOpen(factory.path)
-	if err != nil {
-		return outbound.Stream{}, fmt.Errorf("cli Open: %w", err)
-	}
-
-	return stream, nil
-}
-
-func pickOpen(path string) (outbound.Stream, error) {
-	stream, err := sinks.StdoutSink{}.Open()
-
-	if path != emptyString {
-		stream, err = sinks.FileSink{Path: path}.Open()
-	}
-
-	if err != nil {
-		return outbound.Stream{}, fmt.Errorf(errWrapPickOpen, err)
-	}
-
-	return stream, nil
-}
-
 func (runtime *cliRuntime) writeHelpDocs() (string, error) {
 	file, createErr := runtime.createHelpTemp(emptyString, helpTempPattern)
 	if createErr != nil {
@@ -293,7 +277,12 @@ func (runtime *cliRuntime) finishHelpDocs(file *os.File) (string, error) {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, closeErr)
 	}
 
-	docsErr := runtime.writeDocs(sinks.FileSink{Path: path}, version.Version())
+	writer, openErr := openOutput(path)
+	if openErr != nil {
+		return emptyString, fmt.Errorf(errWrapWriteHelp, openErr)
+	}
+
+	docsErr := runtime.writeDocs(writer, version.Version())
 	if docsErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, docsErr)
 	}
@@ -302,18 +291,23 @@ func (runtime *cliRuntime) finishHelpDocs(file *os.File) (string, error) {
 }
 
 func (runtime *cliRuntime) writeReport(ctx context.Context, args *reportArgs) int {
-	factory, path, webDefault := openSink(args.session.opts.output, args.session.format)
+	outputPath, webDefault := resolveOutputPath(args.session.opts.output, args.session.format)
 
-	writeErr := reporting.Write(args.report, factory, &reporting.WriteOptions{
+	writer, openErr := openOutput(outputPath)
+	if openErr != nil {
+		return failWrite(ctx, args.session, openErr)
+	}
+
+	writeErr := reporting.Write(args.report, writer, &reporting.WriteOptions{
 		Format: args.session.format,
-		Text:   textOptions(path, args.session, runtime.isTerminal),
+		Text:   textOptions(outputPath, args.session, runtime.isTerminal),
 	})
 	if writeErr != nil {
 		return failWrite(ctx, args.session, writeErr)
 	}
 
 	if webDefault {
-		runtime.announceWeb(ctx, args.session.logger, path)
+		runtime.announceWeb(ctx, args.session.logger, outputPath)
 	}
 
 	return zero
@@ -459,14 +453,14 @@ func buildAnalyzeConfig(opts *cliOptions) *distance.Config {
 
 func defaultRuntime() cliRuntime {
 	return cliRuntime{
-		analyze:        distance.Analyze,
+		analyze:        wire.AnalyzeWithDefault,
 		isTerminal:     stdoutIsTerminal,
 		createHelpTemp: os.CreateTemp,
 		closeHelpFile:  closeFile,
 		writeDocs:      reporting.WriteDocs,
-		openBrowser:    browser.Open,
-		startCPU:       profiling.StartCPU,
-		writeHeap:      profiling.WriteHeap,
+		openBrowser:    openBrowser,
+		startCPU:       startCPUProfile,
+		writeHeap:      writeHeapProfile,
 	}
 }
 
@@ -566,14 +560,150 @@ func newLogger(level slog.Leveler) *slog.Logger {
 
 func noopStop() {}
 
-func openSink(outputPath string, format reportingdomain.Format) (sinkFactory, string, bool) {
+func resolveOutputPath(outputPath string, format reportingdomain.Format) (string, bool) {
 	webDefault := outputPath == emptyString && format == reportingdomain.FormatWeb
 
 	if webDefault {
 		outputPath = defaultWebReportName
 	}
 
-	return sinkFactory{path: outputPath}, outputPath, webDefault
+	return outputPath, webDefault
+}
+
+func openOutput(path string) (io.WriteCloser, error) {
+	if path == emptyString {
+		return &stdoutSink{w: bufio.NewWriter(os.Stdout)}, nil
+	}
+
+	file, createErr := os.Create(path)
+	if createErr != nil {
+		return nil, fmt.Errorf("create report file: %w", createErr)
+	}
+
+	return file, nil
+}
+
+func (stream *stdoutSink) Close() error {
+	flushErr := stream.w.Flush()
+	if flushErr != nil {
+		return fmt.Errorf("stdout flush: %w", flushErr)
+	}
+
+	return nil
+}
+
+func (stream *stdoutSink) Write(p []byte) (int, error) {
+	count, writeErr := stream.w.Write(p)
+	if writeErr != nil {
+		return count, fmt.Errorf("stdout write: %w", writeErr)
+	}
+
+	return count, nil
+}
+
+func openBrowser(path string) error {
+	name, args := browserOpenCommand(runtime.GOOS, path)
+
+	cmd := &exec.Cmd{
+		Path: name,
+		Args: append([]string{name}, args...),
+	}
+
+	resolved, lookErr := exec.LookPath(name)
+	if lookErr == nil {
+		cmd.Path = resolved
+	}
+
+	startErr := cmd.Start()
+	if startErr != nil {
+		return fmt.Errorf("open %s in browser: %w", path, startErr)
+	}
+
+	return nil
+}
+
+func browserOpenCommand(goos, path string) (name string, args []string) {
+	switch goos {
+	case "darwin":
+		return "open", []string{path}
+	case "windows":
+		return "rundll32", []string{"url.dll,FileProtocolHandler", path}
+	default:
+		return "xdg-open", []string{path}
+	}
+}
+
+func startCPUProfile(path string) (stop func() error, err error) {
+	file, err := createProfileFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("profiling startCPU: %w", err)
+	}
+
+	startErr := pprof.StartCPUProfile(file)
+	if startErr != nil {
+		closeErr := file.Close()
+
+		return nil, fmt.Errorf("profiling startCPU: %w", errors.Join(startErr, closeErr))
+	}
+
+	return func() error {
+		pprof.StopCPUProfile()
+
+		closeErr := file.Close()
+		if closeErr != nil {
+			return fmt.Errorf("profiling stopCPU: %w", closeErr)
+		}
+
+		return nil
+	}, nil
+}
+
+func writeHeapProfile(path string) error {
+	file, err := createProfileFile(path)
+	if err != nil {
+		return fmt.Errorf("profiling writeHeap: %w", err)
+	}
+
+	writeErr := pprof.WriteHeapProfile(file)
+	closeErr := file.Close()
+
+	if writeErr != nil {
+		return fmt.Errorf("profiling writeHeap: %w", writeErr)
+	}
+
+	if closeErr != nil {
+		return fmt.Errorf("profiling writeHeap: %w", closeErr)
+	}
+
+	return nil
+}
+
+func createProfileFile(path string) (*os.File, error) {
+	dir, name := filepath.Split(path)
+
+	if dir == emptyString {
+		dir = "."
+	}
+
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, fmt.Errorf("open profile directory: %w", err)
+	}
+
+	file, createErr := root.Create(name)
+	rootCloseErr := root.Close()
+
+	if createErr != nil {
+		return nil, fmt.Errorf("create profile file: %w", createErr)
+	}
+
+	if rootCloseErr != nil {
+		discardErr := file.Close()
+
+		return nil, fmt.Errorf("create profile file: %w", errors.Join(rootCloseErr, discardErr))
+	}
+
+	return file, nil
 }
 
 func optionsFrom(flagSet *flag.FlagSet, bindings *flagBindings) *cliOptions {

@@ -1,7 +1,7 @@
 // Gostafa 2026.
 // SPDX-License-Identifier: Apache-2.0.
 
-package main
+package splitpkg
 
 import (
 	"go/ast"
@@ -9,29 +9,11 @@ import (
 )
 
 type (
-	fileReader interface {
-		ReadFile(name string) ([]byte, error)
-	}
 
-	fileWriter interface {
-		WriteFile(name string, data []byte) error
-	}
 
-	fileRemover interface {
-		RemoveFile(name string) error
-	}
 
-	dirHolder interface {
-		Dir() string
-	}
 
-	sourceLister interface {
-		GoFiles() []string
-	}
 
-	markerHolder interface {
-		Marker() string
-	}
 
 	declEntry struct {
 		source string
@@ -56,7 +38,7 @@ type (
 	}
 
 	categoryWrite struct {
-		store           fileWriter
+		store           *packageSplit
 		pkgName         string
 		filename        string
 		generatedMarker string

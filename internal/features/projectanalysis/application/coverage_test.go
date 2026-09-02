@@ -8,13 +8,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
 	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
 	tfmodel "github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
-	"github.com/gostafa/distance/internal/shared/metrics"
-	"github.com/gostafa/distance/internal/shared/workerpool"
+	"github.com/gostafa/distance/distance"
 )
 
 type coverageSource struct{}
@@ -38,11 +36,11 @@ func TestAssembleResultWorkerError(t *testing.T) {
 	sentinel := errors.New("workers failed")
 	pipeline := NewPipeline(typefacts.NewService(coverageSource{}))
 
-	pipeline.runtime.runWorkers = func(context.Context, workerpool.PoolConfig, func(int) error) error {
+	pipeline.runtime.runWorkers = func(context.Context, int, int, func(int) error) error {
 		return sentinel
 	}
 
-	_, err := pipeline.Analyze(t.Context(), &inbound.Options{
+	_, err := pipeline.Analyze(t.Context(), &Options{
 		Patterns: []string{"./..."},
 	})
 
@@ -54,7 +52,7 @@ func TestAssembleResultWorkerError(t *testing.T) {
 func TestReportedMetrics(t *testing.T) {
 	pipeline := NewPipeline(typefacts.NewService(coverageSource{}))
 
-	result, err := pipeline.Analyze(t.Context(), &inbound.Options{
+	result, err := pipeline.Analyze(t.Context(), &Options{
 		Patterns:        []string{"./..."},
 		DependencyScope: "project",
 	})
@@ -63,7 +61,7 @@ func TestReportedMetrics(t *testing.T) {
 	}
 
 	pkg := result.Packages[0]
-	want := []string{metrics.MetricAbstractness, metrics.MetricInstability, metrics.MetricDistance}
+	want := []string{string(distance.MetricAbstractness), string(distance.MetricInstability), string(distance.MetricDistance)}
 
 	if len(pkg.Metrics) != len(want) {
 		t.Fatalf("package metrics = %v, want %v", pkg.Metrics, want)

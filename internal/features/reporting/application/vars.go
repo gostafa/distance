@@ -6,6 +6,8 @@ package application
 import (
 	_ "embed"
 	"errors"
+
+	"github.com/gostafa/distance/internal/shared/version"
 )
 
 var (
@@ -23,4 +25,5 @@ var (
 	webTemplate string
 
 	errShortWrite = errors.New("short write")
+	_             = version.Version
 )

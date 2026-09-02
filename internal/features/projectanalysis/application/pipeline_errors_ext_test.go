@@ -8,11 +8,10 @@ import (
 	"errors"
 	"testing"
 
-	projectanalysis "github.com/gostafa/distance/internal/features/projectanalysis/application"
-	"github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
 	tfmodel "github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
+	projectanalysis "github.com/gostafa/distance/internal/features/projectanalysis/application"
 )
 
 type errSource struct{ err error }
@@ -31,7 +30,7 @@ func TestPipelineLoadError(t *testing.T) {
 	sentinel := errors.New("load failed")
 	pipeline := projectanalysis.NewPipeline(typefacts.NewService(errSource{err: sentinel}))
 
-	_, err := pipeline.Analyze(t.Context(), &inbound.Options{
+	_, err := pipeline.Analyze(t.Context(), &projectanalysis.Options{
 		Patterns: []string{"./..."},
 	})
 

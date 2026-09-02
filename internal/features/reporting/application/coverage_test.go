@@ -14,17 +14,7 @@ import (
 
 	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/reporting/domain"
-	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
-
-type failingSink struct {
-	err error
-}
-
-func (s failingSink) Open() (outbound.Stream, error) {
-	return outbound.Stream{}, s.err
-}
 
 type trackingWriteCloser struct {
 	err    error
@@ -41,42 +31,16 @@ func (w *trackingWriteCloser) Close() error {
 	return nil
 }
 
-type writerSink struct {
-	w io.WriteCloser
-}
-
-func (s writerSink) Open() (outbound.Stream, error) {
-	return outbound.NewStream(s.w), nil
-}
-
-func TestWriteOpenAndRenderErrors(t *testing.T) {
+func TestWriteRenderErrors(t *testing.T) {
 	sentinel := errors.New("write failed")
+	w := &trackingWriteCloser{err: sentinel}
 
 	err := Write(
 		sampleReport(),
-		failingSink{err: sentinel},
+		w,
 		&WriteOptions{Format: domain.FormatText},
 	)
-	if !errors.Is(
-		err,
-		sentinel,
-	) {
-
-		t.Fatalf("open error = %v, want sentinel", err)
-	}
-
-	w := &trackingWriteCloser{err: sentinel}
-
-	err = Write(
-		sampleReport(),
-		writerSink{w: w},
-		&WriteOptions{Format: domain.FormatText},
-	)
-	if !errors.Is(
-		err,
-		sentinel,
-	) {
-
+	if !errors.Is(err, sentinel) {
 		t.Fatalf("render error = %v, want sentinel", err)
 	}
 
@@ -104,9 +68,9 @@ func TestJSONDebugStringsAndMarshalError(t *testing.T) {
 		t.Fatalf("jsonPackage.String() = %q", packageSummary)
 	}
 
-	_, err := encodeOrderedMetrics([]metrics.MetricResult{{
-		Name:       metrics.MetricDistance,
-		Scope:      metrics.ScopePackage,
+	_, err := encodeOrderedMetrics([]distance.MetricResult{{
+		Name:       string(distance.MetricDistance),
+		Scope:      distance.ScopePackage,
 		Value:      math.NaN(),
 		Applicable: true,
 	}})
@@ -116,27 +80,20 @@ func TestJSONDebugStringsAndMarshalError(t *testing.T) {
 }
 
 func TestWriteDocsErrors(t *testing.T) {
-	sentinel := errors.New("open failed")
-
-	err := WriteDocs(failingSink{err: sentinel}, "test")
-	if !errors.Is(err, sentinel) {
-		t.Fatalf("open error = %v, want sentinel", err)
-	}
-
 	original := docsTemplate
 
 	docsTemplate = "missing placeholder"
 
 	t.Cleanup(func() { docsTemplate = original })
 
-	err = renderDocs(io.Discard, "test")
+	err := renderDocs(io.Discard, "test")
 	if err == nil {
 		t.Fatal("expected a missing docs placeholder error")
 	}
 
 	w := &trackingWriteCloser{}
 
-	err = WriteDocs(writerSink{w: w}, "test")
+	err = WriteDocs(w, "test")
 	if err == nil {
 		t.Fatal("expected WriteDocs to propagate the render error")
 	}
@@ -182,6 +139,8 @@ func (w *failWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+func (failWriter) Close() error { return nil }
+
 func TestRenderCSVWriteErrors(t *testing.T) {
 	sentinel := errors.New("csv write failed")
 
@@ -192,8 +151,8 @@ func TestRenderCSVWriteErrors(t *testing.T) {
 	for i := range 200 {
 		big.Packages = append(big.Packages, distance.PackageReport{
 			Path: fmt.Sprintf("example.com/m/p%d", i),
-			Metrics: []metrics.MetricResult{{
-				Name: metrics.MetricDistance, Scope: metrics.ScopePackage, Value: float64(i),
+			Metrics: []distance.MetricResult{{
+				Name: string(distance.MetricDistance), Scope: distance.ScopePackage, Value: float64(i),
 				Applicable: true, Definition: "d", Reason: strings.Repeat("x", 64),
 			}},
 		})
@@ -206,11 +165,7 @@ func TestRenderCSVWriteErrors(t *testing.T) {
 			format: domain.FormatCSV,
 		},
 	)
-	if !errors.Is(
-		err,
-		sentinel,
-	) {
-
+	if !errors.Is(err, sentinel) {
 		t.Fatalf("csv write error = %v, want sentinel", err)
 	}
 }
@@ -229,8 +184,8 @@ func TestJSONMarshalSeamErrors(t *testing.T) {
 		t.Fatalf("renderWeb = %v, want sentinel", err)
 	}
 
-	if _, err := encodeOrderedMetricsWith(runtime, []metrics.MetricResult{{
-		Name: metrics.MetricDistance, Scope: metrics.ScopePackage, Value: 1, Applicable: true,
+	if _, err := encodeOrderedMetricsWith(runtime, []distance.MetricResult{{
+		Name: string(distance.MetricDistance), Scope: distance.ScopePackage, Value: 1, Applicable: true,
 	}}); !errors.Is(err, sentinel) {
 		t.Fatalf("encodeOrderedMetrics = %v, want sentinel", err)
 	}

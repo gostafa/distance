@@ -17,14 +17,14 @@ import (
 func TestWriteWeb(t *testing.T) {
 	t.Parallel()
 
-	sink := bufSink{&bytes.Buffer{}}
+	sink := &bytes.Buffer{}
 
-	err := reporting.Write(report(), sink, &reporting.WriteOptions{Format: domain.FormatWeb})
+	err := reporting.Write(report(), bufWriteCloser{sink}, &reporting.WriteOptions{Format: domain.FormatWeb})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	html := sink.buf.String()
+	html := sink.String()
 
 	if !strings.HasPrefix(html, "<!doctype html>") {
 		t.Errorf("web report does not start with a doctype: %.40q", html)
@@ -103,14 +103,14 @@ func TestWriteWebEscapesScriptTerminator(t *testing.T) {
 
 	rep.Packages[0].Path = "</script><script>alert(1)</script>"
 
-	sink := bufSink{&bytes.Buffer{}}
+	sink := &bytes.Buffer{}
 
-	err := reporting.Write(rep, sink, &reporting.WriteOptions{Format: domain.FormatWeb})
+	err := reporting.Write(rep, bufWriteCloser{sink}, &reporting.WriteOptions{Format: domain.FormatWeb})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	html := sink.buf.String()
+	html := sink.String()
 
 	if strings.Contains(html, "</script><script>alert(1)") {
 		t.Error("payload contains an unescaped script terminator")
@@ -133,14 +133,14 @@ func TestWriteWebPayloadCannotSpoofDocsPlaceholder(t *testing.T) {
 
 	rep.Packages[0].Path = "__DOCS_DATA__"
 
-	sink := bufSink{&bytes.Buffer{}}
+	sink := &bytes.Buffer{}
 
-	err := reporting.Write(rep, sink, &reporting.WriteOptions{Format: domain.FormatWeb})
+	err := reporting.Write(rep, bufWriteCloser{sink}, &reporting.WriteOptions{Format: domain.FormatWeb})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	html := sink.buf.String()
+	html := sink.String()
 
 	if got := strings.Count(html, `id="docs-data"`); got != 1 {
 		t.Errorf("docs-data script elements = %d, want 1", got)

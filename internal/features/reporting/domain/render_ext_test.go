@@ -9,7 +9,6 @@ import (
 
 	"github.com/gostafa/distance/distance"
 	reporting "github.com/gostafa/distance/internal/features/reporting/domain"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 // Black-box: format parsing accepts the known encodings and rejects others.
@@ -34,15 +33,15 @@ func TestTextAndCSVRendering(t *testing.T) {
 
 	rep := distance.Report{
 		SchemaVersion: "1",
-		Tool:          distance.ToolIdent("distance", "t"),
+		ToolName: "distance", ToolVersion: "t",
 		Module:        "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path: "example.com/m/a",
-				Metrics: []metrics.MetricResult{
+				Metrics: []distance.MetricResult{
 					{
 						Name:       "abstractness",
-						Scope:      metrics.ScopePackage,
+						Scope:      distance.ScopePackage,
 						Value:      0.5,
 						Applicable: true,
 					},

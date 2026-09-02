@@ -6,12 +6,12 @@ package model
 import (
 	"fmt"
 
-	"github.com/gostafa/distance/internal/shared/metrics"
+	"github.com/gostafa/distance/internal/shared/version"
 )
 
 // FormatNamed returns a compact debug representation of a named type extract.
 func FormatNamed(name string, kind uint8) string {
-	return fmt.Sprintf("type %q (kind %d, %s)", name, kind, metrics.MetricAbstractness)
+	return fmt.Sprintf("type %q (kind %d, abstractness, tool %s)", name, kind, version.Version())
 }
 
 // ImportList returns the package's import paths.

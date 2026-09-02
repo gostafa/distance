@@ -12,9 +12,7 @@ import (
 	"strings"
 
 	"github.com/gostafa/distance/distance"
-	"github.com/gostafa/distance/internal/features/reporting/domain"
-	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
-	"github.com/gostafa/distance/internal/shared/metrics"
+	reportdomain "github.com/gostafa/distance/internal/features/reporting/domain"
 )
 
 func defaultRuntime() reportingRuntime {
@@ -65,12 +63,12 @@ func writeBufferByte(buf *bytes.Buffer, value byte) error {
 	return nil
 }
 
-func formatRenderers() map[domain.Format]func(io.Writer, *renderOptions) error {
-	return map[domain.Format]func(io.Writer, *renderOptions) error{
-		domain.FormatText: renderText,
-		domain.FormatJSON: renderJSONOpts,
-		domain.FormatCSV:  renderCSVOpts,
-		domain.FormatWeb:  renderWebOpts,
+func formatRenderers() map[reportdomain.Format]func(io.Writer, *renderOptions) error {
+	return map[reportdomain.Format]func(io.Writer, *renderOptions) error{
+		reportdomain.FormatText: renderText,
+		reportdomain.FormatJSON: renderJSONOpts,
+		reportdomain.FormatCSV:  renderCSVOpts,
+		reportdomain.FormatWeb:  renderWebOpts,
 	}
 }
 
@@ -102,7 +100,7 @@ func renderWebOpts(writer io.Writer, opts *renderOptions) error {
 }
 
 func marshalDocsWith(runtime reportingRuntime, toolVersion string) ([]byte, error) {
-	entries := domain.MetricDocs()
+	entries := reportdomain.MetricDocs()
 
 	out := docsPayload{
 		Tool: jsonTool{Name: string(distance.MetricDistance), Version: toolVersion},
@@ -121,7 +119,7 @@ func marshalDocsWith(runtime reportingRuntime, toolVersion string) ([]byte, erro
 	return data, nil
 }
 
-func toJSONMetricDoc(doc *domain.MetricDoc) jsonMetricDoc {
+func toJSONMetricDoc(doc *reportdomain.MetricDoc) jsonMetricDoc {
 	return jsonMetricDoc{
 		Name:           doc.Name,
 		Label:          doc.Label,
@@ -184,14 +182,9 @@ func writeDocsPage(writer io.Writer, payload []byte) error {
 	return nil
 }
 
-// WriteDocs writes the standalone metrics guide page to sink.
-func WriteDocs(sink outbound.Sink, toolVersion string) error {
-	stream, openErr := sink.Open()
-	if openErr != nil {
-		return fmt.Errorf(errWrapWriteDocs, openErr)
-	}
-
-	closeErr := closeAfter(renderDocs(&stream, toolVersion), &stream)
+// WriteDocs writes the standalone metrics guide page to w.
+func WriteDocs(w io.WriteCloser, toolVersion string) error {
+	closeErr := closeAfter(renderDocs(w, toolVersion), w)
 	if closeErr != nil {
 		return fmt.Errorf(errWrapWriteDocs, closeErr)
 	}
@@ -199,19 +192,14 @@ func WriteDocs(sink outbound.Sink, toolVersion string) error {
 	return nil
 }
 
-// Write renders the report into the sink using opts.Format. Text options are
+// Write renders the report into w using opts.Format. Text options are
 // read only by the text format.
-func Write(report *distance.Report, sink outbound.Sink, opts *WriteOptions) error {
-	stream, openErr := sink.Open()
-	if openErr != nil {
-		return fmt.Errorf(errWrapWrite, openErr)
-	}
-
-	closeErr := closeAfter(render(&stream, &renderOptions{
+func Write(report *distance.Report, w io.WriteCloser, opts *WriteOptions) error {
+	closeErr := closeAfter(render(w, &renderOptions{
 		report: report,
 		format: opts.Format,
 		text:   &opts.Text,
-	}), &stream)
+	}), w)
 	if closeErr != nil {
 		return fmt.Errorf(errWrapWrite, closeErr)
 	}
@@ -222,7 +210,7 @@ func Write(report *distance.Report, sink outbound.Sink, opts *WriteOptions) erro
 func render(writer io.Writer, opts *renderOptions) error {
 	renderFn := renderNonText
 
-	if opts.format == domain.FormatText {
+	if opts.format == reportdomain.FormatText {
 		renderFn = renderText
 	}
 
@@ -235,7 +223,7 @@ func render(writer io.Writer, opts *renderOptions) error {
 }
 
 func renderText(writer io.Writer, opts *renderOptions) error {
-	writeErr := writeAll(writer, domain.Text(opts.report, opts.text))
+	writeErr := writeAll(writer, reportdomain.Text(opts.report, opts.text))
 	if writeErr != nil {
 		return fmt.Errorf("application renderText: %w", writeErr)
 	}
@@ -274,7 +262,7 @@ func renderNonText(writer io.Writer, opts *renderOptions) error {
 func renderCSV(w io.Writer, report *distance.Report) error {
 	// WriteAll flushes; a separate header Write cannot surface bufio
 	// errors until Flush, so header and records go through one call.
-	rows := append([][]string{domain.CSVHeader()}, domain.CSVRecords(report)...)
+	rows := append([][]string{reportdomain.CSVHeader()}, reportdomain.CSVRecords(report)...)
 
 	err := csv.NewWriter(w).WriteAll(rows)
 	if err != nil {
@@ -296,7 +284,7 @@ func (p jsonPackage) String() string {
 
 // MarshalJSON writes the object with keys in the fixed metric order.
 func (m *orderedMetrics) MarshalJSON() ([]byte, error) {
-	data, err := encodeOrderedMetrics([]metrics.MetricResult(*m))
+	data, err := encodeOrderedMetrics([]distance.MetricResult(*m))
 	if err != nil {
 		return nil, fmt.Errorf("application marshal metrics: %w", err)
 	}
@@ -306,7 +294,7 @@ func (m *orderedMetrics) MarshalJSON() ([]byte, error) {
 
 // encodeOrderedMetrics assembles the ordered JSON object one name→metric
 // pair at a time.
-func encodeOrderedMetrics(results []metrics.MetricResult) ([]byte, error) {
+func encodeOrderedMetrics(results []distance.MetricResult) ([]byte, error) {
 	data, err := encodeOrderedMetricsWith(defaultRuntime(), results)
 	if err != nil {
 		return nil, fmt.Errorf(errWrapEncodeOrdered, err)
@@ -315,7 +303,7 @@ func encodeOrderedMetrics(results []metrics.MetricResult) ([]byte, error) {
 	return data, nil
 }
 
-func encodeOrderedMetricsWith(rtm reportingRuntime, rows []metrics.MetricResult) ([]byte, error) {
+func encodeOrderedMetricsWith(rtm reportingRuntime, rows []distance.MetricResult) ([]byte, error) {
 	var buf bytes.Buffer
 
 	err := writeMetricObject(rtm, &buf, rows)
@@ -326,7 +314,7 @@ func encodeOrderedMetricsWith(rtm reportingRuntime, rows []metrics.MetricResult)
 	return buf.Bytes(), nil
 }
 
-func writeMetricObject(rtm reportingRuntime, buf *bytes.Buffer, rows []metrics.MetricResult) error {
+func writeMetricObject(rtm reportingRuntime, buf *bytes.Buffer, rows []distance.MetricResult) error {
 	openErr := writeBufferByte(buf, '{')
 	if openErr != nil {
 		return fmt.Errorf(errWrapEncodeOrdered, openErr)
@@ -345,7 +333,7 @@ func writeMetricObject(rtm reportingRuntime, buf *bytes.Buffer, rows []metrics.M
 	return nil
 }
 
-func writeEntries(rtm reportingRuntime, buf *bytes.Buffer, rows []metrics.MetricResult) error {
+func writeEntries(rtm reportingRuntime, buf *bytes.Buffer, rows []distance.MetricResult) error {
 	for i := range rows {
 		entryErr := writeOrderedEntry(rtm, buf, orderedEntry{
 			index:  i,
@@ -388,7 +376,7 @@ func writeEntryComma(buf *bytes.Buffer, index int) error {
 
 // encodeMetricEntry writes one name→metric pair. A non-applicable metric
 // carries its reason and no value — never a fake zero.
-func encodeMetricEntry(rtm reportingRuntime, buf *bytes.Buffer, row *metrics.MetricResult) error {
+func encodeMetricEntry(rtm reportingRuntime, buf *bytes.Buffer, row *distance.MetricResult) error {
 	keyErr := writeJSONKey(rtm, buf, row.Name)
 	if keyErr != nil {
 		return fmt.Errorf(errWrapEncodeMetric, keyErr)
@@ -426,7 +414,7 @@ func writeJSONKey(runtime reportingRuntime, buf *bytes.Buffer, name string) erro
 	return nil
 }
 
-func metricJSON(result *metrics.MetricResult) jsonMetric {
+func metricJSON(result *distance.MetricResult) jsonMetric {
 	out := jsonMetric{
 		Scope:      result.Scope,
 		Applicable: result.Applicable,
@@ -448,7 +436,7 @@ func metricJSON(result *metrics.MetricResult) jsonMetric {
 func buildJSONReport(report *distance.Report) jsonReport {
 	out := jsonReport{
 		SchemaVersion: report.SchemaVersion,
-		Tool:          jsonTool{Name: report.Tool.Name, Version: report.Tool.Version},
+		Tool:          jsonTool{Name: report.ToolName, Version: report.ToolVersion},
 		Packages:      make([]jsonPackage, indexZero, len(report.Packages)),
 	}
 
@@ -514,7 +502,7 @@ func buildWebPageWith(runtime reportingRuntime, report *distance.Report) (string
 		return emptyString, fmt.Errorf(errWrapBuildWeb, err)
 	}
 
-	docs, err := marshalDocsWith(runtime, report.Tool.Version)
+	docs, err := marshalDocsWith(runtime, report.ToolVersion)
 	if err != nil {
 		return emptyString, fmt.Errorf(errWrapBuildWeb, err)
 	}

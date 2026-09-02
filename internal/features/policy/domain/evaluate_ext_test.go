@@ -10,7 +10,6 @@ import (
 
 	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/policy/domain"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 func sampleReport() distance.Report {
@@ -21,27 +20,27 @@ func sampleReport() distance.Report {
 				Path:     "example.com/m/foo",
 				Afferent: 2,
 				Efferent: 20,
-				Metrics: []metrics.MetricResult{{
-					Name:       metrics.MetricDistance,
-					Scope:      metrics.ScopePackage,
+				Metrics: []distance.MetricResult{{
+					Name:       string(distance.MetricDistance),
+					Scope:      distance.ScopePackage,
 					Value:      0.9,
 					Applicable: true,
 				}},
 			},
 			{
 				Path: "example.com/m/internal/domain",
-				Metrics: []metrics.MetricResult{{
-					Name:       metrics.MetricDistance,
-					Scope:      metrics.ScopePackage,
+				Metrics: []distance.MetricResult{{
+					Name:       string(distance.MetricDistance),
+					Scope:      distance.ScopePackage,
 					Value:      0.3,
 					Applicable: true,
 				}},
 			},
 			{
 				Path: "example.com/other",
-				Metrics: []metrics.MetricResult{{
-					Name:       metrics.MetricDistance,
-					Scope:      metrics.ScopePackage,
+				Metrics: []distance.MetricResult{{
+					Name:       string(distance.MetricDistance),
+					Scope:      distance.ScopePackage,
 					Value:      1,
 					Applicable: true,
 				}},
@@ -162,9 +161,9 @@ func TestEvaluateBoundaryTolerance(t *testing.T) {
 		Module: "example.com/m",
 		Packages: []distance.PackageReport{{
 			Path: "example.com/m/p",
-			Metrics: []metrics.MetricResult{{
-				Name:       metrics.MetricDistance,
-				Scope:      metrics.ScopePackage,
+			Metrics: []distance.MetricResult{{
+				Name:       string(distance.MetricDistance),
+				Scope:      distance.ScopePackage,
 				Value:      0.5,
 				Applicable: true,
 			}},
@@ -193,22 +192,22 @@ func TestEvaluateIgnoresAbstractnessAndInstability(t *testing.T) {
 		Module: "example.com/m",
 		Packages: []distance.PackageReport{{
 			Path: "example.com/m/p",
-			Metrics: []metrics.MetricResult{
+			Metrics: []distance.MetricResult{
 				{
-					Name:       metrics.MetricAbstractness,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricAbstractness),
+					Scope:      distance.ScopePackage,
 					Value:      1,
 					Applicable: true,
 				},
 				{
-					Name:       metrics.MetricInstability,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricInstability),
+					Scope:      distance.ScopePackage,
 					Value:      1,
 					Applicable: true,
 				},
 				{
-					Name:       metrics.MetricDistance,
-					Scope:      metrics.ScopePackage,
+					Name:       string(distance.MetricDistance),
+					Scope:      distance.ScopePackage,
 					Value:      0.2,
 					Applicable: true,
 				},
@@ -234,7 +233,7 @@ func TestFormatViolations(t *testing.T) {
 
 	got := domain.FormatViolations([]domain.Violation{{
 		Package:    "example.com/p",
-		Key:        metrics.MetricDistance,
+		Key:        string(distance.MetricDistance),
 		Value:      0.9,
 		Comparator: domain.ComparatorMax,
 		Threshold:  0.5,

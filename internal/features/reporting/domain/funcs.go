@@ -9,7 +9,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/gostafa/distance/distance"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 // MetricDocs returns the ordered metrics guide entries.
@@ -25,11 +24,11 @@ func MetricDocs() []MetricDoc {
 
 func abstractnessDoc() MetricDoc {
 	return MetricDoc{
-		Name:           metrics.MetricAbstractness,
-		Label:          abbrev(metrics.MetricAbstractness),
+		Name:           string(distance.MetricAbstractness),
+		Label:          abbrev(string(distance.MetricAbstractness)),
 		FullName:       "Abstractness",
 		Scope:          DocScopePackage,
-		Definition:     metrics.DefinitionAbstractness,
+		Definition:     distance.DefinitionAbstractness,
 		FormulaMathML:  formulaAbstractness,
 		FormulaLaTeX:   `A = \frac{N_{\text{interface}}}{N_{\text{named}}}`,
 		Summary:        "The share of a package's named types that are interfaces.",
@@ -44,11 +43,11 @@ func abstractnessDoc() MetricDoc {
 
 func instabilityDoc() MetricDoc {
 	return MetricDoc{
-		Name:           metrics.MetricInstability,
-		Label:          abbrev(metrics.MetricInstability),
+		Name:           string(distance.MetricInstability),
+		Label:          abbrev(string(distance.MetricInstability)),
 		FullName:       "Instability",
 		Scope:          DocScopePackage,
-		Definition:     metrics.DefinitionInstability,
+		Definition:     distance.DefinitionInstability,
 		FormulaMathML:  formulaInstability,
 		FormulaLaTeX:   `I = \frac{C_e}{C_a + C_e}`,
 		Summary:        "How independently a package can change, from its coupling.",
@@ -62,11 +61,11 @@ func instabilityDoc() MetricDoc {
 
 func distanceDoc() MetricDoc {
 	return MetricDoc{
-		Name:           metrics.MetricDistance,
-		Label:          abbrev(metrics.MetricDistance),
+		Name:           string(distance.MetricDistance),
+		Label:          abbrev(string(distance.MetricDistance)),
 		FullName:       "Distance from the Main Sequence",
 		Scope:          DocScopePackage,
-		Definition:     metrics.DefinitionDistance,
+		Definition:     distance.DefinitionDistance,
 		FormulaMathML:  formulaDistance,
 		FormulaLaTeX:   `D = \lvert A + I - 1 \rvert`,
 		Summary:        summaryDistance,
@@ -134,15 +133,15 @@ func FormatValue(value float64) string {
 }
 
 func abbrev(name string) string {
-	if name == metrics.MetricAbstractness {
+	if name == string(distance.MetricAbstractness) {
 		return "A"
 	}
 
-	if name == metrics.MetricInstability {
+	if name == string(distance.MetricInstability) {
 		return "I"
 	}
 
-	if name == metrics.MetricDistance {
+	if name == string(distance.MetricDistance) {
 		return "Dist"
 	}
 
@@ -150,7 +149,7 @@ func abbrev(name string) string {
 }
 
 func qualityFor(name string) (direction string, bounded, ok bool) {
-	if name == metrics.MetricDistance {
+	if name == string(distance.MetricDistance) {
 		return DirectionLower, true, true
 	}
 
@@ -360,9 +359,9 @@ func Text(report *distance.Report, opts *TextOptions) string {
 }
 
 func writeTextHeader(builder *strings.Builder, report *distance.Report, opts *TextOptions) {
-	writeBuilder(builder, report.Tool.Name)
+	writeBuilder(builder, report.ToolName)
 	writeBuilder(builder, spaceSep)
-	writeBuilder(builder, report.Tool.Version)
+	writeBuilder(builder, report.ToolVersion)
 	writeBuilder(builder, schemaLabel)
 	writeBuilder(builder, report.SchemaVersion)
 	writeBuilder(builder, newline)
@@ -598,8 +597,8 @@ func meanPkgCells(summary *treeSummary, pkgCols []string) []tableCell {
 	return cells
 }
 
-func metricsByName(results []metrics.MetricResult) map[string]metrics.MetricResult {
-	byName := make(map[string]metrics.MetricResult, len(results))
+func metricsByName(results []distance.MetricResult) map[string]distance.MetricResult {
+	byName := make(map[string]distance.MetricResult, len(results))
 
 	for i := range results {
 		byName[results[i].Name] = results[i]
@@ -619,7 +618,7 @@ func packageMetricCells(pkg *distance.PackageReport, cols []string) []tableCell 
 	return cells
 }
 
-func metricCell(byName map[string]metrics.MetricResult, name string) tableCell {
+func metricCell(byName map[string]distance.MetricResult, name string) tableCell {
 	result, ok := byName[name]
 
 	switch {
@@ -663,7 +662,7 @@ func metricNamesPresent(report *distance.Report) map[string]bool {
 	return present
 }
 
-func markMetricNames(present map[string]bool, results []metrics.MetricResult) {
+func markMetricNames(present map[string]bool, results []distance.MetricResult) {
 	for i := range results {
 		present[results[i].Name] = true
 	}
@@ -672,9 +671,11 @@ func markMetricNames(present map[string]bool, results []metrics.MetricResult) {
 func filterReportedMetrics(present map[string]bool) []string {
 	var cols []string
 
-	for i := range metrics.ReportedMetricOrder() {
-		if present[metrics.ReportedMetricOrder()[i]] {
-			cols = append(cols, metrics.ReportedMetricOrder()[i])
+	for _, name := range distance.AllMetrics() {
+		key := string(name)
+
+		if present[key] {
+			cols = append(cols, key)
 		}
 	}
 
@@ -791,7 +792,7 @@ func CSVRecords(report *distance.Report) [][]string {
 	return records
 }
 
-func metricCSVRows(pkgPath, typeName string, results []metrics.MetricResult) [][]string {
+func metricCSVRows(pkgPath, typeName string, results []distance.MetricResult) [][]string {
 	rows := make([][]string, zero, len(results))
 
 	for i := range results {
@@ -801,7 +802,7 @@ func metricCSVRows(pkgPath, typeName string, results []metrics.MetricResult) [][
 	return rows
 }
 
-func metricCSVRow(pkgPath, typeName string, result *metrics.MetricResult) []string {
+func metricCSVRow(pkgPath, typeName string, result *distance.MetricResult) []string {
 	value := emptyString
 
 	if result.Applicable {

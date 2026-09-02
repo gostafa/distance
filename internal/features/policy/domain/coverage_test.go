@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/gostafa/distance/distance"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 func TestEvaluateSkipsInapplicablePackageMetric(t *testing.T) {
@@ -16,9 +15,9 @@ func TestEvaluateSkipsInapplicablePackageMetric(t *testing.T) {
 		Module: "example.com",
 		Packages: []distance.PackageReport{{
 			Path: "example.com/p",
-			Metrics: []metrics.MetricResult{{
-				Name:       metrics.MetricDistance,
-				Scope:      metrics.ScopePackage,
+			Metrics: []distance.MetricResult{{
+				Name:       string(distance.MetricDistance),
+				Scope:      distance.ScopePackage,
 				Applicable: false,
 			}},
 		}},

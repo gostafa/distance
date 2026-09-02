@@ -1,7 +1,7 @@
 // Gostafa 2026.
 // SPDX-License-Identifier: Apache-2.0.
 
-package main
+package splitpkg
 
 const (
 	zero = 0
@@ -42,4 +42,6 @@ const (
 	errWrapWriteNewline     = "splitpkg write newline: %w"
 	errWrapFinishCategory   = "splitpkg finishCategoryFile: %w"
 	errWrapWriteString      = "write string: %w"
+
+	errShortWrite = "short write"
 )

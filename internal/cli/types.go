@@ -4,15 +4,16 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"flag"
+	"io"
 	"log/slog"
 	"os"
 
 	"github.com/gostafa/distance/distance"
 	policydomain "github.com/gostafa/distance/internal/features/policy/domain"
 	reportingdomain "github.com/gostafa/distance/internal/features/reporting/domain"
-	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
 )
 
 type (
@@ -70,14 +71,14 @@ type (
 		isTerminal     func() bool
 		createHelpTemp func(string, string) (*os.File, error)
 		closeHelpFile  func(*os.File) error
-		writeDocs      func(outbound.Sink, string) error
+		writeDocs      func(io.WriteCloser, string) error
 		openBrowser    func(string) error
 		startCPU       func(string) (func() error, error)
 		writeHeap      func(string) error
 	}
 
-	sinkFactory struct {
-		path string
+	stdoutSink struct {
+		w *bufio.Writer
 	}
 
 	analyzeArgs struct {

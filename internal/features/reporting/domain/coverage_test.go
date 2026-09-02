@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/gostafa/distance/distance"
-	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 func TestRelPathEdges(t *testing.T) {
@@ -24,7 +23,7 @@ func TestRelPathEdges(t *testing.T) {
 func TestTextEmptyPackages(t *testing.T) {
 	got := Text(&distance.Report{
 		SchemaVersion: "1",
-		Tool:          distance.ToolIdent("distance", "test"),
+		ToolName: "distance", ToolVersion: "test",
 		Module:        "example.com/m",
 	}, &TextOptions{})
 
@@ -36,21 +35,21 @@ func TestTextEmptyPackages(t *testing.T) {
 func TestTextMultiSectionSpacerAndMissingMetrics(t *testing.T) {
 	report := distance.Report{
 		SchemaVersion: "1",
-		Tool:          distance.ToolIdent("distance", "test"),
+		ToolName: "distance", ToolVersion: "test",
 		Module:        "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path: "example.com/m",
-				Metrics: []metrics.MetricResult{
+				Metrics: []distance.MetricResult{
 					{
-						Name:       metrics.MetricAbstractness,
-						Scope:      metrics.ScopePackage,
+						Name:       string(distance.MetricAbstractness),
+						Scope:      distance.ScopePackage,
 						Value:      0.5,
 						Applicable: true,
 					},
 					{
-						Name:       metrics.MetricDistance,
-						Scope:      metrics.ScopePackage,
+						Name:       string(distance.MetricDistance),
+						Scope:      distance.ScopePackage,
 						Value:      0.1,
 						Applicable: true,
 					},
@@ -59,11 +58,11 @@ func TestTextMultiSectionSpacerAndMissingMetrics(t *testing.T) {
 			},
 			{
 				Path: "example.com/m/leaf",
-				Metrics: []metrics.MetricResult{
+				Metrics: []distance.MetricResult{
 					// Missing distance (present elsewhere) → blank trailing cell.
 					{
-						Name:       metrics.MetricAbstractness,
-						Scope:      metrics.ScopePackage,
+						Name:       string(distance.MetricAbstractness),
+						Scope:      distance.ScopePackage,
 						Applicable: false,
 						Reason:     "isolated",
 					},
@@ -91,15 +90,15 @@ func TestTextMultiSectionSpacerAndMissingMetrics(t *testing.T) {
 func TestTextExplainAllTypesAndSkipEmptyNotes(t *testing.T) {
 	report := distance.Report{
 		SchemaVersion: "1",
-		Tool:          distance.ToolIdent("distance", "test"),
+		ToolName: "distance", ToolVersion: "test",
 		Module:        "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path: "example.com/m/quiet",
-				Metrics: []metrics.MetricResult{
+				Metrics: []distance.MetricResult{
 					{
-						Name:       metrics.MetricAbstractness,
-						Scope:      metrics.ScopePackage,
+						Name:       string(distance.MetricAbstractness),
+						Scope:      distance.ScopePackage,
 						Value:      0,
 						Applicable: true,
 					},
@@ -131,21 +130,21 @@ func TestTextTrailingBlankPackageMetric(t *testing.T) {
 	// trailing cell is trimmed when the row is written.
 	report := distance.Report{
 		SchemaVersion: "1",
-		Tool:          distance.ToolIdent("distance", "test"),
+		ToolName: "distance", ToolVersion: "test",
 		Module:        "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path: "example.com/m/a",
-				Metrics: []metrics.MetricResult{
+				Metrics: []distance.MetricResult{
 					{
-						Name:       metrics.MetricAbstractness,
-						Scope:      metrics.ScopePackage,
+						Name:       string(distance.MetricAbstractness),
+						Scope:      distance.ScopePackage,
 						Value:      1,
 						Applicable: true,
 					},
 					{
-						Name:       metrics.MetricDistance,
-						Scope:      metrics.ScopePackage,
+						Name:       string(distance.MetricDistance),
+						Scope:      distance.ScopePackage,
 						Value:      0,
 						Applicable: true,
 					},
@@ -153,10 +152,10 @@ func TestTextTrailingBlankPackageMetric(t *testing.T) {
 			},
 			{
 				Path: "example.com/m/b",
-				Metrics: []metrics.MetricResult{
+				Metrics: []distance.MetricResult{
 					{
-						Name:       metrics.MetricAbstractness,
-						Scope:      metrics.ScopePackage,
+						Name:       string(distance.MetricAbstractness),
+						Scope:      distance.ScopePackage,
 						Value:      0,
 						Applicable: true,
 					},

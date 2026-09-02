@@ -17,7 +17,6 @@ import (
 
 	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	"github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
-	"github.com/gostafa/distance/internal/shared/workerpool"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -270,7 +269,7 @@ func TestExtractAllWorkerError(t *testing.T) {
 	sentinel := errors.New("extract failed")
 	runtime := defaultLoaderRuntime()
 
-	runtime.runExtractWorkers = func(context.Context, workerpool.PoolConfig, func(int) error) error {
+	runtime.runExtractWorkers = func(context.Context, int, int, func(int) error) error {
 		return sentinel
 	}
 
