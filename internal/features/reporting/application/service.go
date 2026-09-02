@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/reporting/domain"
 	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
 	"github.com/gostafa/distance/internal/shared/metrics"
-	"github.com/gostafa/distance/distance"
 )
 
 // jsonMarshal is a seam so tests can force encoding failures.
@@ -95,86 +95,13 @@ type jsonPackage struct {
 	Afferent int `json:"afferent"`
 	// Efferent counts this package's in-scope imports (Ce).
 	Efferent int `json:"efferent"`
-	// Funcs counts the package's declared functions and methods.
-	Funcs int `json:"funcs"`
-	// Vars counts top-level variable names declared in the package.
-	Vars int `json:"vars"`
-	// Consts counts top-level constant names declared in the package.
-	Consts int `json:"consts"`
-	// Variables are top-level variable declarations.
-	Variables []jsonDeclaration `json:"variables"`
-	// Constants are top-level constant declarations.
-	Constants []jsonDeclaration `json:"constants"`
-	// Functions are top-level function declarations, excluding methods.
-	Functions []jsonFunction `json:"functions"`
 	// Metrics maps metric names to results in the fixed order.
 	Metrics orderedMetrics `json:"metrics"`
-	// Types are the package's analyzed types in report order.
-	Types []jsonType `json:"types"`
 }
 
 // String summarizes one package entry for debugging.
 func (p jsonPackage) String() string {
-	return fmt.Sprintf("%s: %d metrics, %d types", p.Path, len(p.Metrics), len(p.Types))
-}
-
-type jsonType struct {
-	// Name is the type's declared name.
-	Name string `json:"name"`
-	// Exported reports whether the type name is exported.
-	Exported bool `json:"exported"`
-	// Kind classifies the type's underlying type.
-	Kind string `json:"kind"`
-	// Position locates the type declaration in source.
-	Position jsonPosition `json:"position"`
-	// Fields is the struct field count (embedded fields count one).
-	Fields int `json:"fields"`
-	// FieldDetails holds the struct fields in declaration order.
-	FieldDetails []jsonField `json:"field_details"`
-	// Methods is the declared method count.
-	Methods int `json:"methods"`
-	// MethodDetails holds the declared methods in report order.
-	MethodDetails []jsonFunction `json:"method_details"`
-}
-
-type jsonPosition struct {
-	// File is the declaration source file.
-	File string `json:"file"`
-	// Line is the 1-based source line.
-	Line int `json:"line"`
-	// Column is the 1-based source column.
-	Column int `json:"column"`
-}
-
-type jsonDeclaration struct {
-	// Name is the declared identifier.
-	Name string `json:"name"`
-	// Exported reports whether the declaration name is exported.
-	Exported bool `json:"exported"`
-	// Position locates the declaration in source.
-	Position jsonPosition `json:"position"`
-}
-
-type jsonField struct {
-	// Name is the field name.
-	Name string `json:"name"`
-	// Exported reports whether the field name is exported.
-	Exported bool `json:"exported"`
-	// Embedded marks an embedded field.
-	Embedded bool `json:"embedded"`
-}
-
-type jsonFunction struct {
-	// Name is the declared function or method name.
-	Name string `json:"name"`
-	// Exported reports whether the function name is exported.
-	Exported bool `json:"exported"`
-	// Receiver is the declaring type name for methods; empty for free funcs.
-	Receiver string `json:"receiver"`
-	// Position locates the declaration in source.
-	Position jsonPosition `json:"position"`
-	// Lines is the inclusive source line count from func keyword to end.
-	Lines int `json:"lines"`
+	return fmt.Sprintf("%s: %d metrics", p.Path, len(p.Metrics))
 }
 
 // jsonMetric serializes one MetricResult. A non-applicable metric carries
@@ -264,69 +191,11 @@ func buildJSONReport(report distance.Report) jsonReport {
 		Packages:      make([]jsonPackage, len(report.Packages)),
 	}
 	for i, pkg := range report.Packages {
-		jp := jsonPackage{
-			Path:      pkg.Path,
-			Afferent:  pkg.Afferent,
-			Efferent:  pkg.Efferent,
-			Funcs:     pkg.ExportedFuncs + pkg.UnexportedFuncs,
-			Vars:      pkg.Vars,
-			Consts:    pkg.Consts,
-			Variables: declarations(pkg.Variables),
-			Constants: declarations(pkg.Constants),
-			Functions: functions(pkg.Functions),
-			Metrics:   orderedMetrics(pkg.Metrics),
-			Types:     make([]jsonType, len(pkg.Types)),
-		}
-		for j, t := range pkg.Types {
-			jp.Types[j] = jsonType{
-				Name:          t.Name,
-				Exported:      t.Exported,
-				Kind:          t.Kind,
-				Position:      position(t.Position),
-				Fields:        t.Fields,
-				FieldDetails:  fields(t.FieldDetails),
-				Methods:       t.Methods,
-				MethodDetails: functions(t.MethodDetails),
-			}
-		}
-
-		out.Packages[i] = jp
-	}
-
-	return out
-}
-
-func position(pos distance.Position) jsonPosition {
-	return jsonPosition{File: pos.File, Line: pos.Line, Column: pos.Column}
-}
-
-func declarations(decls []distance.DeclarationReport) []jsonDeclaration {
-	out := make([]jsonDeclaration, len(decls))
-	for i, d := range decls {
-		out[i] = jsonDeclaration{Name: d.Name, Exported: d.Exported, Position: position(d.Position)}
-	}
-
-	return out
-}
-
-func fields(fieldDetails []distance.FieldReport) []jsonField {
-	out := make([]jsonField, len(fieldDetails))
-	for i, f := range fieldDetails {
-		out[i] = jsonField{Name: f.Name, Exported: f.Exported, Embedded: f.Embedded}
-	}
-
-	return out
-}
-
-func functions(functionDetails []distance.FunctionReport) []jsonFunction {
-	out := make([]jsonFunction, len(functionDetails))
-	for i, fn := range functionDetails {
-		out[i] = jsonFunction{
-			Name:     fn.Name,
-			Exported: fn.Exported,
-			Receiver: fn.Receiver,
-			Position: position(fn.Position),
-			Lines:    fn.Lines,
+		out.Packages[i] = jsonPackage{
+			Path:     pkg.Path,
+			Afferent: pkg.Afferent,
+			Efferent: pkg.Efferent,
+			Metrics:  orderedMetrics(pkg.Metrics),
 		}
 	}
 

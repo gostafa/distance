@@ -28,33 +28,31 @@ func TestWriteWeb(t *testing.T) {
 	for _, want := range []string{
 		`id="report-data"`,
 		`"module":"example.com/m"`,
-		`"schema_version":"1"`,
-		`"functions":[{"name":"Run"`,
-		`"variables":[{"name":"Config"`,
-		`"method_details":[{"name":"Do"`,
+		`"schema_version":"6"`,
+		`"afferent":1`,
+		`"efferent":2`,
+		`"abstractness"`,
+		`"instability"`,
 		`"distance"`,
 		`id="docs-data"`,
 		`"formula_mathml"`,
 		`id="report-table"`,
 		`id="report-head"`,
 		`id="report-body"`,
-		`id="kind-pills"`,
-		`id="export-pills"`,
 		`data-sort`,
 		`aria-sort`,
 		`class: 'help'`,
 		`data-help`,
-		`Cyclomatic complexity for the function`,
 		`summarizeNode`,
 		`aggregateMetricCell`,
 		`meanStat`,
-		`Packages`,
-		`Vars`,
-		`Consts`,
-		`Funcs`,
+		`Package`,
+		`Ca`,
+		`Ce`,
+		`label: 'A'`,
+		`label: 'I'`,
+		`label: 'Dist'`,
 		`All`,
-		`Exported`,
-		`Types`,
 	} {
 		if !strings.Contains(html, want) {
 			t.Errorf("web report is missing %q", want)
@@ -67,8 +65,20 @@ func TestWriteWeb(t *testing.T) {
 		}
 	}
 
-	if strings.Contains(html, `label: 'Position'`) {
-		t.Error("web report still defines a Position column")
+	for _, gone := range []string{
+		`id="kind-pills"`,
+		`id="export-pills"`,
+		`"functions":`,
+		`"variables":`,
+		`"types":`,
+		`Funcs`,
+		`Vars`,
+		`Consts`,
+		`Types`,
+	} {
+		if strings.Contains(html, gone) {
+			t.Errorf("web report still contains removed surface %q", gone)
+		}
 	}
 
 	// Self-containment: nothing on the page may fetch an external resource.
@@ -85,7 +95,7 @@ func TestWriteWebEscapesScriptTerminator(t *testing.T) {
 	t.Parallel()
 
 	rep := report()
-	rep.Packages[0].Types[0].Name = "</script><script>alert(1)</script>"
+	rep.Packages[0].Path = "</script><script>alert(1)</script>"
 
 	sink := bufSink{&bytes.Buffer{}}
 	err := reporting.Write(rep, domain.FormatWeb, sink, domain.TextOptions{})
@@ -98,7 +108,8 @@ func TestWriteWebEscapesScriptTerminator(t *testing.T) {
 		t.Error("payload contains an unescaped script terminator")
 	}
 
-	if !strings.Contains(html, `</script>`) {
+	if !strings.Contains(html, `\u003c/script\u003e`) &&
+		!strings.Contains(html, `\u003c`) {
 		t.Error("angle brackets in the payload are not escaped")
 	}
 }
@@ -110,7 +121,7 @@ func TestWriteWebPayloadCannotSpoofDocsPlaceholder(t *testing.T) {
 	t.Parallel()
 
 	rep := report()
-	rep.Packages[0].Types[0].Name = "__DOCS_DATA__"
+	rep.Packages[0].Path = "__DOCS_DATA__"
 
 	sink := bufSink{&bytes.Buffer{}}
 	err := reporting.Write(rep, domain.FormatWeb, sink, domain.TextOptions{})
@@ -123,12 +134,10 @@ func TestWriteWebPayloadCannotSpoofDocsPlaceholder(t *testing.T) {
 		t.Errorf("docs-data script elements = %d, want 1", got)
 	}
 
-	// The hostile name survives as literal report data...
-	if !strings.Contains(html, `"name":"__DOCS_DATA__"`) {
-		t.Error("hostile type name is missing from the report payload")
+	if !strings.Contains(html, `"path":"__DOCS_DATA__"`) {
+		t.Error("hostile package path is missing from the report payload")
 	}
 
-	// ...while the docs script still carries the genuine guide payload.
 	if !strings.Contains(html, `"formula_mathml"`) {
 		t.Error("docs payload was not injected")
 	}

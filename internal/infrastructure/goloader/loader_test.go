@@ -71,16 +71,3 @@ func TestMainModulePath(t *testing.T) {
 		t.Errorf("got %q, want empty", got)
 	}
 }
-
-// White-box: base dir is always absolutized.
-func TestResolveBaseDir(t *testing.T) {
-	t.Parallel()
-
-	if got := resolveBaseDir(""); !filepath.IsAbs(got) {
-		t.Errorf("empty → cwd abs, got %q", got)
-	}
-
-	if got := resolveBaseDir("relative/path"); !filepath.IsAbs(got) {
-		t.Errorf("relative → abs, got %q", got)
-	}
-}

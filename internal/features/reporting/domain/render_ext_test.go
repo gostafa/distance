@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gostafa/distance/distance"
 	reporting "github.com/gostafa/distance/internal/features/reporting/domain"
 	"github.com/gostafa/distance/internal/shared/metrics"
-	"github.com/gostafa/distance/distance"
 )
 
 // Black-box: format parsing accepts the known encodings and rejects others.
@@ -44,13 +44,12 @@ func TestTextAndCSVRendering(t *testing.T) {
 						Applicable: true,
 					},
 				},
-				Types: []distance.TypeReport{{Name: "A"}},
 			},
 		},
 	}
 
 	text := reporting.Text(rep, reporting.TextOptions{})
-	if !strings.Contains(text, "example.com/m") || !strings.Contains(text, "A") {
+	if !strings.Contains(text, "example.com/m") || !strings.Contains(text, "a") {
 		t.Errorf("text output missing content:\n%s", text)
 	}
 

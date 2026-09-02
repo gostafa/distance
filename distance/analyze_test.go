@@ -64,20 +64,6 @@ func findPackage(t *testing.T, report distance.Report, path string) distance.Pac
 	return distance.PackageReport{}
 }
 
-func findType(t *testing.T, pkg distance.PackageReport, name string) distance.TypeReport {
-	t.Helper()
-
-	for _, typ := range pkg.Types {
-		if typ.Name == name {
-			return typ
-		}
-	}
-
-	t.Fatalf("type %s not in package %s", name, pkg.Path)
-
-	return distance.TypeReport{}
-}
-
 func metric(
 	t *testing.T,
 	results []distance.MetricResult,
@@ -150,57 +136,25 @@ func TestAnalyzeFixtureOrdering(t *testing.T) {
 	}
 }
 
-func TestAnalyzeOrderType(t *testing.T) {
-	report := analyzeFixture(t, nil)
-	order := findType(t, findPackage(t, report, "example.com/fixture/orders"), "Order")
-
-	if order.Kind != "struct" || !order.Exported || order.Position.File != "orders/orders.go" {
-		t.Fatalf("order type details = %+v", order)
-	}
-	if len(order.FieldDetails) != 3 || order.FieldDetails[0].Name != "ID" {
-		t.Fatalf("order field details = %+v", order.FieldDetails)
-	}
-	if len(order.MethodDetails) != 3 {
-		t.Fatalf("order method details = %+v", order.MethodDetails)
-	}
-	grandTotal := findFunctionReport(t, order.MethodDetails, "GrandTotal")
-	if grandTotal.Receiver != "Order" || grandTotal.Lines != 6 {
-		t.Fatalf("GrandTotal details = %+v", grandTotal)
-	}
-}
-
-func findFunctionReport(t *testing.T, functions []distance.FunctionReport, name string) distance.FunctionReport {
-	t.Helper()
-
-	for _, fn := range functions {
-		if fn.Name == name {
-			return fn
-		}
-	}
-
-	t.Fatalf("function %s not found in %+v", name, functions)
-
-	return distance.FunctionReport{}
-}
-
 func TestAnalyzePackageMetrics(t *testing.T) {
 	report := analyzeFixture(t, nil)
 
 	store := findPackage(t, report, "example.com/fixture/store")
+	wantValue(t, store.Metrics, "abstractness", 1)
+	wantValue(t, store.Metrics, "instability", 0)
 	wantValue(t, store.Metrics, "distance", 0)
-	if len(store.Metrics) != 1 || store.Metrics[0].Name != "distance" {
-		t.Fatalf("store metrics = %v, want distance only", store.Metrics)
+	if len(store.Metrics) != 3 {
+		t.Fatalf("store metrics = %v, want abstractness, instability, distance", store.Metrics)
 	}
 
 	orders := findPackage(t, report, "example.com/fixture/orders")
-	if orders.Vars != 0 || orders.Consts != 0 {
-		t.Fatalf("orders counts = vars %d consts %d, want 0 and 0", orders.Vars, orders.Consts)
-	}
 	wantValue(t, orders.Metrics, "distance", 0)
 
 	// An isolated package (Ca = Ce = 0) is defined as maximally stable:
 	// instability 0, so distance = |0 + 0 − 1| = 1.
 	isolated := findPackage(t, report, "example.com/fixture/isolated")
+	wantValue(t, isolated.Metrics, "abstractness", 0)
+	wantValue(t, isolated.Metrics, "instability", 0)
 	wantValue(t, isolated.Metrics, "distance", 1)
 }
 
@@ -208,13 +162,14 @@ func TestAnalyzeGeneratedFiles(t *testing.T) {
 	report := analyzeFixture(t, nil)
 
 	gen := findPackage(t, report, "example.com/fixture/gen")
-	if len(gen.Types) != 0 {
-		t.Fatalf("generated types analyzed by default: %v", gen.Types)
-	}
+	// Generated-only packages declare no analyzed types, so abstractness
+	// (and therefore distance) is not applicable by default.
+	wantNotApplicable(t, gen.Metrics, "abstractness")
+	wantNotApplicable(t, gen.Metrics, "distance")
 
 	report = analyzeFixture(t, func(cfg *distance.Config) { cfg.IncludeGenerated = true })
 	gen = findPackage(t, report, "example.com/fixture/gen")
-	_ = findType(t, gen, "Machine")
+	wantValue(t, gen.Metrics, "distance", 1)
 }
 
 func TestAnalyzeDeterminism(t *testing.T) {

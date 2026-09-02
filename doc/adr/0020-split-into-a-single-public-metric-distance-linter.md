@@ -4,7 +4,9 @@ Date: 2026-09-02
 
 ## Status
 
-Accepted
+Superseded in part by [ADR 0022](0022-report-abstractness-and-instability.md):
+abstractness and instability are now reported. They remain not selectable or
+gateable.
 
 ## Context
 

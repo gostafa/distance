@@ -23,3 +23,5 @@ Decision log for modularity, managed with `task adrs:*`
 * [18. Enforce a modularity policy gate](0018-enforce-a-modularity-policy-gate.md)
 * [19. Dual-mode: CLI library and golangci-lint Module Plugin](0019-dual-mode-cli-and-golangci-module-plugin.md)
 * [20. Split into a single-public-metric distance linter](0020-split-into-a-single-public-metric-distance-linter.md)
+* [21. Pattern list is the only policy; size counts are gone](0021-pattern-list-is-the-only-policy.md)
+* [22. Report abstractness and instability alongside distance](0022-report-abstractness-and-instability.md)

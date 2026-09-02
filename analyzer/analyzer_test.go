@@ -36,12 +36,13 @@ func TestNewAcceptsDefaults(t *testing.T) {
 
 func TestRunnerLoadGroupsViolations(t *testing.T) {
 	fixtureDir := filepath.Join(repoRoot(t), "testdata", "fixture")
-	methods := maximum(0)
 
 	r := newRunner(Settings{
 		Directory: fixtureDir,
-		Patterns:  []string{"./isolated"},
-		Type:      &TypeSettings{Methods: &methods},
+		Packages: []policydomain.PackageRule{{
+			Pattern:     "./isolated",
+			MaxDistance: 0,
+		}},
 	}.withDefaults())
 
 	r.load()
@@ -51,23 +52,14 @@ func TestRunnerLoadGroupsViolations(t *testing.T) {
 
 	got := r.byPkg["example.com/fixture/isolated"]
 	if len(got) == 0 {
-		t.Fatal("expected violations for isolated with methods max: 0")
+		t.Fatal("expected distance violations for isolated with max-distance 0")
 	}
 
-	foundMethods := false
 	for _, v := range got {
-		if v.Key == policydomain.KeyMethods && v.Type == "Value" {
-			foundMethods = true
+		if v.Key != "distance" {
+			t.Fatalf("unexpected key %q in %#v", v.Key, got)
 		}
 	}
-
-	if !foundMethods {
-		t.Fatalf("expected methods violation on Value, got %#v", got)
-	}
-}
-
-func maximum(value float64) LimitSettings {
-	return LimitSettings{Max: &value}
 }
 
 func TestFormatViolation(t *testing.T) {
@@ -75,30 +67,24 @@ func TestFormatViolation(t *testing.T) {
 
 	msg := formatViolation(policydomain.Violation{
 		Package:    "example.com/p",
-		Type:       "T",
-		Key:        "methods",
-		Value:      3,
+		Key:        "distance",
+		Value:      0.9,
 		Comparator: policydomain.ComparatorMax,
-		Threshold:  0,
+		Threshold:  0.5,
 	})
 
-	want := "example.com/p.T (type): methods 3 exceeds max 0"
+	want := "example.com/p (package): distance 0.90 exceeds max 0.50"
 	if msg != want {
 		t.Fatalf("formatViolation = %q, want %q", msg, want)
 	}
 }
 
-func TestTypePosAndPackagePos(t *testing.T) {
+func TestPackagePos(t *testing.T) {
 	t.Parallel()
 
 	src := `package p
 
-const C = 1
-var V int
-func helper() {}
-func Exported() {}
 type Widget struct{}
-func (Widget) Do() {}
 `
 	fset := token.NewFileSet()
 
@@ -109,75 +95,9 @@ func (Widget) Do() {}
 
 	pass := &analysis.Pass{Files: []*ast.File{file}, Fset: fset}
 
-	if pos := typePos(pass, "Widget"); pos == token.NoPos {
-		t.Fatal("typePos(Widget) = NoPos")
-	}
-
-	if pos := typePos(pass, "Missing"); pos != file.Package {
-		t.Fatalf("typePos(Missing) = %v, want package clause", pos)
-	}
-
 	if pos := packagePos(pass); pos != file.Package {
 		t.Fatalf("packagePos = %v, want %v", pos, file.Package)
 	}
-
-	positionCases := map[string]string{
-		policydomain.KeyFuncs:           "helper",
-		policydomain.KeyExportedFuncs:   "Exported",
-		policydomain.KeyUnexportedFuncs: "helper",
-		policydomain.KeyVars:            "V",
-		policydomain.KeyConsts:          "C",
-	}
-	for key, ident := range positionCases {
-		want := identPos(t, file, ident)
-		if pos := structuralPos(pass, key); pos != want {
-			t.Fatalf("structuralPos(%q) = %v, want %v", key, pos, want)
-		}
-	}
-
-	for _, tc := range []struct {
-		receiver string
-		name     string
-	}{
-		{"", "helper"},
-		{"Widget", "Do"},
-	} {
-		want := identPos(t, file, tc.name)
-		if pos := exactFuncPos(pass, tc.receiver, tc.name); pos != want {
-			t.Fatalf("exactFuncPos(%q, %q) = %v, want %v",
-				tc.receiver,
-				tc.name,
-				pos,
-				want,
-			)
-		}
-	}
-}
-
-func identPos(t *testing.T, file *ast.File, name string) token.Pos {
-	t.Helper()
-
-	var pos token.Pos
-	ast.Inspect(file, func(n ast.Node) bool {
-		if pos != token.NoPos {
-			return false
-		}
-
-		ident, ok := n.(*ast.Ident)
-		if !ok || ident.Name != name {
-			return true
-		}
-
-		pos = ident.Pos()
-
-		return false
-	})
-
-	if pos == token.NoPos {
-		t.Fatalf("identifier %q not found", name)
-	}
-
-	return pos
 }
 
 func repoRoot(t *testing.T) string {

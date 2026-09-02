@@ -39,10 +39,9 @@ func (s *Service) Collect(
 	return Assemble(modulePath, extracts), nil
 }
 
-// Assemble sorts the extracts, assigns dense numeric IDs, and resolves
-// referenced-type keys to type IDs. Ordering is fully deterministic:
-// packages by import path, types by (package path, name); field and method
-// order is preserved from the extraction contract.
+// Assemble sorts the extracts, assigns dense numeric IDs, and builds the
+// project fact set. Ordering is fully deterministic: packages by import
+// path, types by (package path, name).
 func Assemble(modulePath string, extracts []domain.PackageExtract) domain.ProjectFacts {
 	sort.Slice(extracts, func(i, j int) bool { return extracts[i].Path < extracts[j].Path })
 
@@ -62,36 +61,17 @@ func Assemble(modulePath string, extracts []domain.PackageExtract) domain.Projec
 		Types:      make([]domain.TypeFacts, 0, totalTypes),
 	}
 
-	idByKey := make(map[string]int, totalTypes)
-	nextID := 0
-
-	for _, extract := range extracts {
-		for _, t := range extract.Types {
-			idByKey[domain.TypeKey(extract.Path, t.Name)] = nextID
-			nextID++
-		}
-	}
-
 	typeID := 0
 
 	for pkgID, extract := range extracts {
 		pkg := domain.PackageFacts{
-			ID:                  pkgID,
-			Path:                extract.Path,
-			InModule:            extract.InModule,
-			Imports:             sortedUnique(extract.Imports, extract.Path),
-			ExportedFuncCount:   extract.ExportedFuncCount,
-			UnexportedFuncCount: extract.UnexportedFuncCount,
-			VarCount:            extract.VarCount,
-			ConstCount:          extract.ConstCount,
-			Variables:           append([]domain.DeclarationFacts(nil), extract.Variables...),
-			Constants:           append([]domain.DeclarationFacts(nil), extract.Constants...),
-			Functions:           append([]domain.FunctionFacts(nil), extract.Functions...),
-			TypeIDs:             make([]int, 0, len(extract.Types)),
+			ID:       pkgID,
+			Path:     extract.Path,
+			InModule: extract.InModule,
+			Imports:  sortedUnique(extract.Imports, extract.Path),
+			TypeIDs:  make([]int, 0, len(extract.Types)),
 		}
 		for _, t := range extract.Types {
-			// IDs were assigned in this same iteration order above, so a
-			// running counter matches idByKey without recomputing the key.
 			id := typeID
 			typeID++
 
@@ -100,11 +80,7 @@ func Assemble(modulePath string, extracts []domain.PackageExtract) domain.Projec
 				ID:        id,
 				PackageID: pkgID,
 				Name:      t.Name,
-				Exported:  t.Exported,
 				Kind:      t.Kind,
-				Pos:       t.Pos,
-				Fields:    t.Fields,
-				Methods:   t.Methods,
 			})
 		}
 
@@ -112,18 +88,6 @@ func Assemble(modulePath string, extracts []domain.PackageExtract) domain.Projec
 	}
 
 	return facts
-}
-
-
-func uniqueInts(sorted []int) []int {
-	out := sorted[:0]
-	for i, v := range sorted {
-		if i == 0 || v != sorted[i-1] {
-			out = append(out, v)
-		}
-	}
-
-	return out
 }
 
 // sortedUnique sorts and deduplicates import paths and removes self-imports.

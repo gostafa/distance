@@ -4,71 +4,56 @@ import (
 	"math"
 	"testing"
 
-	"github.com/gostafa/distance/internal/shared/metrics"
 	"github.com/gostafa/distance/distance"
+	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 func TestEvaluateSkipsInapplicablePackageMetric(t *testing.T) {
-	report := distance.Report{Packages: []distance.PackageReport{{
-		Path: "example.com/p",
-		Metrics: []metrics.MetricResult{{
-			Name:       metrics.MetricDistance,
-			Scope:      metrics.ScopePackage,
-			Applicable: false,
+	report := distance.Report{
+		Module: "example.com",
+		Packages: []distance.PackageReport{{
+			Path: "example.com/p",
+			Metrics: []metrics.MetricResult{{
+				Name:       metrics.MetricDistance,
+				Scope:      metrics.ScopePackage,
+				Applicable: false,
+			}},
 		}},
+	}
+	policy := Policy{Packages: []PackageRule{{
+		Pattern:     "./...",
+		MaxDistance: 0,
 	}}}
-	policy := Policy{PackageMetrics: map[string]Limit{
-		metrics.MetricDistance: {Max: 0, HasMax: true},
-	}}
 
 	if got := Evaluate(report, policy); len(got) != 0 {
 		t.Fatalf("Evaluate() = %#v, want no violations", got)
 	}
 }
 
-func TestValidateRejectsNonFiniteStructuralBounds(t *testing.T) {
+func TestValidateRejectsBadRules(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		policy Policy
 	}{
-		{"nan max", Policy{Package: PackageLimits{Types: Limit{Max: math.NaN(), HasMax: true}}}},
-		{"inf min", Policy{Type: TypeLimits{Fields: Limit{Min: math.Inf(1), HasMin: true}}}},
+		{"empty pattern", Policy{Packages: []PackageRule{{Pattern: "", MaxDistance: 0.5}}}},
+		{"nan max", Policy{Packages: []PackageRule{{Pattern: "./...", MaxDistance: math.NaN()}}}},
+		{"inf max", Policy{Packages: []PackageRule{{Pattern: "./...", MaxDistance: math.Inf(1)}}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if err := Validate(tc.policy); err == nil {
-				t.Fatal("Validate succeeded, want non-finite error")
+				t.Fatal("Validate succeeded, want error")
 			}
 		})
 	}
 }
 
-func TestApplyOverrideStructuralKeysAndMin(t *testing.T) {
-	var policy Policy
-	for _, key := range []string{
-		KeyTypes, KeyFuncs, KeyExportedFuncs, KeyUnexportedFuncs, KeyVars, KeyConsts, KeyAfferent, KeyEfferent, KeyFields, KeyMethods,
-	} {
-		if err := ApplyOverride(&policy, key, ComparatorMin, 1); err != nil {
-			t.Fatalf("ApplyOverride(%q, min) = %v", key, err)
-		}
+func TestValidateAcceptsDefault(t *testing.T) {
+	policy, err := PolicyFromPatterns(nil, DefaultMaxDistance)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	if !policy.Package.Types.HasMin || policy.Package.Types.Min != 1 {
-		t.Fatalf("types min = %+v", policy.Package.Types)
-	}
-	if !policy.Package.Funcs.Count.HasMin || policy.Package.Funcs.Count.Min != 1 {
-		t.Fatalf("funcs min = %+v", policy.Package.Funcs)
-	}
-	if !policy.Type.Methods.HasMin || policy.Type.Methods.Min != 1 {
-		t.Fatalf("methods min = %+v", policy.Type.Methods)
-	}
-}
-
-func TestApplyOverrideUnknownScopedMetrics(t *testing.T) {
-	var policy Policy
-	if err := ApplyOverride(&policy, "package.nope", ComparatorMax, 1); err == nil {
-		t.Fatal("unknown package metric succeeded")
-	}
-	if err := ApplyOverride(&policy, "type.nope", ComparatorMax, 1); err == nil {
-		t.Fatal("unknown type metric succeeded")
+	if err := Validate(policy); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -14,11 +14,10 @@ func TestPackageResultString(t *testing.T) {
 	pr := PackageResult{
 		Path:    "example.com/m/p",
 		Metrics: make([]metrics.MetricResult, 2),
-		Types:   make([]TypeResult, 1),
 	}
 
 	s := pr.String()
-	for _, want := range []string{"example.com/m/p", "2 package metrics", "1 types"} {
+	for _, want := range []string{"example.com/m/p", "2 package metrics"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("String()=%q missing %q", s, want)
 		}

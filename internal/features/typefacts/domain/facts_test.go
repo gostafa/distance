@@ -5,15 +5,6 @@ import (
 	"testing"
 )
 
-// White-box: the canonical cross-package key.
-func TestTypeKey(t *testing.T) {
-	t.Parallel()
-
-	if got := TypeKey("example.com/m/pkg", "Widget"); got != "example.com/m/pkg.Widget" {
-		t.Fatalf("TypeKey = %q", got)
-	}
-}
-
 // White-box: the debug Stringers stay informative and panic-free.
 func TestStringers(t *testing.T) {
 	t.Parallel()
@@ -30,11 +21,6 @@ func TestStringers(t *testing.T) {
 	tf := &TypeFacts{Name: "W", Kind: KindInterface}
 	if s := tf.String(); !strings.Contains(s, `"W"`) {
 		t.Errorf("TypeFacts.String = %q", s)
-	}
-
-	mf := &MethodFacts{Name: "Do"}
-	if s := mf.String(); !strings.Contains(s, `"Do"`) {
-		t.Errorf("MethodFacts.String = %q", s)
 	}
 
 	te := &TypeExtract{Name: "E"}

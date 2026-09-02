@@ -6,8 +6,8 @@ import (
 	"go/token"
 	"sync"
 
-	policydomain "github.com/gostafa/distance/internal/features/policy/domain"
 	"github.com/gostafa/distance/distance"
+	policydomain "github.com/gostafa/distance/internal/features/policy/domain"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -17,9 +17,9 @@ const Name = "distance"
 // Doc is the short documentation shown by go/analysis tooling.
 const Doc = `enforce Go package-distance policy thresholds
 
-Reports policy violations for distance from the main sequence
-(|A + I − 1|) and structural budgets. Policy thresholds are configured
-inline in the golangci-lint settings block.`
+Reports policy violations when a package's distance from the main
+sequence (|A + I − 1|) exceeds the first matching packages[] rule.
+Configure rules inline in the golangci-lint settings block.`
 
 // New returns a go/analysis Analyzer that loads the module once, evaluates the
 // distance policy, and emits diagnostics for the package under analysis.
@@ -130,14 +130,6 @@ func groupByPackage(violations []policydomain.Violation) map[string][]policydoma
 	return byPkg
 }
 
-func violationPos(pass *analysis.Pass, v policydomain.Violation) token.Pos {
-	if v.Function != "" {
-		return exactFuncPos(pass, v.Type, v.Function)
-	}
-
-	if v.Type != "" {
-		return typePos(pass, v.Type)
-	}
-
-	return structuralPos(pass, v.Key)
+func violationPos(pass *analysis.Pass, _ policydomain.Violation) token.Pos {
+	return packagePos(pass)
 }

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/reporting/domain"
 	"github.com/gostafa/distance/internal/shared/metrics"
-	"github.com/gostafa/distance/distance"
 )
 
 func sampleReport() distance.Report {
@@ -25,11 +25,10 @@ func sampleReport() distance.Report {
 		Tool:          distance.ToolInfo{Name: "distance", Version: "test"},
 		Module:        "example.com/m",
 		Packages: []distance.PackageReport{{
-			Path:    "example.com/m/a",
-			Vars:    2,
-			Consts:  3,
-			Metrics: []metrics.MetricResult{applicable},
-			Types:   []distance.TypeReport{{Name: "A"}},
+			Path:     "example.com/m/a",
+			Afferent: 1,
+			Efferent: 2,
+			Metrics:  []metrics.MetricResult{applicable},
 		}},
 	}
 }
@@ -56,8 +55,8 @@ func TestRenderJSONContract(t *testing.T) {
 	}
 
 	pkg := got["packages"].([]any)[0].(map[string]any)
-	if pkg["vars"].(float64) != 2 || pkg["consts"].(float64) != 3 {
-		t.Errorf("package counts = vars %v consts %v, want 2 and 3", pkg["vars"], pkg["consts"])
+	if pkg["afferent"].(float64) != 1 || pkg["efferent"].(float64) != 2 {
+		t.Errorf("package coupling = ca %v ce %v, want 1 and 2", pkg["afferent"], pkg["efferent"])
 	}
 
 	dist := pkg["metrics"].(map[string]any)["distance"].(map[string]any)
@@ -71,15 +70,15 @@ func TestEncodeOrderedMetricsPreservesOrder(t *testing.T) {
 	t.Parallel()
 
 	got, err := encodeOrderedMetrics([]metrics.MetricResult{
-		{Name: "amc", Scope: metrics.ScopeType, Value: 1, Applicable: true, Definition: "d"},
-		{Name: "tcc", Scope: metrics.ScopeType, Applicable: false, Reason: "x", Definition: "d"},
+		{Name: metrics.MetricAbstractness, Scope: metrics.ScopePackage, Value: 1, Applicable: true, Definition: "d"},
+		{Name: metrics.MetricDistance, Scope: metrics.ScopePackage, Applicable: false, Reason: "x", Definition: "d"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	s := string(got)
-	if !strings.HasPrefix(s, `{"amc":`) || strings.Index(s, "amc") > strings.Index(s, "tcc") {
+	if !strings.HasPrefix(s, `{"abstractness":`) || strings.Index(s, "abstractness") > strings.Index(s, "distance") {
 		t.Errorf("order not preserved: %s", s)
 	}
 }

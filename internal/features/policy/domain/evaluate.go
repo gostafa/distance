@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gostafa/distance/distance"
+	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 // Comparator identifies which bound a violation crossed.
@@ -19,183 +20,48 @@ const (
 	ComparatorMin Comparator = "min"
 )
 
-// Violation is one broken condition: a field's actual value against the bound
-// it crossed. Type is empty for package-scope conditions.
+// Violation is one broken condition: a package's actual distance against
+// the maximum it crossed.
 type Violation struct {
 	Package    string     // package import path
-	Type       string     // type name; empty for package-scope conditions
-	Function   string     // function or method name; empty for package/type conditions
-	Key        string     // condition key: structural key or metric name
-	Value      float64    // the entity's actual value
+	Key        string     // condition key: always the distance metric
+	Value      float64    // the package's actual distance
 	Comparator Comparator // which bound was crossed
 	Threshold  float64    // the bound's value
 }
 
-// Evaluate checks a report against a policy and returns the violations. The
-// result is deterministic: packages are already sorted by path and types by
-// name, structural conditions precede metric conditions, and metrics keep the
-// report's fixed order. A metric condition is skipped for any entity where the
-// metric is not applicable, so n/a cells never produce false positives.
+// Evaluate checks a report against a policy and returns the violations.
+// The first matching rule in list order wins. Packages that match no rule
+// are not gated. A metric condition is skipped when distance is not
+// applicable, so n/a cells never produce false positives.
 func Evaluate(report distance.Report, policy Policy) []Violation {
 	var violations []Violation
 
 	for i := range report.Packages {
 		pkg := &report.Packages[i]
-
-		check(&violations, pkg.Path, "", KeyTypes, float64(len(pkg.Types)), policy.Package.Types)
-		check(
-			&violations,
-			pkg.Path,
-			"",
-			KeyFuncs,
-			float64(pkg.ExportedFuncs+pkg.UnexportedFuncs),
-			policy.Package.Funcs.Count,
-		)
-		check(
-			&violations,
-			pkg.Path,
-			"",
-			KeyExportedFuncs,
-			float64(pkg.ExportedFuncs),
-			policy.Package.ExportedFuncs,
-		)
-		check(
-			&violations,
-			pkg.Path,
-			"",
-			KeyUnexportedFuncs,
-			float64(pkg.UnexportedFuncs),
-			policy.Package.UnexportedFuncs,
-		)
-		check(
-			&violations,
-			pkg.Path,
-			"",
-			KeyVars,
-			float64(pkg.Vars),
-			policy.Package.Vars,
-		)
-		check(
-			&violations,
-			pkg.Path,
-			"",
-			KeyConsts,
-			float64(pkg.Consts),
-			policy.Package.Consts,
-		)
-		check(
-			&violations,
-			pkg.Path,
-			"",
-			KeyAfferent,
-			float64(pkg.Afferent),
-			policy.Package.Afferent,
-		)
-		check(
-			&violations,
-			pkg.Path,
-			"",
-			KeyEfferent,
-			float64(pkg.Efferent),
-			policy.Package.Efferent,
-		)
-
-		for _, fn := range pkg.Functions {
-			checkFunc(&violations, pkg.Path, "", fn, packageFuncLimits(policy))
+		rule, ok := matchingRule(policy.Packages, pkg.Path, report.Module)
+		if !ok {
+			continue
 		}
 
 		for _, result := range pkg.Metrics {
-			if !result.Applicable {
+			if result.Name != metrics.MetricDistance || !result.Applicable {
 				continue
 			}
 
-			if limit, ok := packageMetricLimit(policy, result.Name); ok {
-				check(&violations, pkg.Path, "", result.Name, result.Value, limit)
-			}
-		}
-
-		for j := range pkg.Types {
-			typ := &pkg.Types[j]
-
-			check(
-				&violations,
-				pkg.Path,
-				typ.Name,
-				KeyFields,
-				float64(typ.Fields),
-				policy.Type.Fields,
-			)
-			check(
-				&violations,
-				pkg.Path,
-				typ.Name,
-				KeyMethods,
-				float64(typ.Methods),
-				policy.Type.Methods,
-			)
-			for _, fn := range typ.MethodDetails {
-				checkFunc(&violations, pkg.Path, typ.Name, fn, policy.Funcs)
+			if result.Value-rule.MaxDistance > comparisonTolerance(result.Value, rule.MaxDistance) {
+				violations = append(violations, Violation{
+					Package:    pkg.Path,
+					Key:        result.Name,
+					Value:      result.Value,
+					Comparator: ComparatorMax,
+					Threshold:  rule.MaxDistance,
+				})
 			}
 		}
 	}
 
 	return violations
-}
-
-func packageFuncLimits(policy Policy) FuncLimits {
-	limits := policy.Funcs
-	if hasBounds(policy.Package.Funcs.Lines) {
-		limits.Lines = policy.Package.Funcs.Lines
-	}
-
-	return limits
-}
-
-// check appends a violation for each bound the value crosses.
-func check(violations *[]Violation, pkg, typ, key string, value float64, limit Limit) {
-	if limit.HasMax && value-limit.Max > comparisonTolerance(value, limit.Max) {
-		*violations = append(*violations, Violation{
-			Package: pkg, Type: typ, Key: key, Value: value,
-			Comparator: ComparatorMax, Threshold: limit.Max,
-		})
-	}
-
-	if limit.HasMin && limit.Min-value > comparisonTolerance(value, limit.Min) {
-		*violations = append(*violations, Violation{
-			Package: pkg, Type: typ, Key: key, Value: value,
-			Comparator: ComparatorMin, Threshold: limit.Min,
-		})
-	}
-}
-
-func checkFunc(
-	violations *[]Violation,
-	pkg, typ string,
-	fn distance.FunctionReport,
-	limits FuncLimits,
-) {
-	checkFunctionField(
-		violations,
-		pkg,
-		typ,
-		fn.Name,
-		KeyFuncLines,
-		float64(fn.Lines),
-		limits.Lines,
-	)
-}
-
-func checkFunctionField(
-	violations *[]Violation,
-	pkg, typ, fn, key string,
-	value float64,
-	limit Limit,
-) {
-	before := len(*violations)
-	check(violations, pkg, typ, key, value, limit)
-	for i := before; i < len(*violations); i++ {
-		(*violations)[i].Function = fn
-	}
 }
 
 // comparisonTolerance absorbs floating-point representation noise at a policy
@@ -221,22 +87,8 @@ func FormatViolations(violations []Violation) string {
 	fmt.Fprintf(&b, "policy: %d %s\n", len(violations), noun)
 
 	for _, v := range violations {
-		where := v.Package + " (package)"
-		if v.Function != "" && v.Type != "" {
-			where = v.Package + "." + v.Type + "." + v.Function + " (func)"
-		} else if v.Function != "" {
-			where = v.Package + "." + v.Function + " (func)"
-		} else if v.Type != "" {
-			where = v.Package + "." + v.Type + " (type)"
-		}
-
-		relation := "exceeds max"
-		if v.Comparator == ComparatorMin {
-			relation = "is below min"
-		}
-
-		fmt.Fprintf(&b, "  %s: %s %s %s %s\n",
-			where, v.Key, formatNumber(v.Value), relation, formatNumber(v.Threshold))
+		fmt.Fprintf(&b, "  %s (package): %s %s exceeds max %s\n",
+			v.Package, v.Key, formatNumber(v.Value), formatNumber(v.Threshold))
 	}
 
 	return b.String()

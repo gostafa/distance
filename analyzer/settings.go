@@ -5,18 +5,20 @@ import (
 	"fmt"
 
 	"github.com/gostafa/distance/distance"
+	policydomain "github.com/gostafa/distance/internal/features/policy/domain"
 )
 
 // Settings configures the distance policy analyzer. Analysis fields map to
-// the distance.Config facade. Policy fields use the same package min/max
-// shape as CLI thresholds, but are decoded directly from golangci-lint's
-// linters.settings.custom.distance.settings block.
+// the distance.Config facade. Policy is a list of package-path patterns,
+// each with a maximum distance. Empty Packages selects the recommended
+// default: [{pattern: "./...", max-distance: 0.5}].
 type Settings struct {
 	// Directory is the working directory for package loading. Empty means the
 	// process working directory.
 	Directory string `json:"directory"`
-	// Patterns are the package patterns to analyze. Empty means ["./..."].
-	Patterns []string `json:"patterns"`
+	// Packages are first-match policy rules. Load patterns are the union of
+	// the rule Pattern fields.
+	Packages []policydomain.PackageRule `json:"packages"`
 	// Tests includes test files and test packages.
 	Tests bool `json:"tests"`
 	// Generated includes files with the standard generated-code marker.
@@ -29,22 +31,14 @@ type Settings struct {
 	ContinueOnError bool `json:"continue-on-error"`
 	// BuildTags are extra build tags for package loading.
 	BuildTags []string `json:"build-tags"`
-	// Package configures package-level structural and metric limits. Nil,
-	// together with nil Type, Funcs, and Metrics, selects the recommended
-	// defaults.
-	Package *PackageSettings `json:"package"`
-	// Type configures type-level structural limits.
-	Type *TypeSettings `json:"type"`
-	// Funcs configures function and method detail limits.
-	Funcs *FuncSettings `json:"funcs"`
-	// Metrics configures legacy/global metric limits. Prefer the scoped metric
-	// maps under Package for new configurations.
-	Metrics map[string]LimitSettings `json:"metrics"`
 }
 
 func (s Settings) withDefaults() Settings {
-	if len(s.Patterns) == 0 {
-		s.Patterns = []string{"./..."}
+	if len(s.Packages) == 0 {
+		s.Packages = []policydomain.PackageRule{{
+			Pattern:     "./...",
+			MaxDistance: policydomain.DefaultMaxDistance,
+		}}
 	}
 
 	s.DependencyScope = cmp.Or(s.DependencyScope, string(distance.DependencyScopeModule))
@@ -79,7 +73,7 @@ func validateDependencyScope(value string) error {
 func (s Settings) toConfig() distance.Config {
 	return distance.Config{
 		Directory:        s.Directory,
-		Patterns:         append([]string(nil), s.Patterns...),
+		Patterns:         policydomain.LoadPatterns(s.Packages),
 		IncludeTests:     s.Tests,
 		IncludeGenerated: s.Generated,
 		BuildTags:        append([]string(nil), s.BuildTags...),
@@ -87,4 +81,15 @@ func (s Settings) toConfig() distance.Config {
 		DependencyScope:  distance.DependencyScope(s.DependencyScope),
 		ContinueOnError:  s.ContinueOnError,
 	}
+}
+
+// policy returns the inline package-rule policy. With no rules configured,
+// the recommended defaults apply. It never reads or discovers a policy file.
+func (s Settings) policy() (policydomain.Policy, error) {
+	policy := policydomain.Policy{Packages: s.Packages}
+	if err := policydomain.Validate(policy); err != nil {
+		return policydomain.Policy{}, err
+	}
+
+	return policy, nil
 }

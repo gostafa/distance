@@ -6,9 +6,9 @@ import (
 	"io"
 	"strings"
 
+	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/reporting/domain"
 	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
-	"github.com/gostafa/distance/distance"
 )
 
 // docsTemplate is the self-contained metrics guide page: inline CSS and

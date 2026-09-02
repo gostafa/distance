@@ -3,13 +3,11 @@ package domain
 import "github.com/gostafa/distance/internal/shared/metrics"
 
 // DocScope groups metrics-guide entries by the kind of entity they
-// describe: type metrics, package metrics, or the structural columns that
-// are counted rather than computed.
+// describe: package metrics, or the structural columns that are counted
+// rather than computed.
 type DocScope string
 
 const (
-	// DocScopeType marks a type-level metric entry.
-	DocScopeType DocScope = "type"
 	// DocScopePackage marks a package-level metric entry.
 	DocScopePackage DocScope = "package"
 	// DocScopeStructural marks a counted column (Ca, Funcs, Fields, …).
@@ -63,21 +61,48 @@ type MetricDoc struct {
 	Example string
 }
 
+const formulaAbstractness = `<math display="block" alttext="A = \frac{N_{interface}}{N_{named}}"><mrow><mi>A</mi><mo>=</mo><mfrac><msub><mi>N</mi><mtext>interface</mtext></msub><msub><mi>N</mi><mtext>named</mtext></msub></mfrac></mrow></math>`
 
+const formulaInstability = `<math display="block" alttext="I = \frac{C_e}{C_a + C_e}"><mrow><mi>I</mi><mo>=</mo><mfrac><msub><mi>C</mi><mi>e</mi></msub><mrow><msub><mi>C</mi><mi>a</mi></msub><mo>+</mo><msub><mi>C</mi><mi>e</mi></msub></mrow></mfrac></mrow></math>`
 
+const formulaDistance = `<math display="block" alttext="D = |A + I - 1|"><mrow><mi>D</mi><mo>=</mo><mo stretchy="false">|</mo><mi>A</mi><mo>+</mo><mi>I</mi><mo>−</mo><mn>1</mn><mo stretchy="false">|</mo></mrow></math>`
 
-
-
-// LaTeX: D = \lvert A + I - 1 \rvert
-const formulaDistance = `<math display="block" alttext="D = |A + I - 1|"><mrow><mi>D</mi><mo>=</mo><mo stretchy="false">|</mo><mi>A</mi><mo>+</mo><mi>I</mi><mo>−</mo><mn>1</mn><mo stretchy="false">|</mo></mrow></math>
-<math display="block" alttext="A = \frac{N_{interface}}{N_{named}}"><mrow><mi>A</mi><mo>=</mo><mfrac><msub><mi>N</mi><mtext>interface</mtext></msub><msub><mi>N</mi><mtext>named</mtext></msub></mfrac></mrow></math>
-<math display="block" alttext="I = \frac{C_e}{C_a + C_e}"><mrow><mi>I</mi><mo>=</mo><mfrac><msub><mi>C</mi><mi>e</mi></msub><mrow><msub><mi>C</mi><mi>a</mi></msub><mo>+</mo><msub><mi>C</mi><mi>e</mi></msub></mrow></mfrac></mrow></math>`
-
-// MetricDocs returns the guide entries for the reported metric and
-// structural columns. Abstractness and instability are described as
-// inputs to distance; they are not documented as selectable metrics.
+// MetricDocs returns the guide entries for the reported metrics and
+// structural columns. Abstractness and instability are documented as
+// reported fields; they are not selectable or gateable.
 func MetricDocs() []MetricDoc {
 	return []MetricDoc{
+		{
+			Name:           metrics.MetricAbstractness,
+			Label:          abbrev(metrics.MetricAbstractness),
+			FullName:       "Abstractness",
+			Scope:          DocScopePackage,
+			Definition:     metrics.DefinitionAbstractness,
+			FormulaMathML:  formulaAbstractness,
+			FormulaLaTeX:   `A = \frac{N_{\text{interface}}}{N_{\text{named}}}`,
+			Summary:        "The share of a package's named types that are interfaces.",
+			HowCalculated:  "Named interface types divided by the package's relevant named types. Type aliases are excluded from both counts. Reported next to instability and distance; not selectable or gateable on its own.",
+			Interpretation: "A neutral ratio with no good/bad color: neither fully concrete nor fully abstract is universally better. Martin's main sequence wants A to balance instability I so that A + I ≈ 1.",
+			NotApplicable:  "When the package declares no relevant named types.",
+			Direction:      DirectionNeutral,
+			Bounded:        true,
+			Example:        "1 interface among 4 named types: A = 0.25.",
+		},
+		{
+			Name:           metrics.MetricInstability,
+			Label:          abbrev(metrics.MetricInstability),
+			FullName:       "Instability",
+			Scope:          DocScopePackage,
+			Definition:     metrics.DefinitionInstability,
+			FormulaMathML:  formulaInstability,
+			FormulaLaTeX:   `I = \frac{C_e}{C_a + C_e}`,
+			Summary:        "How independently a package can change, from its coupling.",
+			HowCalculated:  "Ce / (Ca + Ce) within the configured dependency scope. An isolated package (Ca + Ce = 0) is treated as maximally stable: I = 0. Reported next to abstractness and distance; not selectable or gateable on its own.",
+			Interpretation: "A neutral ratio with no good/bad color: high I means many outgoing reasons to change; low I means others depend on this package. Martin's main sequence wants I to balance abstractness A so that A + I ≈ 1.",
+			Direction:      DirectionNeutral,
+			Bounded:        true,
+			Example:        "Ca = 1 and Ce = 3: I = 0.75. An isolated package is I = 0.",
+		},
 		{
 			Name:           metrics.MetricDistance,
 			Label:          abbrev(metrics.MetricDistance),
@@ -85,9 +110,9 @@ func MetricDocs() []MetricDoc {
 			Scope:          DocScopePackage,
 			Definition:     metrics.DefinitionDistance,
 			FormulaMathML:  formulaDistance,
-			FormulaLaTeX:   `D = \lvert A + I - 1 \rvert` + "\n" + `A = \frac{N_{\text{interface}}}{N_{\text{named}}}` + "\n" + `I = \frac{C_e}{C_a + C_e}`,
+			FormulaLaTeX:   `D = \lvert A + I - 1 \rvert`,
 			Summary:        "How far a package sits from the ideal abstractness–instability balance.",
-			HowCalculated:  "The absolute distance of the package's abstractness A and instability I from the 'main sequence' line A + I = 1, where abstraction and stability balance. A is the share of named types that are interfaces; I is Ce/(Ca+Ce) within the configured dependency scope. An isolated package (Ca + Ce = 0) is treated as maximally stable (I = 0). Abstractness and instability are computed internally and are not reported, selectable, or gateable on their own.",
+			HowCalculated:  "The absolute distance of the package's abstractness A and instability I from the 'main sequence' line A + I = 1, where abstraction and stability balance. A and I are reported beside D. An isolated package (Ca + Ce = 0) is treated as maximally stable (I = 0). Only distance is policy-gateable.",
 			Interpretation: "0 is on the main sequence. High distance means the package is either concrete and stable (rigid — everything depends on its details) or abstract and unstable (abstractions nobody depends on). Mind the isolated-package convention: a concrete isolated package has A = 0 and I = 0, so D = 1 by definition, not necessarily by design fault.",
 			NotApplicable:  "When abstractness is not applicable — for example, the package declares no relevant named types.",
 			Direction:      DirectionLower,
@@ -115,72 +140,6 @@ func MetricDocs() []MetricDoc {
 			Interpretation: "A neutral count with no good/bad color. High Ce means the package has many reasons to change. It is the outgoing half of instability.",
 			Direction:      DirectionNeutral,
 			Example:        "A package importing 2 in-scope packages has Ce = 2 regardless of how often each is imported.",
-		},
-		{
-			Name:           "funcs",
-			Label:          "Funcs",
-			FullName:       "Functions",
-			Scope:          DocScopeStructural,
-			Summary:        "Declared functions and methods in the package.",
-			HowCalculated:  "Counted over the package's analyzed files — excluded files (tests or generated code, unless included by flag) do not contribute.",
-			Interpretation: "A neutral size measure: use it to weigh the metrics — a package with 3 funcs and a package with 300 deserve different scrutiny at the same scores.",
-			Direction:      DirectionNeutral,
-			Example:        "A package with 4 functions and 6 methods across its types shows Funcs = 10.",
-		},
-		{
-			Name:           "vars",
-			Label:          "Vars",
-			FullName:       "Variables",
-			Scope:          DocScopeStructural,
-			Summary:        "Top-level variable names declared in the package.",
-			HowCalculated:  "Counts each non-blank identifier in package-level var declarations over analyzed files. Local variables inside functions and methods do not contribute.",
-			Interpretation: "A neutral size measure. High values can signal broad package-level mutable state, but context matters.",
-			Direction:      DirectionNeutral,
-			Example:        "var a, b int contributes Vars = 2; var _ = setup() contributes 0.",
-		},
-		{
-			Name:           "consts",
-			Label:          "Consts",
-			FullName:       "Constants",
-			Scope:          DocScopeStructural,
-			Summary:        "Top-level constant names declared in the package.",
-			HowCalculated:  "Counts each non-blank identifier in package-level const declarations over analyzed files. Local constants inside functions and methods do not contribute.",
-			Interpretation: "A neutral size measure. Many constants may be harmless domain vocabulary or a sign that related values could be grouped.",
-			Direction:      DirectionNeutral,
-			Example:        "const A, B = 1, 2 contributes Consts = 2; const _ = iota contributes 0.",
-		},
-		{
-			Name:           "types",
-			Label:          "Types",
-			FullName:       "Named types",
-			Scope:          DocScopeStructural,
-			Summary:        "Analyzed named types declared in the package.",
-			HowCalculated:  "Counts the package's named type declarations that enter the analysis; type aliases never enter the model.",
-			Interpretation: "A neutral size measure, shown in the Packages view. Many types with poor cohesion scores is a stronger signal than one outlier.",
-			Direction:      DirectionNeutral,
-			Example:        "A package declaring Service, Config, and an Option interface shows Types = 3.",
-		},
-		{
-			Name:           "fields",
-			Label:          "Fields",
-			FullName:       "Struct fields",
-			Scope:          DocScopeStructural,
-			Summary:        "The type's struct field count.",
-			HowCalculated:  "An embedded field counts as one; members promoted through embedding are not counted. Non-struct types show 0.",
-			Interpretation: "A neutral count that sizes the cohesion metrics: LCOM and TCC both reason about how methods use these fields.",
-			Direction:      DirectionNeutral,
-			Example:        "struct { ID int; Name string; sync.Mutex } has Fields = 3 — the embedded mutex counts as one.",
-		},
-		{
-			Name:           "methods",
-			Label:          "Methods",
-			FullName:       "Declared methods",
-			Scope:          DocScopeStructural,
-			Summary:        "The type's declared method count.",
-			HowCalculated:  "Value- and pointer-receiver methods are counted alike; methods promoted from embedded types are excluded.",
-			Interpretation: "A neutral count that sizes the cohesion and complexity metrics: most of them are n/a below 1 or 2 methods, by design rather than as a gap.",
-			Direction:      DirectionNeutral,
-			Example:        "A type with func (s *S) Open() and func (s S) Close() has Methods = 2.",
 		},
 	}
 }

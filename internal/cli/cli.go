@@ -8,7 +8,7 @@
 //	distance --help --web
 //
 // Logs go to stderr; the report goes to stdout or --output. --help --web
-// opens an illustrated guide to the reported metric in the browser.
+// opens an illustrated guide to the reported metrics in the browser.
 package cli
 
 import (
@@ -24,6 +24,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gostafa/distance/distance"
 	policydomain "github.com/gostafa/distance/internal/features/policy/domain"
 	reporting "github.com/gostafa/distance/internal/features/reporting/application"
 	reportingdomain "github.com/gostafa/distance/internal/features/reporting/domain"
@@ -32,7 +33,6 @@ import (
 	"github.com/gostafa/distance/internal/infrastructure/profiling"
 	"github.com/gostafa/distance/internal/infrastructure/sinks"
 	"github.com/gostafa/distance/internal/shared/version"
-	"github.com/gostafa/distance/distance"
 )
 
 // Seams for tests that need to force exit, analysis, terminal, and I/O paths.
@@ -58,7 +58,7 @@ func run(args []string) int {
 		fs.PrintDefaults()
 		fmt.Fprintf(
 			os.Stderr,
-			"\nFor an illustrated guide to the reported metric:\n  distance --help --web\n",
+			"\nFor an illustrated guide to the reported metrics:\n  distance --help --web\n",
 		)
 	}
 
@@ -100,21 +100,13 @@ func run(args []string) int {
 		check         = fs.Bool(
 			"check",
 			false,
-			"enforce -max/-min thresholds and exit 3 on violations",
+			"enforce --max-distance and exit 3 on violations (default threshold 0.5)",
 		)
-	)
-
-	var maxOverrides, minOverrides overrideList
-
-	fs.Var(
-		&maxOverrides,
-		"max",
-		"policy upper-bound threshold key=value (repeatable; metric keys may be scoped as package.distance; implies -check)",
-	)
-	fs.Var(
-		&minOverrides,
-		"min",
-		"policy lower-bound threshold key=value (repeatable; metric keys may be scoped as package.distance; implies -check)",
+		maxDistance = fs.Float64(
+			"max-distance",
+			policydomain.DefaultMaxDistance,
+			"maximum package distance; applies to every positional pattern (implies -check)",
+		)
 	)
 	if err := fs.Parse(args); err != nil {
 		// --help --web (either order) opens the metrics guide instead of
@@ -174,9 +166,9 @@ func run(args []string) int {
 		}()
 	}
 
-	// A policy gate runs only when explicitly requested: -check or any -max /
-	// -min threshold.
-	gating := *check || len(maxOverrides.items) > 0 || len(minOverrides.items) > 0
+	// A policy gate runs only when explicitly requested: -check or
+	// -max-distance.
+	gating := *check || maxDistanceWasSet(fs)
 
 	var (
 		policy       policydomain.Policy
@@ -184,7 +176,7 @@ func run(args []string) int {
 	)
 
 	if gating {
-		resolved, source, err := resolvePolicy(maxOverrides, minOverrides)
+		resolved, source, err := resolvePolicy(fs.Args(), *maxDistance)
 		if err != nil {
 			logger.Error("policy configuration failed", "error", err)
 
@@ -195,13 +187,13 @@ func run(args []string) int {
 	}
 
 	config := distance.Config{
-		Patterns:        fs.Args(),
-		IncludeTests:    *includeTests,
+		Patterns:         fs.Args(),
+		IncludeTests:     *includeTests,
 		IncludeGenerated: *generated,
-		BuildTags:       splitList(*buildTags),
-		Workers:         *workers,
-		DependencyScope: distance.DependencyScope(*dependencyScope),
-		ContinueOnError: *continueOnError,
+		BuildTags:        splitList(*buildTags),
+		Workers:          *workers,
+		DependencyScope:  distance.DependencyScope(*dependencyScope),
+		ContinueOnError:  *continueOnError,
 	}
 
 	start := time.Now()
@@ -320,6 +312,14 @@ func formatWasSet(fs *flag.FlagSet) bool {
 	return set
 }
 
+// maxDistanceWasSet reports whether -max-distance was given explicitly.
+func maxDistanceWasSet(fs *flag.FlagSet) bool {
+	set := false
+	fs.Visit(func(f *flag.Flag) { set = set || f.Name == "max-distance" })
+
+	return set
+}
+
 // wantsWebHelp reports whether the raw arguments request the web metrics
 // guide: a truthy -web / --web token before any "--" terminator. Raw args
 // are scanned because --help aborts flag parsing before -web is seen.
@@ -416,4 +416,3 @@ func splitList(list string) []string {
 
 	return out
 }
-

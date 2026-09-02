@@ -1,8 +1,9 @@
 # distance
 
 `distance` analyzes Go packages and reports each package's **distance from the
-main sequence** (`|A + I − 1|`). Abstractness and instability are computed
-internally and are not reported, selectable, or gateable on their own.
+main sequence** (`|A + I − 1|`), plus the **abstractness** and **instability**
+that feed it. Abstractness and instability are shown in reports but are not
+selectable or gateable on their own.
 
 It can run as:
 
@@ -33,8 +34,8 @@ distance
 # Open the HTML report.
 # distance --web ./...
 
-# Fail when policy limits are violated.
-# distance --max=types=12 --max=package.distance=0.5 ./...
+# Fail when any loaded package's distance exceeds 0.3.
+# distance --check --max-distance=0.3 ./internal/...
 ```
 
 Flags must come before package patterns:
@@ -51,10 +52,12 @@ Useful flags:
 * `--generated`
 * `--dependency-scope=project|module|all`
 * `--continue-on-error`
-* `--max=key=value` and `--min=key=value`
+* `--check` — enforce `--max-distance` (default 0.5) and exit 3 on violations
+* `--max-distance=0.5` — maximum package distance; applies to every positional pattern
 
-The reported metric is `distance`. A config naming a hidden input (`abstractness`,
-`instability`) is rejected as an unknown policy metric.
+Reports include `abstractness`, `instability`, and `distance`. Policy is a
+list of package-path patterns, each with a max distance. The first matching
+rule wins. Abstractness and instability cannot be selected or gated.
 
 ### Build from source
 
@@ -97,20 +100,12 @@ linters:
       distance:
         type: module
         settings:
-          patterns:
-            - ./...
           tests: false
           generated: false
           dependency-scope: module
-
-          package:
-            types:
-              max: 12
-            funcs:
-              max: 30
-            metrics:
-              distance:
-                max: 0.5
+          packages:
+            - pattern: ./...
+              max-distance: 0.5
 ```
 
 Build and run the custom linter:

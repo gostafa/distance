@@ -8,56 +8,40 @@ import (
 	"strings"
 	"testing"
 
-	policydomain "github.com/gostafa/distance/internal/features/policy/domain"
-	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
 	"github.com/gostafa/distance/distance"
+	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
 )
 
-func TestOverrideListErrorsAndString(t *testing.T) {
-	var overrides overrideList
-	if err := overrides.Set(" types = 3.5 "); err != nil {
-		t.Fatal(err)
-	}
-	if got := overrides.String(); got != "types=3.5" {
-		t.Fatalf("String() = %q", got)
-	}
-
-	for _, value := range []string{"types", " =1", "types=not-a-number"} {
-		if err := overrides.Set(value); err == nil {
-			t.Errorf("Set(%q) succeeded, want error", value)
-		}
-	}
-}
-
-func TestResolvePolicyRequiresThresholdsAndIgnoresConfigFiles(t *testing.T) {
-	dir := t.TempDir()
-	t.Chdir(dir)
-	config := filepath.Join(dir, ".modularity.yml")
-	if err := os.WriteFile(config, []byte("not: valid\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, _, err := resolvePolicy(overrideList{}, overrideList{}); err == nil {
-		t.Fatal("empty flag policy succeeded")
-	}
-
-	maxima := overrideList{items: []override{{key: policydomain.KeyTypes, value: 5}}}
-	policy, source, err := resolvePolicy(maxima, overrideList{})
+func TestResolvePolicyDefaultsAndPatterns(t *testing.T) {
+	policy, source, err := resolvePolicy(nil, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if policy.Package.Types.Max != 5 || source != "flag thresholds" {
-		t.Fatalf("flag policy = %+v, source = %q", policy.Package.Types, source)
+	if source != "flag thresholds" || len(policy.Packages) != 1 ||
+		policy.Packages[0].Pattern != "./..." || policy.Packages[0].MaxDistance != 0.5 {
+		t.Fatalf("default policy = %+v source = %q", policy.Packages, source)
 	}
 
-	badMinimum := overrideList{items: []override{{key: "bogus", value: 1}}}
-	if _, _, err := resolvePolicy(overrideList{}, badMinimum); err == nil {
-		t.Fatal("unknown minimum override succeeded")
+	policy, _, err = resolvePolicy([]string{"./internal/...", "./..."}, 0.3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(policy.Packages) != 2 || policy.Packages[0].MaxDistance != 0.3 {
+		t.Fatalf("pattern policy = %+v", policy.Packages)
 	}
 
-	contradictory := overrideList{items: []override{{key: policydomain.KeyTypes, value: 6}}}
-	if _, _, err := resolvePolicy(maxima, contradictory); err == nil {
-		t.Fatal("minimum above configured maximum succeeded")
+	if _, _, err := resolvePolicy([]string{""}, 0.5); err == nil {
+		t.Fatal("empty pattern succeeded")
+	}
+}
+
+func TestResolvePolicyOverrideSource(t *testing.T) {
+	_, source, err := resolvePolicy([]string{"./..."}, 0.4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(source, "flag thresholds") {
+		t.Fatalf("source = %q", source)
 	}
 }
 
@@ -79,24 +63,13 @@ func TestRunEarlyErrorPaths(t *testing.T) {
 	}
 }
 
-func TestResolvePolicyOverrideSource(t *testing.T) {
-	maxima := overrideList{items: []override{{key: policydomain.KeyTypes, value: 20}}}
-	_, source, err := resolvePolicy(maxima, overrideList{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(source, "flag thresholds") {
-		t.Fatalf("source = %q", source)
-	}
-}
-
 func stubAnalyze(t *testing.T) {
 	t.Helper()
 	original := analyze
 	t.Cleanup(func() { analyze = original })
 	analyze = func(context.Context, distance.Config) (distance.Report, error) {
 		return distance.Report{
-			SchemaVersion: "2",
+			SchemaVersion: "6",
 			Tool:          distance.ToolInfo{Name: "distance", Version: "test"},
 			Module:        "example.com/m",
 		}, nil

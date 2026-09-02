@@ -41,7 +41,7 @@ func findMetric(t *testing.T, results []metrics.MetricResult, name string) metri
 }
 
 // Black-box: the pipeline turns extracts into a deterministic report with
-// distance as the only displayed metric.
+// abstractness, instability, and distance as the displayed metrics.
 func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 	t.Parallel()
 
@@ -50,15 +50,10 @@ func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 		pkgs: []tfdomain.PackageExtract{
 			{
 				Path: "example.com/m/a", InModule: true, Imports: []string{"example.com/m/b"},
-				VarCount: 2, ConstCount: 3,
 				Types: []tfdomain.TypeExtract{
 					{
-						Name:     "A",
-						Exported: true,
-						Kind:     tfdomain.KindStruct,
-						Methods: []tfdomain.MethodFacts{
-							{Name: "Do", Exported: true},
-						},
+						Name: "A",
+						Kind: tfdomain.KindStruct,
 					},
 				},
 			},
@@ -66,7 +61,7 @@ func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 				Path:     "example.com/m/b",
 				InModule: true,
 				Types: []tfdomain.TypeExtract{
-					{Name: "B", Exported: true, Kind: tfdomain.KindInterface},
+					{Name: "B", Kind: tfdomain.KindInterface},
 				},
 			},
 		},
@@ -91,16 +86,16 @@ func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 	}
 
 	pkgA := result.Packages[0]
-	if pkgA.Vars != 2 || pkgA.Consts != 3 {
-		t.Fatalf("a counts = vars %d consts %d, want 2 and 3", pkgA.Vars, pkgA.Consts)
+	if got := findMetric(t, pkgA.Metrics, metrics.MetricAbstractness); !got.Applicable {
+		t.Errorf("a abstractness = %+v, want applicable", got)
+	}
+
+	if got := findMetric(t, pkgA.Metrics, metrics.MetricInstability); !got.Applicable {
+		t.Errorf("a instability = %+v, want applicable", got)
 	}
 
 	if got := findMetric(t, pkgA.Metrics, metrics.MetricDistance); !got.Applicable {
 		t.Errorf("a distance = %+v, want applicable", got)
-	}
-
-	if len(pkgA.Types) != 1 || pkgA.Types[0].Name != "A" {
-		t.Fatalf("a types = %+v", pkgA.Types)
 	}
 
 	if got := findMetric(t, result.Packages[1].Metrics, metrics.MetricDistance); !got.Applicable {

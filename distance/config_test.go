@@ -38,12 +38,15 @@ func TestValidate(t *testing.T) {
 }
 
 func TestAllMetrics(t *testing.T) {
+	want := []MetricName{MetricAbstractness, MetricInstability, MetricDistance}
 	got := AllMetrics()
-	if len(got) != 1 || got[0] != MetricDistance {
-		t.Fatalf("AllMetrics() = %v, want [%s]", got, MetricDistance)
+	if len(got) != len(want) {
+		t.Fatalf("AllMetrics() = %v, want %v", got, want)
 	}
 
-	if def := DefaultMetrics(); len(def) != 1 || def[0] != MetricDistance {
-		t.Fatalf("DefaultMetrics() = %v", def)
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("AllMetrics() = %v, want %v", got, want)
+		}
 	}
 }

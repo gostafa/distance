@@ -70,28 +70,16 @@ func TestDistance(t *testing.T) {
 	}))
 }
 
-func TestClosure(t *testing.T) {
-	got := Closure([]string{MetricDistance})
+func TestReportedMetricOrder(t *testing.T) {
+	got := ReportedMetricOrder()
 	want := []string{MetricAbstractness, MetricInstability, MetricDistance}
 	if len(got) != len(want) {
-		t.Fatalf("closure = %v, want %v", got, want)
+		t.Fatalf("ReportedMetricOrder() = %v, want %v", got, want)
 	}
 
 	for i := range want {
 		if got[i] != want[i] {
-			t.Fatalf("closure = %v, want %v", got, want)
-		}
-	}
-
-	// Distance already pulls Abstractness; selecting both hits the seen early-return.
-	got = Closure([]string{MetricDistance, MetricAbstractness})
-	if len(got) != len(want) {
-		t.Fatalf("closure with duplicate deps = %v, want %v", got, want)
-	}
-
-	for i := range want {
-		if got[i] != want[i] {
-			t.Fatalf("closure with duplicate deps = %v, want %v", got, want)
+			t.Fatalf("ReportedMetricOrder() = %v, want %v", got, want)
 		}
 	}
 }

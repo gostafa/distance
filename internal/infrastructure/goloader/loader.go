@@ -3,8 +3,6 @@ package goloader
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/gostafa/distance/internal/features/typefacts/domain"
@@ -28,8 +26,6 @@ const loadMode = packages.NeedName |
 var (
 	packagesLoad      = packages.Load
 	runExtractWorkers = workerpool.Run
-	osGetwd           = os.Getwd
-	filepathAbs       = filepath.Abs
 )
 
 // Loader implements outbound.FactSource on top of golang.org/x/tools.
@@ -114,13 +110,6 @@ func extractAll(
 	opts outbound.FactOptions,
 	modulePath string,
 ) ([]domain.PackageExtract, error) {
-	analyzed := make(map[string]bool, len(pkgs))
-	for _, p := range pkgs {
-		analyzed[p.PkgPath] = true
-	}
-
-	baseDir := resolveBaseDir(opts.Directory)
-
 	extracts := make([]domain.PackageExtract, len(pkgs))
 	workers := workerpool.Workers(opts.Workers, len(pkgs))
 
@@ -128,9 +117,7 @@ func extractAll(
 		pkg := pkgs[i]
 		extracts[i] = extractPackage(pkg, extractorOptions{
 			includeGenerated: opts.IncludeGenerated,
-			analyzed:         analyzed,
 			modulePath:       modulePath,
-			baseDir:          baseDir,
 		})
 		// Release compiler data as soon as the package's facts exist; only
 		// this worker touches these fields.
@@ -231,22 +218,4 @@ func mainModulePath(pkgs []*packages.Package) string {
 	}
 
 	return ""
-}
-
-// resolveBaseDir absolutizes the analysis directory so source positions can
-// be reported relative to it.
-func resolveBaseDir(dir string) string {
-	if dir == "" {
-		if wd, err := osGetwd(); err == nil {
-			return wd
-		}
-
-		return ""
-	}
-
-	if abs, err := filepathAbs(dir); err == nil {
-		return abs
-	}
-
-	return dir
 }

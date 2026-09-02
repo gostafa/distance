@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/gostafa/distance/internal/features/projectanalysis/ports/inbound"
-	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
 	"github.com/gostafa/distance/internal/infrastructure/analyzer"
 	"github.com/gostafa/distance/internal/shared/version"
 )
@@ -39,99 +38,13 @@ func Analyze(ctx context.Context, config Config) (Report, error) {
 		Packages:      make([]PackageReport, len(result.Packages)),
 	}
 	for i, pkg := range result.Packages {
-		out := PackageReport{
-			Path:            pkg.Path,
-			Afferent:        pkg.Afferent,
-			Efferent:        pkg.Efferent,
-			ExportedFuncs:   pkg.ExportedFuncs,
-			UnexportedFuncs: pkg.UnexportedFuncs,
-			Vars:            pkg.Vars,
-			Consts:          pkg.Consts,
-			Variables:       declarationReports(pkg.Variables),
-			Constants:       declarationReports(pkg.Constants),
-			Functions:       functionReports(pkg.Functions),
-			Metrics:         pkg.Metrics,
-			Types:           make([]TypeReport, len(pkg.Types)),
+		report.Packages[i] = PackageReport{
+			Path:     pkg.Path,
+			Afferent: pkg.Afferent,
+			Efferent: pkg.Efferent,
+			Metrics:  pkg.Metrics,
 		}
-		for j, t := range pkg.Types {
-			out.Types[j] = TypeReport{
-				Name:          t.Name,
-				Exported:      t.Exported,
-				Kind:          typeKindName(t.Kind),
-				Position:      positionReport(t.Pos),
-				Fields:        t.Fields,
-				FieldDetails:  fieldReports(t.FieldDetails),
-				Methods:       t.Methods,
-				MethodDetails: functionReports(t.MethodDetails),
-			}
-		}
-
-		report.Packages[i] = out
 	}
 
 	return report, nil
-}
-
-func declarationReports(decls []inbound.DeclarationResult) []DeclarationReport {
-	if len(decls) == 0 {
-		return nil
-	}
-
-	out := make([]DeclarationReport, len(decls))
-	for i, d := range decls {
-		out[i] = DeclarationReport{
-			Name:     d.Name,
-			Exported: d.Exported,
-			Position: positionReport(d.Pos),
-		}
-	}
-
-	return out
-}
-
-func fieldReports(fields []tfdomain.FieldFacts) []FieldReport {
-	if len(fields) == 0 {
-		return nil
-	}
-
-	out := make([]FieldReport, len(fields))
-	for i, f := range fields {
-		out[i] = FieldReport{Name: f.Name, Exported: f.Exported, Embedded: f.Embedded}
-	}
-
-	return out
-}
-
-func functionReports(functions []inbound.FunctionResult) []FunctionReport {
-	if len(functions) == 0 {
-		return nil
-	}
-
-	out := make([]FunctionReport, len(functions))
-	for i, fn := range functions {
-		out[i] = FunctionReport{
-			Name:     fn.Name,
-			Exported: fn.Exported,
-			Receiver: fn.Receiver,
-			Position: positionReport(fn.Pos),
-			Lines:    fn.Lines,
-		}
-	}
-
-	return out
-}
-
-func positionReport(pos tfdomain.Position) Position {
-	return Position{File: pos.File, Line: pos.Line, Column: pos.Column}
-}
-
-func typeKindName(kind tfdomain.TypeKind) string {
-	switch kind {
-	case tfdomain.KindStruct:
-		return "struct"
-	case tfdomain.KindInterface:
-		return "interface"
-	default:
-		return "other"
-	}
 }

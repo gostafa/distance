@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gostafa/distance/internal/features/typefacts/domain"
 	"github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
 	"golang.org/x/tools/go/packages"
 )
@@ -142,36 +143,34 @@ func (Talker) Speak() {}
 		}
 	}
 
-	// Interface method with no body hits walkBody's nil-body path.
+	foundTalker := false
 	for _, pkg := range pkgs {
 		if !strings.HasSuffix(pkg.Path, "/iface") {
 			continue
 		}
 		for _, te := range pkg.Types {
-			if te.Name == "Talker" && len(te.Methods) != 1 {
-				t.Fatalf("Talker methods = %d", len(te.Methods))
+			if te.Name == "Talker" {
+				foundTalker = true
+				if te.Kind != domain.KindOther {
+					t.Fatalf("Talker kind = %d, want other", te.Kind)
+				}
 			}
 		}
 	}
+	if !foundTalker {
+		t.Fatal("Talker not extracted")
+	}
 }
 
-func TestFieldDocumentedAndSkipPos(t *testing.T) {
-	if fieldDocumented(nil, token.Pos(1)) {
-		t.Fatal("empty fieldDocs should be false")
-	}
-	docs := []docRange{{start: 10, end: 20, documented: true}}
-	if fieldDocumented(docs, token.Pos(5)) {
-		t.Fatal("pos before first range should be false")
-	}
-	if !fieldDocumented(docs, token.Pos(15)) {
-		t.Fatal("pos inside documented range should be true")
-	}
-
+func TestSkipPos(t *testing.T) {
 	fset := token.NewFileSet()
 	f := fset.AddFile("gen.go", -1, 20)
 	f.SetLinesForContent([]byte("package x\n"))
 	if skipPos(fset, true, map[string]bool{f.Name(): true}, token.Pos(f.Base())) {
 		t.Fatal("includeGenerated=true must not skip")
+	}
+	if !skipPos(fset, false, map[string]bool{f.Name(): true}, token.Pos(f.Base())) {
+		t.Fatal("generated file should be skipped")
 	}
 }
 
@@ -186,21 +185,6 @@ func TestSelectPackagesTruncation(t *testing.T) {
 	_, err := selectPackages(loaded, false)
 	if err == nil || !strings.Contains(err.Error(), "and 2 more") {
 		t.Fatalf("truncation error = %v", err)
-	}
-}
-
-func TestResolveBaseDirFailures(t *testing.T) {
-	origGetwd, origAbs := osGetwd, filepathAbs
-	t.Cleanup(func() { osGetwd, filepathAbs = origGetwd, origAbs })
-
-	osGetwd = func() (string, error) { return "", errors.New("no cwd") }
-	if got := resolveBaseDir(""); got != "" {
-		t.Fatalf("getwd failure = %q, want empty", got)
-	}
-
-	filepathAbs = func(string) (string, error) { return "", errors.New("no abs") }
-	if got := resolveBaseDir("relative"); got != "relative" {
-		t.Fatalf("abs failure = %q, want relative", got)
 	}
 }
 
@@ -277,14 +261,28 @@ func TestExtractAllWorkerError(t *testing.T) {
 	}
 }
 
-func TestIndexTypeDeclSkipsNonTypeSpec(t *testing.T) {
-	decl := &ast.GenDecl{
-		Tok:   token.TYPE,
-		Specs: []ast.Spec{&ast.ValueSpec{Names: []*ast.Ident{{Name: "x"}}}},
+func TestTypeKindClassification(t *testing.T) {
+	dir := writeModule(t, map[string]string{
+		"k.go": `
+package k
+type S struct{}
+type I interface{ M() }
+type A int
+`,
+	})
+	_, pkgs, err := load(context.Background(), outbound.FactOptions{
+		Directory: dir,
+		Patterns:  []string{"."},
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
-	got := indexTypeDecl(&types.Info{}, map[types.Object]bool{}, nil, decl)
-	if got != nil {
-		t.Fatalf("fieldDocs = %v, want nil", got)
+	kinds := map[string]domain.TypeKind{}
+	for _, te := range pkgs[0].Types {
+		kinds[te.Name] = te.Kind
+	}
+	if kinds["S"] != domain.KindStruct || kinds["I"] != domain.KindInterface || kinds["A"] != domain.KindOther {
+		t.Fatalf("kinds = %+v", kinds)
 	}
 }
 
@@ -309,32 +307,5 @@ func TestExtractPackageSkipsNonNamedTypeName(t *testing.T) {
 	out := extractPackage(pkg, extractorOptions{})
 	if len(out.Types) != 0 {
 		t.Fatalf("types = %+v, want none", out.Types)
-	}
-}
-
-func TestSortedMethodsSkipsMissingDecls(t *testing.T) {
-	dir := writeModule(t, map[string]string{
-		"m.go": `
-package m
-type T struct{}
-func (t *T) M() {}
-`,
-	})
-	cfg := &packages.Config{
-		Dir:  dir,
-		Mode: loadMode,
-	}
-	loaded, err := packages.Load(cfg, "./")
-	if err != nil || len(loaded) == 0 || loaded[0].Types == nil {
-		t.Fatalf("load: %v pkgs=%d", err, len(loaded))
-	}
-	pkg := loaded[0]
-	tn, _ := pkg.Types.Scope().Lookup("T").(*types.TypeName)
-	named, _ := tn.Type().(*types.Named)
-
-	// Empty funcDecls → every method hits the !ok skip branch.
-	got := sortedMethods(pkg.Fset, extractorOptions{}, nil, map[*types.Func]*ast.FuncDecl{}, named)
-	if len(got) != 0 {
-		t.Fatalf("sortedMethods = %d, want 0", len(got))
 	}
 }

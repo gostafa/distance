@@ -24,20 +24,26 @@ const (
 // MetricName identifies a reported metric.
 type MetricName string
 
-// MetricDistance is the only metric this linter reports: a package's distance
-// from the main sequence, |A + I - 1|. Its inputs — abstractness A and
-// instability I — are computed internally and are not reported, selectable,
-// or gateable on their own.
-const MetricDistance MetricName = metrics.MetricDistance
+const (
+	// MetricAbstractness is the package interface ratio A.
+	MetricAbstractness MetricName = metrics.MetricAbstractness
+	// MetricInstability is the package coupling ratio I = Ce/(Ca+Ce).
+	MetricInstability MetricName = metrics.MetricInstability
+	// MetricDistance is a package's distance from the main sequence,
+	// |A + I - 1|. Abstractness and instability are reported beside it
+	// but are not selectable or gateable on their own.
+	MetricDistance MetricName = metrics.MetricDistance
+)
 
-// AllMetrics returns every reported metric name. This linter reports one.
+// AllMetrics returns every reported metric name, in column order.
 func AllMetrics() []MetricName {
-	return []MetricName{MetricDistance}
-}
+	names := metrics.ReportedMetricOrder()
+	out := make([]MetricName, len(names))
+	for i, name := range names {
+		out[i] = MetricName(name)
+	}
 
-// DefaultMetrics returns the reported metric set, which is fixed.
-func DefaultMetrics() []MetricName {
-	return AllMetrics()
+	return out
 }
 
 // Config controls an analysis run. The zero value is usable: defaults are

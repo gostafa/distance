@@ -1,24 +1,10 @@
 package model
 
-import (
-	"strings"
-	"testing"
-)
+import "testing"
 
-func TestMethodFactsString(t *testing.T) {
-	facts := &MethodFacts{
-		Name:     "Save",
-		Exported: true,
-		Pos:      Position{File: "store.go", Line: 12, Column: 3},
-	}
-
-	got := facts.String()
-	for _, want := range []string{
-		`method "Save"`,
-		"exported true",
-	} {
-		if !strings.Contains(got, want) {
-			t.Errorf("String() = %q, want it to contain %q", got, want)
-		}
+func TestPositionZero(t *testing.T) {
+	var pos Position
+	if pos.File != "" || pos.Line != 0 || pos.Column != 0 {
+		t.Fatalf("zero Position = %+v", pos)
 	}
 }

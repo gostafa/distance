@@ -82,9 +82,9 @@ func collectOptions(opts inbound.Options) tfoutbound.FactOptions {
 	}
 }
 
-// analyzePackage assembles one package's structural facts, its reported
-// metric, and its types. It writes only into its own result value, so package
-// workers never share mutable state.
+// analyzePackage assembles one package's coupling facts and its reported
+// metrics. It writes only into its own result value, so package workers never
+// share mutable state.
 func analyzePackage(
 	facts *tfdomain.ProjectFacts,
 	pkgID int,
@@ -93,99 +93,20 @@ func analyzePackage(
 ) inbound.PackageResult {
 	pkg := &facts.Packages[pkgID]
 
-	result := inbound.PackageResult{
-		Path:            pkg.Path,
-		Afferent:        pkgCoupling.Afferent,
-		Efferent:        pkgCoupling.Efferent,
-		ExportedFuncs:   pkg.ExportedFuncCount,
-		UnexportedFuncs: pkg.UnexportedFuncCount,
-		Vars:            pkg.VarCount,
-		Consts:          pkg.ConstCount,
-		Variables:       declarationResults(pkg.Variables),
-		Constants:       declarationResults(pkg.Constants),
-		Functions:       functionResults(pkg.Functions),
-		Metrics:         packageMetrics(pkgResults[pkgID]),
+	return inbound.PackageResult{
+		Path:     pkg.Path,
+		Afferent: pkgCoupling.Afferent,
+		Efferent: pkgCoupling.Efferent,
+		Metrics:  packageMetrics(pkgResults[pkgID]),
 	}
-
-	result.Types = make([]inbound.TypeResult, 0, len(pkg.TypeIDs))
-	for _, typeID := range pkg.TypeIDs {
-		result.Types = append(result.Types, typeResult(&facts.Types[typeID]))
-	}
-
-	return result
 }
 
-// packageMetrics reports distance only; abstractness and instability are its
-// internal inputs.
+// packageMetrics reports abstractness, instability, and distance in the
+// fixed public order. Only distance is policy-gateable.
 func packageMetrics(result pkgmetrics.Result) []metrics.MetricResult {
-	return []metrics.MetricResult{result.Distance}
-}
-
-// typeResult carries one type's structural facts. Types have no reported
-// metric in this linter.
-func typeResult(t *tfdomain.TypeFacts) inbound.TypeResult {
-	return inbound.TypeResult{
-		Name:          t.Name,
-		Exported:      t.Exported,
-		Kind:          t.Kind,
-		Pos:           t.Pos,
-		Fields:        len(t.Fields),
-		FieldDetails:  append([]tfdomain.FieldFacts(nil), t.Fields...),
-		Methods:       len(t.Methods),
-		MethodDetails: methodResults(t),
+	return []metrics.MetricResult{
+		result.Abstractness,
+		result.Instability,
+		result.Distance,
 	}
-}
-
-func declarationResults(decls []tfdomain.DeclarationFacts) []inbound.DeclarationResult {
-	if len(decls) == 0 {
-		return nil
-	}
-
-	out := make([]inbound.DeclarationResult, len(decls))
-	for i, d := range decls {
-		out[i] = inbound.DeclarationResult{
-			Name:     d.Name,
-			Exported: d.Exported,
-			Pos:      d.Pos,
-		}
-	}
-
-	return out
-}
-
-func functionResults(functions []tfdomain.FunctionFacts) []inbound.FunctionResult {
-	if len(functions) == 0 {
-		return nil
-	}
-
-	out := make([]inbound.FunctionResult, len(functions))
-	for i, fn := range functions {
-		out[i] = inbound.FunctionResult{
-			Name:     fn.Name,
-			Exported: fn.Exported,
-			Pos:      fn.Pos,
-			Lines:    fn.Lines,
-		}
-	}
-
-	return out
-}
-
-func methodResults(t *tfdomain.TypeFacts) []inbound.FunctionResult {
-	if len(t.Methods) == 0 {
-		return nil
-	}
-
-	out := make([]inbound.FunctionResult, len(t.Methods))
-	for i, method := range t.Methods {
-		out[i] = inbound.FunctionResult{
-			Name:     method.Name,
-			Exported: method.Exported,
-			Receiver: t.Name,
-			Pos:      method.Pos,
-			Lines:    method.Lines,
-		}
-	}
-
-	return out
 }

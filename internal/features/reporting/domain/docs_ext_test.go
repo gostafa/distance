@@ -28,7 +28,7 @@ func TestMetricDocsCoverEveryMetric(t *testing.T) {
 		assertMetricDoc(t, byName, name, domain.DocScopePackage)
 	}
 
-	for _, name := range []string{"ca", "ce", "funcs", "vars", "consts", "types", "fields", "methods"} {
+	for _, name := range []string{"ca", "ce"} {
 		d, ok := byName[name]
 		if !ok {
 			t.Errorf("structural column %q has no docs entry", name)

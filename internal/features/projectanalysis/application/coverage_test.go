@@ -22,12 +22,8 @@ func (coverageSource) Load(
 		Path: "example.com/m/a", InModule: true,
 		Types: []tfdomain.TypeExtract{
 			{
-				Name:     "A",
-				Exported: true,
-				Kind:     tfdomain.KindStruct,
-				Methods: []tfdomain.MethodFacts{
-					{Name: "Do", Exported: true},
-				},
+				Name: "A",
+				Kind: tfdomain.KindStruct,
 			},
 		},
 	}}, nil
@@ -51,7 +47,7 @@ func TestAssembleResultWorkerError(t *testing.T) {
 	}
 }
 
-func TestReportedMetricIsDistanceOnly(t *testing.T) {
+func TestReportedMetrics(t *testing.T) {
 	pipeline := NewPipeline(typefacts.NewService(coverageSource{}))
 	result, err := pipeline.Analyze(context.Background(), inbound.Options{
 		Patterns:        []string{"./..."},
@@ -62,7 +58,14 @@ func TestReportedMetricIsDistanceOnly(t *testing.T) {
 	}
 
 	pkg := result.Packages[0]
-	if len(pkg.Metrics) != 1 || pkg.Metrics[0].Name != metrics.MetricDistance {
-		t.Fatalf("package metrics = %v, want distance only", pkg.Metrics)
+	want := []string{metrics.MetricAbstractness, metrics.MetricInstability, metrics.MetricDistance}
+	if len(pkg.Metrics) != len(want) {
+		t.Fatalf("package metrics = %v, want %v", pkg.Metrics, want)
+	}
+
+	for i, name := range want {
+		if pkg.Metrics[i].Name != name {
+			t.Fatalf("package metrics = %v, want %v", pkg.Metrics, want)
+		}
 	}
 }

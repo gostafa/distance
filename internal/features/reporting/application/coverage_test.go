@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/reporting/domain"
 	"github.com/gostafa/distance/internal/shared/metrics"
-	"github.com/gostafa/distance/distance"
 )
 
 type failingSink struct {
@@ -87,14 +87,14 @@ func TestJSONDebugStringsAndMarshalError(t *testing.T) {
 		t.Fatalf("jsonReport.String() = %q", reportSummary)
 	}
 
-	packageSummary := (jsonPackage{Path: "example.com/p", Metrics: make(orderedMetrics, 2), Types: make([]jsonType, 1)}).String()
-	if packageSummary != "example.com/p: 2 metrics, 1 types" {
+	packageSummary := (jsonPackage{Path: "example.com/p", Metrics: make(orderedMetrics, 2)}).String()
+	if packageSummary != "example.com/p: 2 metrics" {
 		t.Fatalf("jsonPackage.String() = %q", packageSummary)
 	}
 
 	_, err := encodeOrderedMetrics([]metrics.MetricResult{{
 		Name:       metrics.MetricDistance,
-		Scope:      metrics.ScopeType,
+		Scope:      metrics.ScopePackage,
 		Value:      math.NaN(),
 		Applicable: true,
 	}})

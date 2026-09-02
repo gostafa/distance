@@ -13,21 +13,9 @@ func TestNewBuildAnalyzersAndLoadMode(t *testing.T) {
 
 	p, err := plugin.New(map[string]any{
 		"dependency-scope": "module",
-		"patterns":         []any{"./..."},
-		"funcs": map[string]any{
-			"lines": map[string]any{"max": 80},
-		},
-		"package": map[string]any{
-			"types": 10,
-			"funcs": map[string]any{
-				"max": 20,
-			},
-			"metrics": map[string]any{
-				"distance": map[string]any{"max": 0.7},
-			},
-		},
-		"type": map[string]any{
-			"fields": map[string]any{"max": 14},
+		"packages": []any{
+			map[string]any{"pattern": "./internal/...", "max-distance": 0.2},
+			map[string]any{"pattern": "./...", "max-distance": 0.5},
 		},
 	})
 	if err != nil {
@@ -86,27 +74,32 @@ func TestNewRejectsPolicyFileSetting(t *testing.T) {
 func TestNewRejectsUnknownInlinePolicySettings(t *testing.T) {
 	t.Parallel()
 
-	cases := map[string]any{
-		"structural key": map[string]any{
-			"package": map[string]any{"bogus": 1},
-		},
-		"limit key": map[string]any{
-			"type": map[string]any{
-				"metrics": map[string]any{
-					"amc": map[string]any{"maks": 3},
-				},
-			},
-		},
+	if _, err := plugin.New(map[string]any{
+		"package": map[string]any{"types": 12},
+	}); err == nil {
+		t.Fatal("expected decoding error for removed package settings")
+	}
+}
+
+func TestNewRejectsAbstractnessAndInstabilitySettings(t *testing.T) {
+	t.Parallel()
+
+	for _, key := range []string{"abstractness", "instability", "metrics"} {
+		if _, err := plugin.New(map[string]any{key: 0.5}); err == nil {
+			t.Errorf("%s: expected error for unknown policy metric setting", key)
+		}
 	}
 
-	for name, raw := range cases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			if _, err := plugin.New(raw); err == nil {
-				t.Fatal("expected decoding error")
-			}
-		})
+	if _, err := plugin.New(map[string]any{
+		"packages": []any{
+			map[string]any{
+				"pattern":      "./...",
+				"max-distance": 0.5,
+				"abstractness": 0.3,
+			},
+		},
+	}); err == nil {
+		t.Fatal("expected error for abstractness on a package rule")
 	}
 }
 
@@ -124,10 +117,8 @@ func TestNewRejectsInvalidAnalyzerSettings(t *testing.T) {
 	}
 
 	p, err = plugin.New(map[string]any{
-		"type": map[string]any{
-			"metrics": map[string]any{
-				"distance": map[string]any{"max": 0.5},
-			},
+		"packages": []any{
+			map[string]any{"pattern": "", "max-distance": 0.5},
 		},
 	})
 	if err != nil {
@@ -135,6 +126,6 @@ func TestNewRejectsInvalidAnalyzerSettings(t *testing.T) {
 	}
 
 	if _, err = p.BuildAnalyzers(); err == nil {
-		t.Fatal("expected BuildAnalyzers error for package-only metric under type")
+		t.Fatal("expected BuildAnalyzers error for empty pattern")
 	}
 }

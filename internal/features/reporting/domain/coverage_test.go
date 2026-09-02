@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gostafa/distance/internal/shared/metrics"
 	"github.com/gostafa/distance/distance"
+	"github.com/gostafa/distance/internal/shared/metrics"
 )
 
 func TestRelPathEdges(t *testing.T) {
@@ -63,9 +63,6 @@ func TestTextMultiSectionSpacerAndMissingMetrics(t *testing.T) {
 						Reason:     "isolated",
 					},
 				},
-				Types: []distance.TypeReport{{
-					Name: "T",
-				}},
 			},
 		},
 	}
@@ -102,10 +99,6 @@ func TestTextExplainAllTypesAndSkipEmptyNotes(t *testing.T) {
 			},
 			{
 				Path: "example.com/m/noisy",
-				Types: []distance.TypeReport{
-					{Name: "A"},
-					{Name: "B"},
-				},
 			},
 		},
 	}
@@ -113,12 +106,6 @@ func TestTextExplainAllTypesAndSkipEmptyNotes(t *testing.T) {
 	got := Text(report, TextOptions{Explain: true})
 	if strings.Contains(got, "notes") {
 		t.Fatalf("no reported metric reasons, notes should be absent:\n%s", got)
-	}
-}
-
-func TestValueColorUnknownMetric(t *testing.T) {
-	if got := valueColor("not-a-metric", 1, &columnStats{min: 0, max: 2, count: 2}); got != "" {
-		t.Fatalf("valueColor = %q, want empty", got)
 	}
 }
 
@@ -168,5 +155,5 @@ func TestTextTrailingBlankPackageMetric(t *testing.T) {
 		},
 	}
 	got := Text(report, TextOptions{})
-	mustMatch(t, got, `(?m)^b\s+0\s+0\s+0\s+0$`)
+	mustMatch(t, got, `(?m)^b\s+0\.00$`)
 }
