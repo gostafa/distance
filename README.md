@@ -34,8 +34,8 @@ distance
 # Open the HTML report.
 # distance --web ./...
 
-# Fail when any loaded package's distance exceeds 0.3.
-# distance --check --max-distance=0.3 ./internal/...
+# Fail when any loaded package's distance exceeds a rule max.
+# distance --check --rule='**':0.5 --rule='**/internal/**':0.2 ./...
 ```
 
 Flags must come before package patterns:
@@ -52,12 +52,13 @@ Useful flags:
 * `--generated`
 * `--dependency-scope=project|module|all`
 * `--continue-on-error`
-* `--check` — enforce `--max-distance` (default 0.5) and exit 3 on violations
-* `--max-distance=0.5` — maximum package distance; applies to every positional pattern
+* `--check` with `--rule=pattern:max` (repeatable; requires `--check`)
 
-Reports include `abstractness`, `instability`, and `distance`. Policy is a
-list of package-path patterns, each with a max distance. The first matching
-rule wins. Abstractness and instability cannot be selected or gated.
+Reports include `abstractness`, `instability`, and `distance`. Policy gates
+package distance by import-path glob. When multiple rules match, the most
+specific pattern wins: more literal segments, then fewer wildcards, then
+longer patterns; exact ties use the later rule. Abstractness and
+instability cannot be selected or gated.
 
 ### Build from source
 
@@ -103,9 +104,12 @@ linters:
           tests: false
           generated: false
           dependency-scope: module
-          packages:
-            - pattern: ./...
-              max-distance: 0.5
+          patterns: [./...]
+          rules:
+            - pattern: "**"
+              max: 0.5
+            - pattern: "**/internal/**"
+              max: 0.2
 ```
 
 Build and run the custom linter:

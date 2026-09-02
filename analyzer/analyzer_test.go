@@ -15,6 +15,10 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+func floatPtr(value float64) *float64 {
+	return &value
+}
+
 func TestNewRejectsInvalidSettings(t *testing.T) {
 	t.Parallel()
 
@@ -42,9 +46,10 @@ func TestRunnerLoadGroupsViolations(t *testing.T) {
 
 	r := newRunner((&Settings{
 		Directory: fixtureDir,
-		Packages: []policydomain.PackageRule{{
-			Pattern:     "./isolated",
-			MaxDistance: 0,
+		Patterns:  []string{"./isolated"},
+		Rules: []RuleSettings{{
+			Pattern: "**/isolated",
+			Max:     floatPtr(0),
 		}},
 	}).withDefaults())
 
@@ -57,12 +62,12 @@ func TestRunnerLoadGroupsViolations(t *testing.T) {
 	got := r.byPkg["example.com/fixture/isolated"]
 
 	if len(got) == 0 {
-		t.Fatal("expected distance violations for isolated with max-distance 0")
+		t.Fatal("expected distance violations for isolated with max 0")
 	}
 
-	for _, v := range got {
-		if v.Key != "distance" {
-			t.Fatalf("unexpected key %q in %#v", v.Key, got)
+	for _, item := range got {
+		if item.Rule != "**/isolated" {
+			t.Fatalf("unexpected rule %q in %#v", item.Rule, got)
 		}
 	}
 }
@@ -71,14 +76,13 @@ func TestFormatViolation(t *testing.T) {
 	t.Parallel()
 
 	msg := formatViolation(&policydomain.Violation{
-		Package:    "example.com/p",
-		Key:        "distance",
-		Value:      0.9,
-		Comparator: policydomain.ComparatorMax,
-		Threshold:  0.5,
+		Package:   "example.com/p",
+		Value:     0.9,
+		Threshold: 0.5,
+		Rule:      "**",
 	})
 
-	want := "example.com/p (package): distance 0.90 exceeds max 0.50"
+	want := "example.com/p (package): distance 0.90 exceeds max 0.50 (rule **)"
 
 	if msg != want {
 		t.Fatalf("formatViolation = %q, want %q", msg, want)

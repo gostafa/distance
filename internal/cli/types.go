@@ -33,7 +33,16 @@ type (
 		showVersion     *bool
 		verbose         *bool
 		check           *bool
-		maxDistance     *float64
+		rules           ruleList
+	}
+
+	ruleSpec struct {
+		pattern string
+		maximum float64
+	}
+
+	ruleList struct {
+		items []ruleSpec
 	}
 
 	cliOptions struct {
@@ -45,8 +54,8 @@ type (
 		format          string
 		memoryProfile   string
 		patterns        []string
+		rules           ruleList
 		workers         int
-		maxDistance     float64
 		generated       bool
 		continueOnError bool
 		showVersion     bool
@@ -62,7 +71,7 @@ type (
 		logger       *slog.Logger
 		format       reportingdomain.Format
 		policySource string
-		policy       policydomain.Policy
+		policy       []policydomain.Rule
 		gating       bool
 	}
 

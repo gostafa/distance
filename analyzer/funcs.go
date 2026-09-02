@@ -66,6 +66,36 @@ func applyInt(raw json.RawMessage, dest *int) error {
 	return nil
 }
 
+func applyNumber(raw json.RawMessage, dest *float64) error {
+	if raw == nil {
+		return nil
+	}
+
+	unmarshalErr := json.Unmarshal(raw, dest)
+	if unmarshalErr != nil {
+		return fmt.Errorf(errWrapRule, unmarshalErr)
+	}
+
+	return nil
+}
+
+func applyNumberPtr(raw json.RawMessage, dest **float64) error {
+	if raw == nil {
+		return nil
+	}
+
+	var value float64
+
+	numberErr := applyNumber(raw, &value)
+	if numberErr != nil {
+		return fmt.Errorf(errWrapApply, numberErr)
+	}
+
+	*dest = &value
+
+	return nil
+}
+
 func applyString(raw json.RawMessage, dest *string) error {
 	if raw == nil {
 		return nil
@@ -105,7 +135,7 @@ func bindAnalyzer(settings *Settings) *analysis.Analyzer {
 }
 
 func computeViolations(cfg *Settings, src reportAnalyzer) (pkgViolations, error) {
-	policy, policyErr := cfg.policy()
+	rules, policyErr := settingsRules(cfg)
 	if policyErr != nil {
 		return nil, fmt.Errorf(errWrapPolicy, policyErr)
 	}
@@ -115,18 +145,18 @@ func computeViolations(cfg *Settings, src reportAnalyzer) (pkgViolations, error)
 		return nil, fmt.Errorf(errWrapAnalyzeRun, analyzeErr)
 	}
 
-	return groupByPackage(policydomain.Evaluate(&report, policy)), nil
+	return groupByPackage(policydomain.Evaluate(&report, rules)), nil
 }
 
-func decodePackageRule(raw json.RawMessage) (policydomain.PackageRule, error) {
+func decodeRuleSettings(raw json.RawMessage) (RuleSettings, error) {
 	fields, unmarshalErr := unmarshalObject(raw)
 	if unmarshalErr != nil {
-		return policydomain.PackageRule{}, fmt.Errorf(errWrapRule, unmarshalErr)
+		return RuleSettings{}, fmt.Errorf(errWrapRule, unmarshalErr)
 	}
 
-	rule, fromErr := packageRuleFromFields(fields)
+	rule, fromErr := ruleSettingsFromFields(fields)
 	if fromErr != nil {
-		return policydomain.PackageRule{}, fmt.Errorf(errWrapApply, fromErr)
+		return RuleSettings{}, fmt.Errorf(errWrapApply, fromErr)
 	}
 
 	return rule, nil
@@ -143,21 +173,21 @@ func unmarshalObject(raw json.RawMessage) (map[string]json.RawMessage, error) {
 	return fields, nil
 }
 
-func packageRuleFromFields(fields map[string]json.RawMessage) (policydomain.PackageRule, error) {
+func ruleSettingsFromFields(fields map[string]json.RawMessage) (RuleSettings, error) {
 	unknownErr := rejectUnknown(fields, ruleKeys())
 	if unknownErr != nil {
-		return policydomain.PackageRule{}, fmt.Errorf(errWrapApply, unknownErr)
+		return RuleSettings{}, fmt.Errorf(errWrapApply, unknownErr)
 	}
 
-	rule, fromErr := packageRuleFrom(fields)
+	rule, fromErr := ruleSettingsFrom(fields)
 	if fromErr != nil {
-		return policydomain.PackageRule{}, fmt.Errorf(errWrapApply, fromErr)
+		return RuleSettings{}, fmt.Errorf(errWrapApply, fromErr)
 	}
 
 	return rule, nil
 }
 
-func decodePackages(raw json.RawMessage) ([]policydomain.PackageRule, error) {
+func decodeRules(raw json.RawMessage) ([]RuleSettings, error) {
 	if raw == nil {
 		return nil, nil
 	}
@@ -177,11 +207,11 @@ func decodePackages(raw json.RawMessage) ([]policydomain.PackageRule, error) {
 	return rules, nil
 }
 
-func decodeRuleList(items []json.RawMessage) ([]policydomain.PackageRule, error) {
-	rules := make([]policydomain.PackageRule, zero, len(items))
+func decodeRuleList(items []json.RawMessage) ([]RuleSettings, error) {
+	rules := make([]RuleSettings, zero, len(items))
 
 	for i := range items {
-		rule, decodeErr := decodePackageRule(items[i])
+		rule, decodeErr := decodeRuleSettings(items[i])
 		if decodeErr != nil {
 			return nil, fmt.Errorf(errWrapApply, decodeErr)
 		}
@@ -214,11 +244,12 @@ func formatNumber(value float64) string {
 
 func formatViolation(violation *policydomain.Violation) string {
 	return fmt.Sprintf(
-		"%s (package): %s %s exceeds max %s",
+		"%s (package): %s %s exceeds max %s (rule %s)",
 		violation.Package,
-		violation.Key,
+		distance.MetricDistance,
 		formatNumber(violation.Value),
 		formatNumber(violation.Threshold),
+		violation.Rule,
 	)
 }
 
@@ -248,36 +279,42 @@ func packagePos(pass *analysis.Pass) token.Pos {
 	return token.NoPos
 }
 
-func packageRuleFrom(fields map[string]json.RawMessage) (policydomain.PackageRule, error) {
-	var rule policydomain.PackageRule
+func parseSettingsRules(settings *Settings) ([]policydomain.Rule, error) {
+	rules := make([]policydomain.Rule, zero, len(settings.Rules))
+
+	for index := range settings.Rules {
+		if settings.Rules[index].Max == nil {
+			return nil, fmt.Errorf("parseRules: rules[%d]: %w", index, errRuleMaxRequired)
+		}
+
+		rules = append(rules, policydomain.Rule{
+			Pattern: settings.Rules[index].Pattern,
+			Max:     *settings.Rules[index].Max,
+		})
+	}
+
+	validateErr := policydomain.Validate(rules)
+	if validateErr != nil {
+		return nil, fmt.Errorf("parseRules: %w", validateErr)
+	}
+
+	return rules, nil
+}
+
+func ruleSettingsFrom(fields map[string]json.RawMessage) (RuleSettings, error) {
+	var rule RuleSettings
 
 	patternErr := applyString(firstRaw(fields, keyPattern), &rule.Pattern)
 	if patternErr != nil {
-		return policydomain.PackageRule{}, fmt.Errorf(errWrapApply, patternErr)
+		return RuleSettings{}, fmt.Errorf(errWrapApply, patternErr)
 	}
 
-	numberErr := applyNumber(
-		firstRaw(fields, keyMaxDistance, keyMaxDistanceKebab),
-		&rule.MaxDistance,
-	)
+	numberErr := applyNumberPtr(firstRaw(fields, keyMax), &rule.Max)
 	if numberErr != nil {
-		return policydomain.PackageRule{}, fmt.Errorf(errWrapApply, numberErr)
+		return RuleSettings{}, fmt.Errorf(errWrapApply, numberErr)
 	}
 
 	return rule, nil
-}
-
-func applyNumber(raw json.RawMessage, dest *float64) error {
-	if raw == nil {
-		return nil
-	}
-
-	unmarshalErr := json.Unmarshal(raw, dest)
-	if unmarshalErr != nil {
-		return fmt.Errorf(errWrapRule, unmarshalErr)
-	}
-
-	return nil
 }
 
 func reportViolations(pass *analysis.Pass, violations []policydomain.Violation) {
@@ -315,21 +352,32 @@ func (err scopeError) Error() string {
 	)
 }
 
-func (settings *Settings) policy() (policydomain.Policy, error) {
-	policy := policydomain.Policy{Packages: settings.Packages}
-
-	validateErr := policydomain.Validate(policy)
-	if validateErr != nil {
-		return policydomain.Policy{}, fmt.Errorf("analyzer policy: %w", validateErr)
+func settingsRules(settings *Settings) ([]policydomain.Rule, error) {
+	if len(settings.Rules) == zero {
+		return policydomain.DefaultRules(), nil
 	}
 
-	return policy, nil
+	parsed, parseErr := parseSettingsRules(settings)
+	if parseErr != nil {
+		return nil, fmt.Errorf("rules: %w", parseErr)
+	}
+
+	return parsed, nil
+}
+
+func (settings *Settings) policy() ([]policydomain.Rule, error) {
+	rules, rulesErr := settingsRules(settings)
+	if rulesErr != nil {
+		return nil, fmt.Errorf("analyzer policy: %w", rulesErr)
+	}
+
+	return rules, nil
 }
 
 func (settings *Settings) toConfig() *distance.Config {
 	return &distance.Config{
 		Directory:        settings.Directory,
-		Patterns:         policydomain.LoadPatterns(settings.Packages),
+		Patterns:         append([]string(nil), settings.Patterns...),
 		IncludeTests:     settings.Tests,
 		IncludeGenerated: settings.Generated,
 		BuildTags:        append([]string(nil), settings.BuildTags...),
@@ -387,7 +435,8 @@ func settingsKeys() map[string]bool {
 		keyDirectory:       true,
 		keyDependencyScope: true,
 		keyDependencyKebab: true,
-		keyPackages:        true,
+		keyPatterns:        true,
+		keyRules:           true,
 		keyBuildTags:       true,
 		keyBuildTagsKebab:  true,
 		keyWorkers:         true,
@@ -400,9 +449,8 @@ func settingsKeys() map[string]bool {
 
 func ruleKeys() map[string]bool {
 	return map[string]bool{
-		keyPattern:          true,
-		keyMaxDistance:      true,
-		keyMaxDistanceKebab: true,
+		keyPattern: true,
+		keyMax:     true,
 	}
 }
 
@@ -426,12 +474,17 @@ func (settings *Settings) applyLists(raw map[string]json.RawMessage) error {
 		return fmt.Errorf(errWrapApply, tagsErr)
 	}
 
-	rules, packagesErr := decodePackages(firstRaw(raw, keyPackages))
-	if packagesErr != nil {
-		return fmt.Errorf(errWrapApply, packagesErr)
+	patternsErr := applyStrings(firstRaw(raw, keyPatterns), &settings.Patterns)
+	if patternsErr != nil {
+		return fmt.Errorf(errWrapApply, patternsErr)
 	}
 
-	settings.Packages = rules
+	rules, rulesErr := decodeRules(firstRaw(raw, keyRules))
+	if rulesErr != nil {
+		return fmt.Errorf(errWrapApply, rulesErr)
+	}
+
+	settings.Rules = rules
 
 	return nil
 }
@@ -500,22 +553,17 @@ func (settings *Settings) validate() error {
 		return fmt.Errorf(errWrapValidate, scopeErr)
 	}
 
-	policy, policyErr := settings.policy()
+	_, policyErr := settings.policy()
 	if policyErr != nil {
 		return fmt.Errorf(errWrapValidate, policyErr)
 	}
-
-	settings.Packages = policy.Packages
 
 	return nil
 }
 
 func (settings *Settings) withDefaults() *Settings {
-	if len(settings.Packages) == zero {
-		settings.Packages = []policydomain.PackageRule{{
-			Pattern:     allPackagesPattern,
-			MaxDistance: policydomain.DefaultMaxDistance,
-		}}
+	if len(settings.Patterns) == zero {
+		settings.Patterns = []string{defaultPackagePattern}
 	}
 
 	settings.DependencyScope = cmp.Or(

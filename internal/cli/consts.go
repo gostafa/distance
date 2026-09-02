@@ -11,8 +11,10 @@ const (
 	exitInterrupted = 130
 
 	emptyString = ""
+	commaSep    = ","
 	zero        = 0
 	one         = 1
+	floatBits   = 64
 
 	keyPath         = "path"
 	keyError        = "error"
@@ -23,9 +25,9 @@ const (
 	keyViolations   = "violations"
 	keyFormat       = "format"
 
-	flagNameMaxDistance = "max-distance"
-	helpTempPattern     = "distance-help-*.html"
-	policySourceFlags   = "flag thresholds"
+	flagNameRule          = "rule"
+	helpTempPattern       = "distance-help-*.html"
+	policySourceFlagRules = "flag rules"
 	usageHeader         = "usage: distance [flags] [patterns...]\n\n"
 	usageWebHint        = "\nFor an illustrated guide to the reported metrics:\n  distance --help --web\n"
 	versionPrefix       = "distance "

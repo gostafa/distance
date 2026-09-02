@@ -16,9 +16,10 @@ func TestNewBuildAnalyzersAndLoadMode(t *testing.T) {
 
 	p, err := plugin.New(map[string]any{
 		"dependency-scope": "module",
-		"packages": []any{
-			map[string]any{"pattern": "./internal/...", "max-distance": 0.2},
-			map[string]any{"pattern": "./...", "max-distance": 0.5},
+		"patterns":         []any{"./..."},
+		"rules": []any{
+			map[string]any{"pattern": "**", "max": 0.5},
+			map[string]any{"pattern": "**/internal/**", "max": 0.2},
 		},
 	})
 	if err != nil {
@@ -94,15 +95,35 @@ func TestNewRejectsAbstractnessAndInstabilitySettings(t *testing.T) {
 	}
 
 	if _, err := plugin.New(map[string]any{
-		"packages": []any{
+		"rules": []any{
 			map[string]any{
-				"pattern":      "./...",
-				"max-distance": 0.5,
+				"pattern":      "**",
+				"max":          0.5,
 				"abstractness": 0.3,
 			},
 		},
 	}); err == nil {
-		t.Fatal("expected error for abstractness on a package rule")
+		t.Fatal("expected error for abstractness on a rule")
+	}
+}
+
+func TestNewRejectsLegacyPackagesAndMaxDistance(t *testing.T) {
+	t.Parallel()
+
+	if _, err := plugin.New(map[string]any{
+		"packages": []any{
+			map[string]any{"pattern": "./...", "max-distance": 0.5},
+		},
+	}); err == nil {
+		t.Fatal("expected error for removed packages setting")
+	}
+
+	if _, err := plugin.New(map[string]any{
+		"rules": []any{
+			map[string]any{"pattern": "**", "max-distance": 0.5},
+		},
+	}); err == nil {
+		t.Fatal("expected error for removed max-distance key")
 	}
 }
 
@@ -120,8 +141,8 @@ func TestNewRejectsInvalidAnalyzerSettings(t *testing.T) {
 	}
 
 	p, err = plugin.New(map[string]any{
-		"packages": []any{
-			map[string]any{"pattern": "", "max-distance": 0.5},
+		"rules": []any{
+			map[string]any{"pattern": "", "max": 0.5},
 		},
 	})
 	if err != nil {

@@ -39,15 +39,24 @@ type (
 		key string
 	}
 
+	// RuleSettings is one inline policy rule in analyzer settings.
+	RuleSettings struct {
+		// Max is the exclusive maximum distance for matching packages.
+		Max *float64 `json:"max"`
+		// Pattern is a package-path glob (* one segment, ** any depth).
+		Pattern string `json:"pattern"`
+	}
+
 	// Settings is the golangci-lint configuration block for the distance analyzer.
 	Settings struct {
-		Directory       string                     `json:"directory"`
-		DependencyScope string                     `json:"dependency_scope"`
-		Packages        []policydomain.PackageRule `json:"packages"`
-		BuildTags       []string                   `json:"build_tags"`
-		Workers         int                        `json:"workers"`
-		Tests           bool                       `json:"tests"`
-		Generated       bool                       `json:"generated"`
-		ContinueOnError bool                       `json:"continue_on_error"`
+		Directory       string         `json:"directory"`
+		DependencyScope string         `json:"dependency_scope"`
+		Patterns        []string       `json:"patterns"`
+		BuildTags       []string       `json:"build_tags"`
+		Rules           []RuleSettings `json:"rules"`
+		Workers         int            `json:"workers"`
+		Tests           bool           `json:"tests"`
+		Generated       bool           `json:"generated"`
+		ContinueOnError bool           `json:"continue_on_error"`
 	}
 )

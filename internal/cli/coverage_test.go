@@ -8,7 +8,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/gostafa/distance/distance"
@@ -31,40 +30,70 @@ func stubAnalyze(runtime *cliRuntime) {
 	}
 }
 
-func TestResolvePolicyDefaultsAndPatterns(t *testing.T) {
-	policy, source, err := resolvePolicy(nil, 0.5)
+func TestResolvePolicyRequiresRules(t *testing.T) {
+	if _, _, err := resolvePolicy(ruleList{}); err == nil {
+		t.Fatal("empty rules succeeded")
+	}
+
+	rules := ruleList{items: []ruleSpec{{pattern: "**/internal/**", maximum: 0.2}}}
+
+	policy, source, err := resolvePolicy(rules)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if source != "flag thresholds" || len(policy.Packages) != 1 ||
-		policy.Packages[0].Pattern != "./..." || policy.Packages[0].MaxDistance != 0.5 {
+	if source != policySourceFlagRules || len(policy) != 1 ||
+		policy[0].Pattern != "**/internal/**" || policy[0].Max != 0.2 {
 
-		t.Fatalf("default policy = %+v source = %q", policy.Packages, source)
+		t.Fatalf("rule policy = %+v source = %q", policy, source)
 	}
 
-	policy, _, err = resolvePolicy([]string{"./internal/...", "./..."}, 0.3)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(policy.Packages) != 2 || policy.Packages[0].MaxDistance != 0.3 {
-		t.Fatalf("pattern policy = %+v", policy.Packages)
-	}
-
-	if _, _, err := resolvePolicy([]string{""}, 0.5); err == nil {
-		t.Fatal("empty pattern succeeded")
+	bad := ruleList{items: []ruleSpec{{pattern: "**", maximum: 2}}}
+	if _, _, err := resolvePolicy(bad); err == nil {
+		t.Fatal("out-of-range max succeeded")
 	}
 }
 
-func TestResolvePolicyOverrideSource(t *testing.T) {
-	_, source, err := resolvePolicy([]string{"./..."}, 0.4)
-	if err != nil {
+func TestParseRuleSpec(t *testing.T) {
+	t.Parallel()
+
+	got, err := parseRuleSpec("**:0.5")
+	if err != nil || got.pattern != "**" || got.maximum != 0.5 {
+		t.Fatalf("parseRuleSpec = %+v err = %v", got, err)
+	}
+
+	if _, err := parseRuleSpec("not-a-number"); err == nil {
+		t.Fatal("missing colon succeeded")
+	}
+
+	if _, err := parseRuleSpec(":0.5"); err == nil {
+		t.Fatal("empty pattern succeeded")
+	}
+
+	if _, err := parseRuleSpec("**:nope"); err == nil {
+		t.Fatal("invalid number succeeded")
+	}
+}
+
+func TestRuleListSetAndString(t *testing.T) {
+	t.Parallel()
+
+	var rules ruleList
+
+	if err := rules.Set("**:0.5"); err != nil {
 		t.Fatal(err)
 	}
 
-	if !strings.Contains(source, "flag thresholds") {
-		t.Fatalf("source = %q", source)
+	if err := rules.Set("**/internal/**:0.2"); err != nil {
+		t.Fatal(err)
+	}
+
+	if rules.String() != "**:0.5,**/internal/**:0.2" {
+		t.Fatalf("String = %q", rules.String())
+	}
+
+	if err := rules.Set("bad"); err == nil {
+		t.Fatal("invalid spec succeeded")
 	}
 }
 

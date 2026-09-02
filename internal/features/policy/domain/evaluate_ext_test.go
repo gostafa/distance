@@ -49,108 +49,83 @@ func sampleReport() distance.Report {
 	}
 }
 
-func TestEvaluateFirstMatchWins(t *testing.T) {
+func TestEvaluateMostSpecificRuleWins(t *testing.T) {
 	t.Parallel()
 
-	policy := domain.Policy{Packages: []domain.PackageRule{
-		{Pattern: "./internal/domain/...", MaxDistance: 0.2},
-		{Pattern: "./...", MaxDistance: 0.5},
-	}}
+	rules := []domain.Rule{
+		{Pattern: "**", Max: 0.5},
+		{Pattern: "**/internal/**", Max: 0.2},
+	}
 
 	got := domain.Evaluate(func() *distance.Report {
 		r := sampleReport()
-		return &r
-	}(), policy)
 
-	if len(got) != 2 {
-		t.Fatalf("violations = %#v, want 2", got)
+		return &r
+	}(), rules)
+
+	if len(got) != 3 {
+		t.Fatalf("violations = %#v, want 3", got)
 	}
 
 	byPkg := map[string]domain.Violation{}
 
-	for _, v := range got {
-		byPkg[v.Package] = v
+	for _, item := range got {
+		byPkg[item.Package] = item
 	}
 
-	if v, ok := byPkg["example.com/m/internal/domain"]; !ok || v.Threshold != 0.2 {
-		t.Fatalf("internal/domain = %#v, want first-match max 0.2", v)
+	if item, ok := byPkg["example.com/m/internal/domain"]; !ok || item.Threshold != 0.2 {
+		t.Fatalf("internal/domain = %#v, want specific max 0.2", item)
 	}
 
-	if v, ok := byPkg["example.com/m/foo"]; !ok || v.Threshold != 0.5 {
-		t.Fatalf("foo = %#v, want ./... max 0.5", v)
+	if item, ok := byPkg["example.com/m/foo"]; !ok || item.Threshold != 0.5 {
+		t.Fatalf("foo = %#v, want ** max 0.5", item)
 	}
 
-	if _, ok := byPkg["example.com/other"]; ok {
-		t.Fatal("unrelated package should not be gated")
-	}
-}
-
-func TestEvaluateOverlapPrefersListOrder(t *testing.T) {
-	t.Parallel()
-
-	// Broad rule first: the specific prefix never wins.
-	policy := domain.Policy{Packages: []domain.PackageRule{
-		{Pattern: "./...", MaxDistance: 0.8},
-		{Pattern: "./foo", MaxDistance: 0.1},
-	}}
-
-	got := domain.Evaluate(func() *distance.Report {
-		r := sampleReport()
-		return &r
-	}(), policy)
-
-	if len(got) != 1 || got[0].Package != "example.com/m/foo" || got[0].Threshold != 0.8 {
-		t.Fatalf("violations = %#v, want foo against the first ./... rule", got)
+	if item, ok := byPkg["example.com/other"]; !ok || item.Threshold != 0.5 {
+		t.Fatalf("other = %#v, want ** max 0.5", item)
 	}
 }
 
 func TestEvaluateExactImportPath(t *testing.T) {
 	t.Parallel()
 
-	policy := domain.Policy{Packages: []domain.PackageRule{
-		{Pattern: "example.com/m/foo", MaxDistance: 0.5},
-	}}
+	rules := []domain.Rule{{Pattern: "example.com/m/foo", Max: 0.5}}
 
 	got := domain.Evaluate(func() *distance.Report {
 		r := sampleReport()
+
 		return &r
-	}(), policy)
+	}(), rules)
 
 	if len(got) != 1 || got[0].Package != "example.com/m/foo" {
 		t.Fatalf("violations = %#v, want foo only", got)
 	}
 }
 
-func TestMatchPatternResolvesRelativeAndPrefix(t *testing.T) {
+func TestMatchPackage(t *testing.T) {
 	t.Parallel()
 
-	const module = "example.com/m"
-
 	cases := []struct {
-		pattern, path string
-		want          bool
+		pattern string
+		path    string
+		want    bool
 	}{
-		{"./", "example.com/m", true},
-		{"./...", "example.com/m", true},
-		{"./...", "example.com/m/foo", true},
-		{"./foo", "example.com/m/foo", true},
-		{"./foo", "example.com/m/foo/bar", false},
-		{"./foo/...", "example.com/m/foo", true},
-		{"./foo/...", "example.com/m/foo/bar", true},
-		{"./foo/...", "example.com/m/other", false},
-		{"example.com/m/foo/...", "example.com/m/foo/bar", true},
-		{"example.com/other", "example.com/other", true},
-		{"./...", "example.com/other", false},
+		{"**", "example.com/m/foo", true},
+		{"**", "a", true},
+		{"example.com/m/foo", "example.com/m/foo", true},
+		{"example.com/m/foo", "example.com/m/bar", false},
+		{"**/internal/**", "example.com/m/internal/store", true},
+		{"**/internal/**", "example.com/m/store", false},
+		{"example.com/*/foo", "example.com/m/foo", true},
+		{"example.com/*/foo", "example.com/m/n/foo", false},
+		{"**/foo", "example.com/foo", true},
+		{"**/foo", "example.com/a/b/foo", true},
 	}
 
 	for _, tc := range cases {
-		if got := domain.MatchPattern(tc.pattern, tc.path, module); got != tc.want {
-			t.Errorf("MatchPattern(%q, %q) = %v, want %v", tc.pattern, tc.path, got, tc.want)
+		if got := domain.MatchPackage(tc.pattern, tc.path); got != tc.want {
+			t.Errorf("MatchPackage(%q, %q) = %v, want %v", tc.pattern, tc.path, got, tc.want)
 		}
-	}
-
-	if !domain.MatchPattern("./...", "any/path", "") {
-		t.Error("./... with empty module should match all loaded packages")
 	}
 }
 
@@ -169,18 +144,15 @@ func TestEvaluateBoundaryTolerance(t *testing.T) {
 			}},
 		}},
 	}
-	policy := domain.Policy{Packages: []domain.PackageRule{{
-		Pattern:     "./...",
-		MaxDistance: 0.5,
-	}}}
+	rules := []domain.Rule{{Pattern: "**", Max: 0.5}}
 
-	if got := domain.Evaluate(&report, policy); len(got) != 0 {
+	if got := domain.Evaluate(&report, rules); len(got) != 0 {
 		t.Fatalf("exact boundary should pass: %#v", got)
 	}
 
 	report.Packages[0].Metrics[0].Value = 0.5 + 1e-9
 
-	if got := domain.Evaluate(&report, policy); len(got) != 1 {
+	if got := domain.Evaluate(&report, rules); len(got) != 1 {
 		t.Fatalf("over-threshold should fail: %#v", got)
 	}
 }
@@ -214,12 +186,9 @@ func TestEvaluateIgnoresAbstractnessAndInstability(t *testing.T) {
 			},
 		}},
 	}
-	policy := domain.Policy{Packages: []domain.PackageRule{{
-		Pattern:     "./...",
-		MaxDistance: 0.5,
-	}}}
+	rules := []domain.Rule{{Pattern: "**", Max: 0.5}}
 
-	if got := domain.Evaluate(&report, policy); len(got) != 0 {
+	if got := domain.Evaluate(&report, rules); len(got) != 0 {
 		t.Fatalf("A/I must not be gated: %#v", got)
 	}
 }
@@ -232,26 +201,20 @@ func TestFormatViolations(t *testing.T) {
 	}
 
 	got := domain.FormatViolations([]domain.Violation{{
-		Package:    "example.com/p",
-		Key:        string(distance.MetricDistance),
-		Value:      0.9,
-		Comparator: domain.ComparatorMax,
-		Threshold:  0.5,
+		Package:   "example.com/p",
+		Value:     0.9,
+		Threshold: 0.5,
+		Rule:      "**",
 	}})
 
-	if !strings.Contains(got, "1 violation") || !strings.Contains(got, "exceeds max 0.50") {
+	want := "example.com/p (package): distance 0.90 exceeds max 0.50 (rule **)"
+	if !strings.Contains(got, "1 violation") || !strings.Contains(got, want) {
 		t.Fatalf("FormatViolations = %q", got)
 	}
 
 	got = domain.FormatViolations([]domain.Violation{
-		{Package: "a", Key: "distance", Value: 1, Comparator: domain.ComparatorMax, Threshold: 0},
-		{
-			Package:    "b",
-			Key:        "distance",
-			Value:      math.Pi,
-			Comparator: domain.ComparatorMax,
-			Threshold:  0.5,
-		},
+		{Package: "a", Value: 1, Threshold: 0, Rule: "**"},
+		{Package: "b", Value: math.Pi, Threshold: 0.5, Rule: "**"},
 	})
 
 	if !strings.Contains(got, "2 violations") {

@@ -28,11 +28,10 @@ func TestRunnerRunReportsPackageViolations(t *testing.T) {
 
 	r := &runner{byPkg: map[string][]policydomain.Violation{
 		"example.com/p": {{
-			Package:    "example.com/p",
-			Key:        "distance",
-			Value:      0.9,
-			Comparator: policydomain.ComparatorMax,
-			Threshold:  0.5,
+			Package:   "example.com/p",
+			Value:     0.9,
+			Threshold: 0.5,
+			Rule:      "**",
 		}},
 	}}
 	r.once.Do(func() {})
@@ -58,7 +57,7 @@ func TestRunnerRunReportsPackageViolations(t *testing.T) {
 		t.Errorf("package diagnostic position = %v, want %v", diagnostics[0].Pos, file.Package)
 	}
 
-	if !strings.Contains(diagnostics[0].Message, "exceeds max 0.50") {
+	if !strings.Contains(diagnostics[0].Message, "exceeds max 0.50 (rule **)") {
 		t.Errorf("diagnostic = %q", diagnostics[0].Message)
 	}
 
@@ -72,9 +71,9 @@ func TestRunnerRunReportsPackageViolations(t *testing.T) {
 }
 
 func TestRunnerLoadErrors(t *testing.T) {
-	r := newRunner((&Settings{Packages: []policydomain.PackageRule{{
-		Pattern:     "",
-		MaxDistance: 0.5,
+	r := newRunner((&Settings{Rules: []RuleSettings{{
+		Pattern: "",
+		Max:     floatPtr(0.5),
 	}}}).withDefaults())
 	r.load()
 
@@ -84,7 +83,7 @@ func TestRunnerLoadErrors(t *testing.T) {
 
 	r = newRunner((&Settings{
 		Directory: filepath.Join(t.TempDir(), "missing"),
-		Packages:  []policydomain.PackageRule{{Pattern: "./...", MaxDistance: 0.5}},
+		Rules:     []RuleSettings{{Pattern: "**", Max: floatPtr(0.5)}},
 	}).withDefaults())
 	r.load()
 
@@ -110,23 +109,23 @@ func TestInlinePolicyDefaultsAndIgnoresModularityFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(defaults.Packages) != 1 ||
-		defaults.Packages[0].Pattern != "./..." ||
-		defaults.Packages[0].MaxDistance != 0.5 {
+	if len(defaults) != 1 ||
+		defaults[0].Pattern != "**" ||
+		defaults[0].Max != 0.5 {
 
-		t.Fatalf("default policy = %+v", defaults.Packages)
+		t.Fatalf("default policy = %+v", defaults)
 	}
 
-	inline, err := (&Settings{Packages: []policydomain.PackageRule{
-		{Pattern: "./internal/...", MaxDistance: 0.2},
-		{Pattern: "./...", MaxDistance: 0.5},
+	inline, err := (&Settings{Rules: []RuleSettings{
+		{Pattern: "**/internal/**", Max: floatPtr(0.2)},
+		{Pattern: "**", Max: floatPtr(0.5)},
 	}}).policy()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(inline.Packages) != 2 || inline.Packages[0].MaxDistance != 0.2 {
-		t.Fatalf("inline policy = %+v", inline.Packages)
+	if len(inline) != 2 || inline[0].Max != 0.2 {
+		t.Fatalf("inline policy = %+v", inline)
 	}
 }
 
@@ -136,21 +135,42 @@ func TestEmptyPackagePosition(t *testing.T) {
 	}
 }
 
-func TestSettingsToConfigUnionsPatterns(t *testing.T) {
-	cfg := (&Settings{Packages: []policydomain.PackageRule{
-		{Pattern: "./internal/...", MaxDistance: 0.2},
-		{Pattern: "./internal/...", MaxDistance: 0.1},
-		{Pattern: "./...", MaxDistance: 0.5},
-	}}).toConfig()
+func TestSettingsToConfigUsesLoadPatterns(t *testing.T) {
+	cfg := (&Settings{
+		Patterns: []string{"./internal/...", "./..."},
+		Rules: []RuleSettings{
+			{Pattern: "**/internal/**", Max: floatPtr(0.2)},
+			{Pattern: "**", Max: floatPtr(0.5)},
+		},
+	}).withDefaults().toConfig()
 
 	if len(cfg.Patterns) != 2 || cfg.Patterns[0] != "./internal/..." || cfg.Patterns[1] != "./..." {
 		t.Fatalf("load patterns = %v", cfg.Patterns)
 	}
 }
 
-func TestSettingsRejectsEmptyPattern(t *testing.T) {
-	err := (&Settings{Packages: []policydomain.PackageRule{{Pattern: "", MaxDistance: 0.5}}}).validate()
+func TestSettingsRejectsEmptyPatternAndMissingMax(t *testing.T) {
+	err := (&Settings{Rules: []RuleSettings{{Pattern: "", Max: floatPtr(0.5)}}}).validate()
 	if err == nil {
 		t.Fatal("empty pattern accepted")
+	}
+
+	err = (&Settings{Rules: []RuleSettings{{Pattern: "**"}}}).validate()
+	if err == nil {
+		t.Fatal("missing max accepted")
+	}
+}
+
+func TestSettingsRejectsLegacyKeys(t *testing.T) {
+	t.Parallel()
+
+	var settings Settings
+
+	if err := settings.UnmarshalJSON([]byte(`{"packages":[]}`)); err == nil {
+		t.Fatal("packages key accepted")
+	}
+
+	if err := settings.UnmarshalJSON([]byte(`{"rules":[{"pattern":"**","max-distance":0.5}]}`)); err == nil {
+		t.Fatal("max-distance key accepted")
 	}
 }

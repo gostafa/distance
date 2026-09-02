@@ -5,11 +5,11 @@ package domain
 
 import (
 	"errors"
-
-	"github.com/gostafa/distance/internal/shared/version"
 )
 
 var (
-	errShortWrite = errors.New("short write")
-	_             = version.Version
+	errNotFinite     = errors.New("must be a finite number")
+	errPatternEmpty  = errors.New("pattern must be non-empty")
+	errMaxOutOfRange = errors.New("max must be in [0, 1]")
+	errNegativeWrite = errors.New("negative write count")
 )

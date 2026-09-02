@@ -43,7 +43,7 @@ func (runtime *cliRuntime) announceWeb(ctx context.Context, logger *slog.Logger,
 }
 
 func attachPolicy(ctx context.Context, session *runSession) int {
-	session.gating = session.opts.check || flagWasSet(session.opts.flagSet, flagNameMaxDistance)
+	session.gating = session.opts.check
 
 	if !session.gating {
 		return zero
@@ -67,7 +67,7 @@ func (runtime *cliRuntime) execute(args []string) int {
 }
 
 func fillPolicy(ctx context.Context, session *runSession) int {
-	policy, source, policyErr := resolvePolicy(session.opts.patterns, session.opts.maxDistance)
+	policy, source, policyErr := resolvePolicy(session.opts.rules)
 	if policyErr != nil {
 		session.logger.ErrorContext(
 			ctx,
@@ -417,12 +417,12 @@ func bindPolicyFlags(flagSet *flag.FlagSet, bindings *flagBindings) {
 	bindings.check = flagSet.Bool(
 		"check",
 		false,
-		"enforce --max-distance and exit 3 on violations (default threshold 0.5)",
+		"enforce -rule thresholds and exit 3 on violations",
 	)
-	bindings.maxDistance = flagSet.Float64(
-		flagNameMaxDistance,
-		policydomain.DefaultMaxDistance,
-		"maximum package distance; applies to every positional pattern (implies -check)",
+	flagSet.Var(
+		&bindings.rules,
+		flagNameRule,
+		"policy rule pattern:max (repeatable; e.g. '**/internal/**':0.2; requires -check)",
 	)
 }
 
@@ -723,7 +723,7 @@ func optionsFrom(flagSet *flag.FlagSet, bindings *flagBindings) *cliOptions {
 		showVersion:     *bindings.showVersion,
 		verbose:         *bindings.verbose,
 		check:           *bindings.check,
-		maxDistance:     *bindings.maxDistance,
+		rules:           bindings.rules,
 		patterns:        flagSet.Args(),
 		flagSet:         flagSet,
 	}
@@ -745,13 +745,72 @@ func parseCLI(args []string) (opts *cliOptions, code int) {
 	return optionsFrom(flagSet, bindings), zero
 }
 
-func resolvePolicy(patterns []string, maxDistance float64) (policydomain.Policy, string, error) {
-	policy, policyErr := policydomain.PolicyFromPatterns(patterns, maxDistance)
-	if policyErr != nil {
-		return policydomain.Policy{}, emptyString, fmt.Errorf(errWrapPolicy, policyErr)
+func parseRuleSpec(value string) (ruleSpec, error) {
+	pattern, number, ok := strings.Cut(value, ":")
+
+	if !ok {
+		return ruleSpec{}, fmt.Errorf("%w: got %q", errExpectedPatternMax, value)
 	}
 
-	return policy, policySourceFlags, nil
+	pattern = strings.TrimSpace(pattern)
+
+	if pattern == emptyString {
+		return ruleSpec{}, fmt.Errorf("%w: %q", errEmptyPattern, value)
+	}
+
+	parsed, err := strconv.ParseFloat(strings.TrimSpace(number), floatBits)
+	if err != nil {
+		return ruleSpec{}, fmt.Errorf("invalid number in %q: %w", value, err)
+	}
+
+	return ruleSpec{pattern: pattern, maximum: parsed}, nil
+}
+
+func policyDomainRules(specs []ruleSpec) []policydomain.Rule {
+	rules := make([]policydomain.Rule, zero, len(specs))
+
+	for i := range specs {
+		rules = append(rules, policydomain.Rule{Pattern: specs[i].pattern, Max: specs[i].maximum})
+	}
+
+	return rules
+}
+
+func resolvePolicy(rules ruleList) ([]policydomain.Rule, string, error) {
+	if len(rules.items) == zero {
+		return nil, emptyString, errNoPolicyRules
+	}
+
+	domainRules := policyDomainRules(rules.items)
+
+	validateErr := policydomain.Validate(domainRules)
+	if validateErr != nil {
+		return nil, emptyString, fmt.Errorf(errWrapPolicy, validateErr)
+	}
+
+	return domainRules, policySourceFlagRules, nil
+}
+
+func (list *ruleList) Set(value string) error {
+	spec, err := parseRuleSpec(value)
+	if err != nil {
+		return fmt.Errorf("set rule: %w", err)
+	}
+
+	list.items = append(list.items, spec)
+
+	return nil
+}
+
+func (list *ruleList) String() string {
+	parts := make([]string, zero, len(list.items))
+
+	for i := range list.items {
+		parts = append(parts, list.items[i].pattern+":"+
+			strconv.FormatFloat(list.items[i].maximum, 'g', -one, floatBits))
+	}
+
+	return strings.Join(parts, commaSep)
 }
 
 func resolveReportFormat(opts *cliOptions, log *slog.Logger) formatOut {

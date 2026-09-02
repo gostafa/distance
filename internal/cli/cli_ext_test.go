@@ -214,15 +214,15 @@ func chdirFixture(t *testing.T) {
 	t.Chdir(fixture)
 }
 
-// Black-box: a violated max-distance exits 3. Isolated fixture packages
-// have distance 1, so a 0.5 threshold fails.
+// Black-box: --check --rule='**':0 fails. Isolated fixture packages have
+// distance 1.
 func TestRunCheckFailsExitsThree(t *testing.T) {
 	chdirFixture(t)
 
 	if code := cli.Run(
 		[]string{
 			"--check",
-			"--max-distance=0",
+			"--rule=**:0",
 			"--output",
 			filepath.Join(t.TempDir(), "r.txt"),
 			"./...",
@@ -232,14 +232,14 @@ func TestRunCheckFailsExitsThree(t *testing.T) {
 	}
 }
 
-// Black-box: a satisfiable max-distance policy passes with exit 0.
+// Black-box: a satisfiable glob rule passes with exit 0.
 func TestRunCheckFlagPolicyPasses(t *testing.T) {
 	chdirFixture(t)
 
 	args := []string{
 		"--output", filepath.Join(t.TempDir(), "r.txt"),
 		"--check",
-		"--max-distance=1",
+		"--rule=**:1",
 		"./...",
 	}
 
@@ -248,18 +248,16 @@ func TestRunCheckFlagPolicyPasses(t *testing.T) {
 	}
 }
 
-// Black-box: --check with the default 0.5 threshold is a valid gate, and
-// gating never runs without --check or --max-distance.
+// Black-box: --check without --rule is usage 2; ungated runs stay 0.
 func TestRunCheckKeyAndTriggers(t *testing.T) {
 	chdirFixture(t)
 
 	out := filepath.Join(t.TempDir(), "r.txt")
 
-	if code := cli.Run([]string{"--check", "--output", out, "./..."}); code != 3 {
-		t.Fatalf("default check exit = %d, want 3 (isolated D=1 > 0.5)", code)
+	if code := cli.Run([]string{"--check", "--output", out, "./..."}); code != 2 {
+		t.Fatalf("check without rule exit = %d, want 2", code)
 	}
 
-	// No policy flag → no gate.
 	if code := cli.Run([]string{"--output", out, "./..."}); code != 0 {
 		t.Fatalf("ungated exit = %d, want 0", code)
 	}

@@ -12,255 +12,239 @@ import (
 	"github.com/gostafa/distance/distance"
 )
 
-// Evaluate returns policy violations for packages in report.
-func Evaluate(report *distance.Report, policy Policy) []Violation {
+// DefaultRules returns the recommended baseline when no rules are configured
+// (plugin users). A single catch-all rule gates distance at 0.5.
+func DefaultRules() []Rule {
+	return []Rule{{Pattern: doubleStar, Max: DefaultMaxDistance}}
+}
+
+// Evaluate checks a report against rules and returns violations. When no rules
+// are given, DefaultRules applies. Packages are already sorted in the report,
+// so the result order is deterministic.
+func Evaluate(report *distance.Report, rules []Rule) []Violation {
+	if len(rules) == zero {
+		rules = DefaultRules()
+	}
+
 	violations := make([]Violation, zero, len(report.Packages))
 
-	for i := range report.Packages {
-		violations = append(
-			violations,
-			packageViolations(&report.Packages[i], policy, report.Module)...,
-		)
+	for index := range report.Packages {
+		violations = append(violations, evaluatePackage(&report.Packages[index], rules)...)
 	}
 
 	return violations
 }
 
-// FormatViolations renders violations as a multi-line policy failure message.
+// FormatViolations renders violations as a human-readable summary. The empty
+// slice yields the empty string, so callers can print unconditionally.
 func FormatViolations(violations []Violation) string {
 	if len(violations) == zero {
 		return emptyString
 	}
 
-	return formatViolationList(violations)
-}
+	var builder strings.Builder
 
-// Limit returns the exclusive distance bound.
-func (rule PackageRule) Limit() float64 {
-	return rule.MaxDistance
-}
-
-// LoadPatterns returns unique non-empty patterns from rules, preserving order.
-func LoadPatterns(rules []PackageRule) []string {
-	patterns := make([]string, zero, len(rules))
-	seen := make(map[string]bool, len(rules))
-
-	return appendUniquePatterns(patterns, seen, rules)
-}
-
-// MatchPattern reports whether importPath matches pattern under modulePath.
-func MatchPattern(pattern, importPath, modulePath string) bool {
-	resolved := resolvePattern(pattern, modulePath)
-
-	if resolved == allPackagesPattern {
-		return true
-	}
-
-	return matchResolved(resolved, importPath)
-}
-
-// PolicyFromPatterns builds a Policy with one rule per pattern.
-func PolicyFromPatterns(patterns []string, maxDistance float64) (Policy, error) {
-	if len(patterns) == zero {
-		patterns = []string{allPackagesPattern}
-	}
-
-	policy, err := validatedPolicy(Policy{Packages: rulesFromPatterns(patterns, maxDistance)})
+	err := writeViolationHeader(&builder, len(violations))
 	if err != nil {
-		return Policy{}, fmt.Errorf("policy PolicyFromPatterns: %w", err)
+		return emptyString
 	}
 
-	return policy, nil
+	err = writeViolationLines(&builder, violations)
+	if err != nil {
+		return emptyString
+	}
+
+	return builder.String()
 }
 
-// RulePattern returns the package match pattern.
-func (rule PackageRule) RulePattern() string {
-	return rule.Pattern
+// MatchPackage reports whether pattern matches importPath. * matches exactly
+// one path segment; ** matches zero or more segments. Matching is against the
+// full import path using / as the separator. When multiple rules match, the
+// evaluator selects the most specific pattern rather than the first match.
+func MatchPackage(pattern, importPath string) bool {
+	return matchSegments(splitPattern(pattern), strings.Split(importPath, pathSep))
 }
 
-// Validate checks that every package rule is well-formed.
-func Validate(policy Policy) error {
-	for i := range policy.Packages {
-		checkErr := checkRule(policy.Packages[i], i)
-		if checkErr != nil {
-			return fmt.Errorf("policy Validate: %w", checkErr)
+// Validate checks that every rule has a non-empty pattern and a finite Max in
+// [0, 1].
+func Validate(rules []Rule) error {
+	for index := range rules {
+		err := validateRule(fmt.Sprintf("rules[%d]", index), rules[index])
+		if err != nil {
+			return fmt.Errorf("Validate: %w", err)
 		}
 	}
 
 	return nil
 }
 
-// Error returns the validation message for a package rule.
-func (err ruleError) Error() string {
-	return fmt.Sprintf("packages[%d]: %s", err.index, err.reason)
-}
-
-func appendUniquePatterns(patterns []string, seen map[string]bool, rules []PackageRule) []string {
-	for i := range rules {
-		pattern := rules[i].RulePattern()
-
-		if pattern == emptyString || seen[pattern] {
-			continue
-		}
-
-		seen[pattern] = true
-		patterns = append(patterns, pattern)
-	}
-
-	return patterns
-}
-
-func checkRule(rule PackageRule, index int) error {
-	if strings.TrimSpace(rule.RulePattern()) == emptyString {
-		return ruleError{index: index, reason: "pattern must not be empty"}
-	}
-
-	if !finite(rule.Limit()) {
-		return ruleError{index: index, reason: "max-distance must be a finite number"}
+func checkFinite(key string, value float64) error {
+	if math.IsNaN(value) || math.IsInf(value, zero) {
+		return fmt.Errorf(errFmtKeyed, key, errNotFinite)
 	}
 
 	return nil
 }
 
 func comparisonTolerance(value, threshold float64) float64 {
-	return comparisonEpsilon * max(one, math.Abs(value), math.Abs(threshold))
+	return comparisonEps * max(one, math.Abs(value), math.Abs(threshold))
 }
 
-func distanceViolation(pkg string, res *distance.MetricResult, rule PackageRule) (Violation, bool) {
-	if res.Name != string(distance.MetricDistance) || !res.Applicable {
+func distanceViolation(gate *packageGate) (Violation, bool) {
+	if !gate.ok {
 		return Violation{}, false
 	}
 
-	if res.Value-rule.Limit() <= comparisonTolerance(res.Value, rule.Limit()) {
+	if gate.value-gate.threshold <= comparisonTolerance(gate.value, gate.threshold) {
 		return Violation{}, false
 	}
 
 	return Violation{
-		Package:    pkg,
-		Key:        res.Name,
-		Value:      res.Value,
-		Comparator: ComparatorMax,
-		Threshold:  rule.Limit(),
+		Package:   gate.pkg,
+		Value:     gate.value,
+		Threshold: gate.threshold,
+		Rule:      gate.pattern,
 	}, true
 }
 
-func finite(value float64) bool {
-	return !math.IsNaN(value) && !math.IsInf(value, zero)
+func evaluatePackage(pkg *distance.PackageReport, rules []Rule) []Violation {
+	threshold, pattern := matchingRule(pkg.Path, rules)
+
+	if pattern == emptyString {
+		return nil
+	}
+
+	return scanMetrics(pkg, pattern, threshold)
 }
 
 func formatNumber(value float64) string {
 	if value == math.Trunc(value) && !math.IsInf(value, zero) {
-		return strconv.FormatFloat(value, 'f', floatPrecAuto, floatBitSize)
+		return strconv.FormatFloat(value, 'f', -one, floatBits)
 	}
 
-	return strconv.FormatFloat(value, 'f', floatPrecFixed, floatBitSize)
+	return strconv.FormatFloat(value, 'f', two, floatBits)
 }
 
-func formatViolationList(violations []Violation) string {
-	var builder strings.Builder
+func matchDoubleStar(pattern, path []string, pos matchPos) bool {
+	pos.pi++
 
-	writeErr := writeBuilder(
-		&builder,
-		fmt.Sprintf("policy: %d %s\n", len(violations), violationNoun(len(violations))),
-	)
-	if writeErr != nil {
-		return emptyString
-	}
-
-	return writeViolationLines(&builder, violations)
-}
-
-func matchResolved(resolved, importPath string) bool {
-	before, ok := strings.CutSuffix(resolved, "/...")
-
-	if !ok {
-		return importPath == resolved
-	}
-
-	if before == emptyString {
+	if pos.pi == len(pattern) {
 		return true
 	}
 
-	return importPath == before || strings.HasPrefix(importPath, before+"/")
+	for pos.si <= len(path) {
+		if matchFrom(pattern, path, pos) {
+			return true
+		}
+
+		pos.si++
+	}
+
+	return false
 }
 
-func matchingRule(rules []PackageRule, importPath, modulePath string) (PackageRule, bool) {
-	for i := range rules {
-		if MatchPattern(rules[i].RulePattern(), importPath, modulePath) {
-			return rules[i], true
+func matchFrom(pattern, path []string, pos matchPos) bool {
+	for pos.pi < len(pattern) {
+		if pattern[pos.pi] == doubleStar {
+			return matchDoubleStar(pattern, path, pos)
+		}
+
+		if !matchOne(pattern, path, &pos) {
+			return false
 		}
 	}
 
-	return PackageRule{}, false
+	return pos.si == len(path)
 }
 
-func packageViolations(pkg *distance.PackageReport, policy Policy, module string) []Violation {
-	rule, ok := matchingRule(policy.Packages, pkg.Path, module)
+func matchOne(pattern, path []string, pos *matchPos) bool {
+	if pos.si >= len(path) {
+		return false
+	}
 
-	if !ok {
+	if pattern[pos.pi] != star && pattern[pos.pi] != path[pos.si] {
+		return false
+	}
+
+	pos.pi++
+
+	pos.si++
+
+	return true
+}
+
+func matchSegments(pattern, path []string) bool {
+	return matchFrom(pattern, path, matchPos{})
+}
+
+func matchingCandidate(rule *Rule, importPath, currentPattern string) *Rule {
+	if !MatchPackage(rule.Pattern, importPath) {
 		return nil
 	}
 
-	return scanMetrics(pkg, rule)
+	if currentPattern != emptyString && !moreSpecific(rule.Pattern, currentPattern) {
+		return nil
+	}
+
+	return rule
 }
 
-func resolveAll(modulePath string) string {
-	if modulePath == emptyString {
-		return allPackagesPattern
+func matchingRule(importPath string, rules []Rule) (threshold float64, pattern string) {
+	for index := range rules {
+		rule := matchingCandidate(&rules[index], importPath, pattern)
+
+		if rule == nil {
+			continue
+		}
+
+		threshold = rule.Max
+		pattern = rule.Pattern
 	}
 
-	return modulePath + "/..."
+	return threshold, pattern
 }
 
-func resolveDot(modulePath string) string {
-	if modulePath == emptyString {
-		return currentPackage
+func moreSpecific(candidate, current string) bool {
+	candidateLiteral, candidateWildcards, candidateSegments := patternSpecificity(candidate)
+	currentLiteral, currentWildcards, currentSegments := patternSpecificity(current)
+
+	if candidateLiteral != currentLiteral {
+		return candidateLiteral > currentLiteral
 	}
 
-	return modulePath
+	if candidateWildcards != currentWildcards {
+		return candidateWildcards < currentWildcards
+	}
+
+	// A longer pattern is more constrained. Equality deliberately returns true
+	// so later rules override earlier rules with the same specificity.
+	return candidateSegments >= currentSegments
 }
 
-func resolvePattern(pattern, modulePath string) string {
-	if pattern == currentPackage {
-		return resolveDot(modulePath)
+func patternSpecificity(pattern string) (literal, wildcards, segments int) {
+	segmentsList := splitPattern(pattern)
+
+	for index := range segmentsList {
+		segment := &segmentsList[index]
+		segments++
+
+		if *segment == star || *segment == doubleStar {
+			wildcards++
+
+			continue
+		}
+
+		literal++
 	}
 
-	if pattern == allPackagesPattern {
-		return resolveAll(modulePath)
-	}
-
-	return resolveRelative(pattern, modulePath)
+	return literal, wildcards, segments
 }
 
-func resolveRelative(pattern, modulePath string) string {
-	after, ok := strings.CutPrefix(pattern, "./")
-
-	if !ok || modulePath == emptyString {
-		return pattern
-	}
-
-	if after == emptyString {
-		return modulePath
-	}
-
-	return modulePath + "/" + after
-}
-
-func rulesFromPatterns(patterns []string, maxDistance float64) []PackageRule {
-	rules := make([]PackageRule, zero, len(patterns))
-
-	for i := range patterns {
-		rules = append(rules, PackageRule{Pattern: patterns[i], MaxDistance: maxDistance})
-	}
-
-	return rules
-}
-
-func scanMetrics(pkg *distance.PackageReport, rule PackageRule) []Violation {
+func scanMetrics(pkg *distance.PackageReport, pattern string, threshold float64) []Violation {
 	violations := make([]Violation, zero, len(pkg.Metrics))
 
-	for i := range pkg.Metrics {
-		item, hit := distanceViolation(pkg.Path, &pkg.Metrics[i], rule)
+	for index := range pkg.Metrics {
+		item, hit := distanceViolation(metricGate(pkg, &pkg.Metrics[index], pattern, threshold))
 
 		if hit {
 			violations = append(violations, item)
@@ -270,52 +254,94 @@ func scanMetrics(pkg *distance.PackageReport, rule PackageRule) []Violation {
 	return violations
 }
 
-func validatedPolicy(policy Policy) (Policy, error) {
-	validateErr := Validate(policy)
-	if validateErr != nil {
-		return Policy{}, fmt.Errorf("policy from patterns: %w", validateErr)
+func metricGate(
+	pkg *distance.PackageReport,
+	res *distance.MetricResult,
+	pattern string,
+	threshold float64,
+) *packageGate {
+	if res.Name != string(distance.MetricDistance) || !res.Applicable {
+		return &packageGate{pkg: pkg.Path, pattern: pattern, threshold: threshold}
 	}
 
-	return policy, nil
+	return &packageGate{
+		pkg:       pkg.Path,
+		pattern:   pattern,
+		threshold: threshold,
+		value:     res.Value,
+		ok:        true,
+	}
 }
 
-func violationNoun(count int) string {
-	if count == one {
-		return "violation"
+func splitPattern(pattern string) []string {
+	if pattern == emptyString {
+		return nil
 	}
 
-	return "violations"
+	return strings.Split(pattern, pathSep)
 }
 
-func writeBuilder(builder *strings.Builder, text string) error {
-	written, writeErr := builder.WriteString(text)
-	if writeErr != nil {
-		return fmt.Errorf(errWrapWriteBuilder, writeErr)
+func validateRule(key string, rule Rule) error {
+	if rule.Pattern == emptyString {
+		return fmt.Errorf(errFmtKeyed, key, errPatternEmpty)
 	}
 
-	if written != len(text) {
-		return fmt.Errorf(errWrapWriteBuilder, errShortWrite)
+	err := checkFinite(key+".max", rule.Max)
+	if err != nil {
+		return fmt.Errorf("validateRule: %w", err)
+	}
+
+	if rule.Max < zero || rule.Max > one {
+		return fmt.Errorf("%s.max: %w (got %g)", key, errMaxOutOfRange, rule.Max)
 	}
 
 	return nil
 }
 
-func writeViolationLines(builder *strings.Builder, violations []Violation) string {
-	for i := range violations {
-		item := &violations[i]
-		line := fmt.Sprintf(
-			"  %s (package): %s %s exceeds max %s\n",
-			item.Package,
-			item.Key,
-			formatNumber(item.Value),
-			formatNumber(item.Threshold),
-		)
+func writef(builder *strings.Builder, format string, args ...any) error {
+	written, err := fmt.Fprintf(builder, format, args...)
+	if err != nil {
+		return fmt.Errorf(errFmtWrite, err)
+	}
 
-		writeErr := writeBuilder(builder, line)
-		if writeErr != nil {
-			return builder.String()
+	if written < zero {
+		return fmt.Errorf(errFmtWrite, errNegativeWrite)
+	}
+
+	return nil
+}
+
+func writeViolationHeader(builder *strings.Builder, count int) error {
+	noun := "violations"
+
+	if count == one {
+		noun = "violation"
+	}
+
+	err := writef(builder, "policy: %d %s\n", count, noun)
+	if err != nil {
+		return fmt.Errorf("writeViolationHeader: %w", err)
+	}
+
+	return nil
+}
+
+func writeViolationLines(builder *strings.Builder, violations []Violation) error {
+	for index := range violations {
+		violation := &violations[index]
+		where := violation.Package + " (package)"
+
+		err := writef(builder, "  %s: %s %s exceeds max %s (rule %s)\n",
+			where,
+			distance.MetricDistance,
+			formatNumber(violation.Value),
+			formatNumber(violation.Threshold),
+			violation.Rule,
+		)
+		if err != nil {
+			return fmt.Errorf("writeViolationLines: %w", err)
 		}
 	}
 
-	return builder.String()
+	return nil
 }

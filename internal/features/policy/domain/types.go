@@ -4,44 +4,34 @@
 package domain
 
 type (
-
-	// PatternHolder exposes a package rule's match pattern.
-	PatternHolder interface {
-		RulePattern() string
-	}
-
-	// DistanceLimit exposes a package rule's exclusive distance bound.
-	DistanceLimit interface {
-		Limit() float64
-	}
-
-	// ruleError is a validation failure for one packages[] entry.
-	ruleError struct {
-		reason string
-		index  int
-	}
-
-	// Violation records one policy failure for a package metric.
+	// Violation records one package whose distance exceeded a matching rule.
 	Violation struct {
-		Package    string
-		Key        string
-		Comparator string
-		Value      float64
-		Threshold  float64
+		Package   string
+		Rule      string
+		Value     float64
+		Threshold float64
 	}
 
-	// PackageRule is one packages[] entry matching a pattern to a max distance.
-	PackageRule struct {
-		// Pattern is a go list package pattern (./..., ./internal/..., an
-		// exact import path, or mod/pkg/...).
-		Pattern string `json:"pattern"`
-		// MaxDistance is the exclusive upper bound: fail when distance >
-		// MaxDistance.
-		MaxDistance float64 `json:"max_distance"`
+	// Rule is a package-path glob paired with an exclusive maximum distance.
+	// When more than one rule matches, the most specific pattern wins; exact
+	// ties use the later rule.
+	Rule struct {
+		// Pattern is a glob against the full import path; * matches one segment,
+		// ** matches zero or more segments, using / as the separator.
+		Pattern string
+		// Max is the exclusive upper bound in [0, 1]: fail when distance > Max.
+		Max float64
 	}
 
-	// Policy is the set of package rules evaluated against a report.
-	Policy struct {
-		Packages []PackageRule
+	matchPos struct {
+		pi, si int
+	}
+
+	packageGate = struct {
+		pkg       string
+		pattern   string
+		threshold float64
+		value     float64
+		ok        bool
 	}
 )
