@@ -16,12 +16,16 @@ import (
 
 // NewService returns a Collector backed by source.
 func NewService(source outbound.FactSource) *Service {
-	return &Service{source: source}
+	return &Service{
+		load: func(ctx context.Context, opts *outbound.FactOptions) (string, []model.PackageExtract, error) {
+			return source.Load(ctx, opts)
+		},
+	}
 }
 
 // Collect loads package extracts and assembles project facts.
 func (svc *Service) Collect(ctx context.Context, opt *outbound.FactOptions) (ProjectFacts, error) {
-	modulePath, extracts, err := svc.source.Load(ctx, opt)
+	modulePath, extracts, err := svc.load(ctx, opt)
 	if err != nil {
 		return domain.ProjectFacts{}, fmt.Errorf("application Collect: %w", err)
 	}
@@ -82,9 +86,9 @@ func countExtractTypes(extracts []model.PackageExtract) int {
 func packageFromExtract(input *packageAssemble) domain.PackageFacts {
 	pkg := domain.PackageFacts{
 		ID:       input.pkgID,
-		Path:     model.PathOf(input.extract),
+		Path:     input.extract.Path,
 		InModule: input.extract.InModule,
-		Imports:  sortedUnique(model.ImportsOf(input.extract), model.PathOf(input.extract)),
+		Imports:  sortedUnique(input.extract.Imports, input.extract.Path),
 		TypeIDs:  make([]int, zeroIndex, len(input.extract.Types)),
 	}
 

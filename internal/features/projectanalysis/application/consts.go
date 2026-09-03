@@ -20,6 +20,8 @@ const (
 	// ScopePackage marks a metric computed once per package.
 	ScopePackage = "package"
 
+	errWrapAnalyze = "application Analyze: %w"
+
 	zero                = 0
 	mainSequenceBalance = 1
 )

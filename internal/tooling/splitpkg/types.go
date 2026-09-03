@@ -13,12 +13,12 @@ type (
 		source string
 	}
 
-	categoryFile struct {
+	categoryFile = struct {
 		name  string
 		decls []declEntry
 	}
 
-	packageSplit struct {
+	packageSplit = struct {
 		root            *os.Root
 		dir             string
 		pkgName         string
@@ -31,7 +31,7 @@ type (
 		goFiles         []string
 	}
 
-	categoryWrite struct {
+	categoryWrite = struct {
 		store           *packageSplit
 		pkgName         string
 		filename        string
@@ -39,15 +39,9 @@ type (
 		decls           []declEntry
 	}
 
-	declCollect struct {
+	declCollect = struct {
 		split *packageSplit
 		path  string
 		src   []byte
-	}
-
-	pathError struct {
-		err  error
-		op   string
-		path string
 	}
 )

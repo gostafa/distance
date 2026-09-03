@@ -45,7 +45,7 @@ func TestRunnerRunReportsPackageViolations(t *testing.T) {
 		Report: func(d analysis.Diagnostic) { diagnostics = append(diagnostics, d) },
 	}
 
-	if _, err := r.run(pass); err != nil {
+	if _, err := runRunner(r, pass); err != nil {
 		t.Fatal(err)
 	}
 
@@ -65,27 +65,31 @@ func TestRunnerRunReportsPackageViolations(t *testing.T) {
 	failing := &runner{err: sentinel}
 	failing.once.Do(func() {})
 
-	if _, err := failing.run(pass); !errors.Is(err, sentinel) {
+	if _, err := runRunner(failing, pass); !errors.Is(err, sentinel) {
 		t.Fatalf("run error = %v, want sentinel", err)
 	}
 }
 
 func TestRunnerLoadErrors(t *testing.T) {
-	r := newRunner((&Settings{Rules: []RuleSettings{{
+	settings := Settings{Rules: []RuleSettings{{
 		Pattern: "",
 		Max:     floatPtr(0.5),
-	}}}).withDefaults())
-	r.load()
+	}}}
+	s := settingsWithDefaults(&settings)
+	r := newRunner(&s)
+	loadRunner(r)
 
 	if r.err == nil || !strings.Contains(r.err.Error(), "distance policy") {
 		t.Fatalf("policy load error = %v", r.err)
 	}
 
-	r = newRunner((&Settings{
+	settings = Settings{
 		Directory: filepath.Join(t.TempDir(), "missing"),
 		Rules:     []RuleSettings{{Pattern: "**", Max: floatPtr(0.5)}},
-	}).withDefaults())
-	r.load()
+	}
+	s = settingsWithDefaults(&settings)
+	r = newRunner(&s)
+	loadRunner(r)
 
 	if r.err == nil || !strings.Contains(r.err.Error(), "distance analyze") {
 		t.Fatalf("analysis load error = %v", r.err)
@@ -104,7 +108,8 @@ func TestInlinePolicyDefaultsAndIgnoresModularityFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defaults, err := (&Settings{Directory: dir}).withDefaults().policy()
+	defaultsSettings := Settings{Directory: dir}
+	defaults, err := settingsRules(&defaultsSettings)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,10 +121,11 @@ func TestInlinePolicyDefaultsAndIgnoresModularityFile(t *testing.T) {
 		t.Fatalf("default policy = %+v", defaults)
 	}
 
-	inline, err := (&Settings{Rules: []RuleSettings{
+	inlineSettings := Settings{Rules: []RuleSettings{
 		{Pattern: "**/internal/**", Max: floatPtr(0.2)},
 		{Pattern: "**", Max: floatPtr(0.5)},
-	}}).policy()
+	}}
+	inline, err := settingsRules(&inlineSettings)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,13 +142,15 @@ func TestEmptyPackagePosition(t *testing.T) {
 }
 
 func TestSettingsToConfigUsesLoadPatterns(t *testing.T) {
-	cfg := (&Settings{
+	settings := Settings{
 		Patterns: []string{"./internal/...", "./..."},
 		Rules: []RuleSettings{
 			{Pattern: "**/internal/**", Max: floatPtr(0.2)},
 			{Pattern: "**", Max: floatPtr(0.5)},
 		},
-	}).withDefaults().toConfig()
+	}
+	s := settingsWithDefaults(&settings)
+	cfg := settingsToConfig(&s)
 
 	if len(cfg.Patterns) != 2 || cfg.Patterns[0] != "./internal/..." || cfg.Patterns[1] != "./..." {
 		t.Fatalf("load patterns = %v", cfg.Patterns)
@@ -150,12 +158,14 @@ func TestSettingsToConfigUsesLoadPatterns(t *testing.T) {
 }
 
 func TestSettingsRejectsEmptyPatternAndMissingMax(t *testing.T) {
-	err := (&Settings{Rules: []RuleSettings{{Pattern: "", Max: floatPtr(0.5)}}}).validate()
+	settings := Settings{Rules: []RuleSettings{{Pattern: "", Max: floatPtr(0.5)}}}
+	err := validateSettings(&settings)
 	if err == nil {
 		t.Fatal("empty pattern accepted")
 	}
 
-	err = (&Settings{Rules: []RuleSettings{{Pattern: "**"}}}).validate()
+	settings = Settings{Rules: []RuleSettings{{Pattern: "**"}}}
+	err = validateSettings(&settings)
 	if err == nil {
 		t.Fatal("missing max accepted")
 	}
@@ -166,12 +176,13 @@ func TestSettingsRejectsLegacyKeys(t *testing.T) {
 
 	var settings Settings
 
-	if err := settings.UnmarshalJSON([]byte(`{"packages":[]}`)); err == nil {
+	if err := UnmarshalSettings([]byte(`{"packages":[]}`), &settings); err == nil {
 		t.Fatal("packages key accepted")
 	}
 
-	if err := settings.UnmarshalJSON(
+	if err := UnmarshalSettings(
 		[]byte(`{"rules":[{"pattern":"**","max-distance":0.5}]}`),
+		&settings,
 	); err == nil {
 		t.Fatal("max-distance key accepted")
 	}

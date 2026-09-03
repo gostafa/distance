@@ -59,11 +59,11 @@ func TestWantsWebHelp(t *testing.T) {
 func TestRunUsageErrors(t *testing.T) {
 	t.Parallel()
 
-	if code := execute([]string{"--format=xml"}); code != 2 {
+	if code := executeDefault([]string{"--format=xml"}); code != 2 {
 		t.Errorf("invalid format exit = %d, want 2", code)
 	}
 
-	if code := execute([]string{"--this-flag-does-not-exist"}); code != 2 {
+	if code := executeDefault([]string{"--this-flag-does-not-exist"}); code != 2 {
 		t.Errorf("unknown flag exit = %d, want 2", code)
 	}
 }

@@ -14,13 +14,13 @@ import (
 	"github.com/gostafa/distance/distance"
 )
 
-func execute(args []string) int {
+func executeDefault(args []string) int {
 	runtime := defaultRuntime()
 
-	return runtime.execute(args)
+	return execute(&runtime, args)
 }
 
-func stubAnalyze(runtime *cliRuntime) {
+func stubAnalyze(runtime *runtimeConfig) {
 	runtime.analyze = func(context.Context, *distance.Config) (distance.Report, error) {
 		return distance.Report{
 			SchemaVersion: "6",
@@ -31,11 +31,11 @@ func stubAnalyze(runtime *cliRuntime) {
 }
 
 func TestResolvePolicyRequiresRules(t *testing.T) {
-	if _, _, err := resolvePolicy(ruleList{}); err == nil {
+	if _, _, err := resolvePolicy(nil); err == nil {
 		t.Fatal("empty rules succeeded")
 	}
 
-	rules := ruleList{items: []ruleSpec{{pattern: "**/internal/**", maximum: 0.2}}}
+	rules := []ruleSpec{{pattern: "**/internal/**", maximum: 0.2}}
 
 	policy, source, err := resolvePolicy(rules)
 	if err != nil {
@@ -48,7 +48,7 @@ func TestResolvePolicyRequiresRules(t *testing.T) {
 		t.Fatalf("rule policy = %+v source = %q", policy, source)
 	}
 
-	bad := ruleList{items: []ruleSpec{{pattern: "**", maximum: 2}}}
+	bad := []ruleSpec{{pattern: "**", maximum: 2}}
 	if _, _, err := resolvePolicy(bad); err == nil {
 		t.Fatal("out-of-range max succeeded")
 	}
@@ -75,36 +75,38 @@ func TestParseRuleSpec(t *testing.T) {
 	}
 }
 
-func TestRuleListSetAndString(t *testing.T) {
+func TestRuleFlagAccumulation(t *testing.T) {
 	t.Parallel()
 
-	var rules ruleList
+	var rules []ruleSpec
 
-	if err := rules.Set("**:0.5"); err != nil {
+	if err := appendRule(&rules, "**:0.5"); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := rules.Set("**/internal/**:0.2"); err != nil {
+	if err := appendRule(&rules, "**/internal/**:0.2"); err != nil {
 		t.Fatal(err)
 	}
 
-	if rules.String() != "**:0.5,**/internal/**:0.2" {
-		t.Fatalf("String = %q", rules.String())
+	if len(rules) != 2 ||
+		rules[0].pattern != "**" || rules[0].maximum != 0.5 ||
+		rules[1].pattern != "**/internal/**" || rules[1].maximum != 0.2 {
+		t.Fatalf("rules = %+v", rules)
 	}
 
-	if err := rules.Set("bad"); err == nil {
+	if err := appendRule(&rules, "bad"); err == nil {
 		t.Fatal("invalid spec succeeded")
 	}
 }
 
 func TestRunEarlyErrorPaths(t *testing.T) {
-	if code := execute([]string{"--verbose", "--dependency-scope=nope"}); code != 1 {
+	if code := executeDefault([]string{"--verbose", "--dependency-scope=nope"}); code != 1 {
 		t.Fatalf("invalid dependency scope exit = %d, want 1", code)
 	}
 
 	badProfile := filepath.Join(t.TempDir(), "missing", "cpu.prof")
 
-	if code := execute([]string{"--cpu-profile=" + badProfile}); code != 1 {
+	if code := executeDefault([]string{"--cpu-profile=" + badProfile}); code != 1 {
 		t.Fatalf("bad CPU profile exit = %d, want 1", code)
 	}
 
@@ -113,7 +115,7 @@ func TestRunEarlyErrorPaths(t *testing.T) {
 	t.Setenv("TMP", badTemp)
 
 	runtime := defaultRuntime()
-	if code := runtime.runWebHelp(); code != 1 {
+	if code := runWebHelp(&runtime); code != 1 {
 		t.Fatalf("web help with bad temp dir exit = %d, want 1", code)
 	}
 }
@@ -125,7 +127,7 @@ func TestRunCanceledAnalysis(t *testing.T) {
 		return distance.Report{}, context.Canceled
 	}
 
-	if code := runtime.execute([]string{"./..."}); code != 130 {
+	if code := execute(&runtime, []string{"./..."}); code != 130 {
 		t.Fatalf("exit = %d, want 130", code)
 	}
 }
@@ -136,7 +138,7 @@ func TestRunMemoryProfileAndReportWriteErrors(t *testing.T) {
 
 	badHeap := filepath.Join(t.TempDir(), "missing", "heap.prof")
 
-	if code := runtime.execute([]string{"--memory-profile=" + badHeap, "./..."}); code != 1 {
+	if code := execute(&runtime, []string{"--memory-profile=" + badHeap, "./..."}); code != 1 {
 		t.Fatalf("bad memory profile exit = %d", code)
 	}
 
@@ -151,7 +153,7 @@ func TestRunMemoryProfileAndReportWriteErrors(t *testing.T) {
 
 	out := filepath.Join(outDir, "report.json")
 
-	if code := runtime.execute([]string{"--format=json", "--output=" + out, "./..."}); code != 1 {
+	if code := execute(&runtime, []string{"--format=json", "--output=" + out, "./..."}); code != 1 {
 		t.Fatalf("unwritable output exit = %d", code)
 	}
 }
@@ -166,7 +168,7 @@ func TestRunWebDefaultOpensBrowser(t *testing.T) {
 	runtime.isTerminal = func() bool { return true }
 	runtime.openBrowser = func(string) error { return errors.New("no browser") }
 
-	if code := runtime.execute([]string{"--format=web", "./..."}); code != 0 {
+	if code := execute(&runtime, []string{"--format=web", "./..."}); code != 0 {
 		t.Fatalf("web default exit = %d", code)
 	}
 
@@ -183,7 +185,8 @@ func TestRunCPUStopProfileError(t *testing.T) {
 		return func() error { return errors.New("stop failed") }, nil
 	}
 
-	if code := runtime.execute(
+	if code := execute(
+		&runtime,
 		[]string{"--cpu-profile=" + filepath.Join(t.TempDir(), "cpu.prof"), "./..."},
 	); code != 0 {
 		t.Fatalf("exit = %d, want 0 (stop error is logged only)", code)
@@ -196,7 +199,7 @@ func TestRunWebHelpTerminalBrowserWarn(t *testing.T) {
 	runtime.isTerminal = func() bool { return true }
 	runtime.openBrowser = func(string) error { return errors.New("open failed") }
 
-	if code := runtime.runWebHelp(); code != 0 {
+	if code := runWebHelp(&runtime); code != 0 {
 		t.Fatalf("runWebHelp exit = %d", code)
 	}
 }
@@ -206,14 +209,14 @@ func TestWriteHelpDocsCloseAndWriteErrors(t *testing.T) {
 
 	runtime.closeHelpFile = func(*os.File) error { return errors.New("close failed") }
 
-	if _, err := runtime.writeHelpDocs(); err == nil {
+	if _, err := writeHelpDocs(&runtime); err == nil {
 		t.Fatal("want close error")
 	}
 
 	runtime = defaultRuntime()
 	runtime.writeDocs = func(io.WriteCloser, string) error { return errors.New("docs failed") }
 
-	if _, err := runtime.writeHelpDocs(); err == nil {
+	if _, err := writeHelpDocs(&runtime); err == nil {
 		t.Fatal("want docs write error")
 	}
 }

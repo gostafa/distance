@@ -122,7 +122,7 @@ func typeKind(named *types.Named) uint8 {
 }
 
 // New returns a Loader that extracts type facts via go/packages.
-func New() *Loader { return &Loader{} }
+func New() *Loader { return &Loader{extract: extractFacts} }
 
 func defaultLoaderRuntime() loaderRuntime {
 	return loaderRuntime{
@@ -131,9 +131,8 @@ func defaultLoaderRuntime() loaderRuntime {
 	}
 }
 
-// Load loads packages and returns the module path plus one extract per package.
-func (*Loader) Load(ctx context.Context, opt *fo.FactOptions) (mod string, ext Loaded, err error) {
-	out := defaultLoaderRuntime().load(ctx, opt)
+func extractFacts(ctx context.Context, opt *fo.FactOptions) (mod string, ext Loaded, err error) {
+	out := load(ctx, defaultLoaderRuntime(), opt)
 
 	if out.err != nil {
 		return emptyString, nil, fmt.Errorf(errWrapLoad, out.err)
@@ -142,15 +141,29 @@ func (*Loader) Load(ctx context.Context, opt *fo.FactOptions) (mod string, ext L
 	return out.mod, out.ext, nil
 }
 
-func (rtm loaderRuntime) load(ctx context.Context, opt *factOpts) loadOut {
-	pkgs, err := rtm.loadPackages(ctx, opt)
+// Load loads packages and returns the module path plus one extract per package.
+func (loader *Loader) Load(ctx context.Context, opt *factOpts) (mod string, ext Loaded, err error) {
+	mod, ext, err = loader.extract(ctx, opt)
+	if err != nil {
+		return emptyString, nil, fmt.Errorf(errWrapLoad, err)
+	}
+
+	return mod, ext, nil
+}
+
+func load(ctx context.Context, rtm loaderRuntime, opt *factOpts) loadOut {
+	pkgs, err := loadPackages(ctx, rtm, opt)
 	if err != nil {
 		return loadOut{err: fmt.Errorf(errWrapLoad, err)}
 	}
 
 	modulePath := mainModulePath(pkgs)
 
-	extracts, err := rtm.extractAll(ctx, &extractJob{pkgs: pkgs, opts: opt, modulePath: modulePath})
+	extracts, err := extractAll(
+		ctx,
+		rtm,
+		&extractJob{pkgs: pkgs, opts: opt, modulePath: modulePath},
+	)
 	if err != nil {
 		return loadOut{err: fmt.Errorf(errWrapLoad, err)}
 	}
@@ -158,7 +171,7 @@ func (rtm loaderRuntime) load(ctx context.Context, opt *factOpts) loadOut {
 	return loadOut{mod: modulePath, ext: extracts}
 }
 
-func (rtm loaderRuntime) loadPackages(ctx context.Context, opt *factOpts) (loadedPkgs, error) {
+func loadPackages(ctx context.Context, rtm loaderRuntime, opt *factOpts) (loadedPkgs, error) {
 	patterns := loadPatterns(opt)
 
 	loaded, err := rtm.packagesLoad(packagesConfig(ctx, opt), patterns...)
@@ -214,7 +227,7 @@ func finishLoad(loaded loadedPkgs, pats []string, opts *fo.FactOptions) (loadedP
 	return pkgs, nil
 }
 
-func (rtm loaderRuntime) extractAll(ctx context.Context, job *extractJob) (pkgExtracts, error) {
+func extractAll(ctx context.Context, rtm loaderRuntime, job *extractJob) (pkgExtracts, error) {
 	extracts := emptyExtracts(len(job.pkgs))
 
 	err := rtm.runExtractWorkers(
@@ -306,13 +319,13 @@ func filterPkgs(byPath pkgByPath, order []string, opt *factOpts) (pkgs loadedPkg
 	out := filterOut{pkgs: make([]*packages.Package, emptyLen, len(order))}
 
 	for i := range order {
-		out.absorb(byPath[order[i]], order[i], opt)
+		absorb(&out, byPath[order[i]], opt)
 	}
 
 	return out.pkgs, out.errs
 }
 
-func (out *filterOut) absorb(pkg *packages.Package, path string, opts *fo.FactOptions) {
+func absorb(out *filterOut, pkg *packages.Package, opts *fo.FactOptions) {
 	if !packageBroken(pkg) {
 		out.pkgs = append(out.pkgs, pkg)
 
@@ -323,7 +336,7 @@ func (out *filterOut) absorb(pkg *packages.Package, path string, opts *fo.FactOp
 		return
 	}
 
-	out.errs = append(out.errs, packageErrorMsgs(path, pkg)...)
+	out.errs = append(out.errs, packageErrorMsgs(pkg.PkgPath, pkg)...)
 }
 
 func packageBroken(pkg *packages.Package) bool {

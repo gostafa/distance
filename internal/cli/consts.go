@@ -11,7 +11,6 @@ const (
 	exitInterrupted = 130
 
 	emptyString = ""
-	commaSep    = ","
 	zero        = 0
 	one         = 1
 	floatBits   = 64
@@ -56,6 +55,8 @@ const (
 	errWrapStderr         = "cli writeStderr: %w"
 	errWrapPolicy         = "cli resolvePolicy: %w"
 	errWrapPickOpen       = "cli pickOpen: %w"
+	errFmtStdoutClose     = "stdout close: %w"
+	errFmtStdoutWrite     = "stdout write: %w"
 	errFmtStartCPU        = "profiling startCPU: %w"
 	errFmtWriteHeap       = "profiling writeHeap: %w"
 	errFmtCreateProfile   = "create profile file: %w"

@@ -20,14 +20,21 @@ func TestStringers(t *testing.T) {
 		Types:      make([]TypeFacts, 3),
 	}
 
-	if s := pf.String(); !strings.Contains(s, "2 packages") || !strings.Contains(s, "3 types") {
-		t.Errorf("ProjectFacts.String = %q", s)
+	if s := ProjectFactsString(
+		pf,
+	); !strings.Contains(s, "2 packages") ||
+		!strings.Contains(s, "3 types") {
+		t.Errorf("ProjectFactsString = %q", s)
 	}
 
 	tf := &TypeFacts{Name: "W", Kind: KindInterface}
 
-	if s := tf.String(); !strings.Contains(s, `"W"`) {
-		t.Errorf("TypeFacts.String = %q", s)
+	if s := FormatTypeFacts(tf); !strings.Contains(s, `"W"`) {
+		t.Errorf("FormatTypeFacts = %q", s)
+	}
+
+	if s := DumpFacts(pf); !strings.Contains(s, "2 packages") {
+		t.Errorf("DumpFacts = %q", s)
 	}
 
 	named := model.FormatNamed("E", model.KindOther)

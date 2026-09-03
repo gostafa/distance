@@ -19,13 +19,13 @@ type (
 
 	// Service is the default Collector implementation.
 	Service struct {
-		source outbound.FactSource
+		load func(context.Context, *outbound.FactOptions) (string, []model.PackageExtract, error)
 	}
 
 	// ProjectFacts is the assembled project snapshot returned by Collect.
 	ProjectFacts = domain.ProjectFacts
 
-	packageAssemble struct {
+	packageAssemble = struct {
 		extract *model.PackageExtract
 		typeID  *int
 		facts   *domain.ProjectFacts

@@ -14,13 +14,17 @@ import (
 	"github.com/gostafa/distance/internal/infrastructure/goloader"
 )
 
-func defaultPipelineRuntime() pipelineRuntime {
-	return pipelineRuntime{runWorkers: goloader.RunWorkers}
-}
-
 // NewPipeline returns a Pipeline that collects facts via facts.
 func NewPipeline(facts typefacts.Collector) *Pipeline {
-	return &Pipeline{facts: facts, runtime: defaultPipelineRuntime()}
+	return pipelineWithWorkers(facts, goloader.RunWorkers)
+}
+
+func pipelineWithWorkers(facts typefacts.Collector, runWorkers workerRunFunc) *Pipeline {
+	return &Pipeline{
+		analyze: func(ctx context.Context, opts *Options) (Result, error) {
+			return runPipeline(ctx, &pipelineRuntime{facts: facts, runWorkers: runWorkers}, opts)
+		},
+	}
 }
 
 // NewDefaultPipeline returns a Pipeline wired with the default goloader fact source.
@@ -30,12 +34,21 @@ func NewDefaultPipeline() *Pipeline {
 
 // Analyze collects type facts and computes package metrics for opts.
 func (pipe *Pipeline) Analyze(ctx context.Context, opts *Options) (Result, error) {
-	facts, err := pipe.facts.Collect(ctx, collectOptions(opts))
+	result, err := pipe.analyze(ctx, opts)
 	if err != nil {
-		return Result{}, fmt.Errorf("application Analyze: %w", err)
+		return Result{}, fmt.Errorf(errWrapAnalyze, err)
 	}
 
-	result, err := pipe.assemble(ctx, &assembleIn{facts: &facts, opts: opts})
+	return result, nil
+}
+
+func runPipeline(ctx context.Context, runtime *pipelineRuntime, opts *Options) (Result, error) {
+	facts, err := runtime.facts.Collect(ctx, collectOptions(opts))
+	if err != nil {
+		return Result{}, fmt.Errorf(errWrapAnalyze, err)
+	}
+
+	result, err := assemble(ctx, runtime, &assembleIn{facts: &facts, opts: opts})
 	if err != nil {
 		return Result{}, fmt.Errorf("application assemble: %w", err)
 	}
@@ -43,13 +56,13 @@ func (pipe *Pipeline) Analyze(ctx context.Context, opts *Options) (Result, error
 	return result, nil
 }
 
-func (pipe *Pipeline) assemble(ctx context.Context, args *assembleIn) (Result, error) {
+func assemble(ctx context.Context, runtime *pipelineRuntime, args *assembleIn) (Result, error) {
 	err := ctx.Err()
 	if err != nil {
 		return Result{}, fmt.Errorf("application assembleResult: %w", err)
 	}
 
-	result, err := pipe.buildResults(ctx, args)
+	result, err := buildResults(ctx, runtime, args)
 	if err != nil {
 		return Result{}, fmt.Errorf("application build packages: %w", err)
 	}
@@ -57,13 +70,13 @@ func (pipe *Pipeline) assemble(ctx context.Context, args *assembleIn) (Result, e
 	return result, nil
 }
 
-func (pipe *Pipeline) buildResults(ctx context.Context, args *assembleIn) (Result, error) {
+func buildResults(ctx context.Context, runtime *pipelineRuntime, args *assembleIn) (Result, error) {
 	graph := coupling.BuildDependencyGraph(args.facts, args.opts.DependencyScope)
-	packageResults := emptyPackageResults(args.facts.PackageCount())
+	packageResults := emptyPackageResults(len(args.facts.Packages))
 
-	err := pipe.runtime.runWorkers(ctx, goloader.WorkerRun{
-		Workers: goloader.Workers(args.opts.Workers, args.facts.PackageCount()),
-		Tasks:   args.facts.PackageCount(),
+	err := runtime.runWorkers(ctx, goloader.WorkerRun{
+		Workers: goloader.Workers(args.opts.Workers, len(args.facts.Packages)),
+		Tasks:   len(args.facts.Packages),
 	}, fillPackageAt(&fillInput{facts: args.facts, graph: &graph, rows: packageResults}))
 	if err != nil {
 		return Result{}, fmt.Errorf("application buildPackageResults: %w", err)
@@ -129,7 +142,7 @@ func analyzePackage(input *analyzePackageInput) PackageResult {
 }
 
 func computeForPackages(in *computeIn) []packageMetrics {
-	results := make([]packageMetrics, zero, in.facts.PackageCount())
+	results := make([]packageMetrics, zero, len(in.facts.Packages))
 
 	for pkgID := range in.facts.Packages {
 		results = append(results, computeOne(in, pkgID))

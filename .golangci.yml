@@ -9,9 +9,20 @@ linters:
     - testpackage
     - godot
     - exhaustruct
-  enable: [distance]
+  enable: [distance, reusability]
   settings:
     custom:
+      reusability:
+        type: module
+        description: Enforce Go type reusability policy thresholds
+        settings:
+          dependency-scope: module
+          field-usage: direct
+          rules:
+            - pattern: '**'
+              min: 0.80
+            - pattern: '**/*_test'
+              min: 0.0
       distance:
         type: module
         description: Enforce Go main-sequence distance policy thresholds

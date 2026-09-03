@@ -17,7 +17,7 @@ import (
 )
 
 type (
-	flagBindings struct {
+	flagBindings = struct {
 		format          *string
 		webReport       *bool
 		output          *string
@@ -33,19 +33,15 @@ type (
 		showVersion     *bool
 		verbose         *bool
 		check           *bool
-		rules           ruleList
+		rules           []ruleSpec
 	}
 
-	ruleSpec struct {
+	ruleSpec = struct {
 		pattern string
 		maximum float64
 	}
 
-	ruleList struct {
-		items []ruleSpec
-	}
-
-	cliOptions struct {
+	cliOptions = struct {
 		flagSet         *flag.FlagSet
 		cpuProfile      string
 		output          string
@@ -54,7 +50,7 @@ type (
 		format          string
 		memoryProfile   string
 		patterns        []string
-		rules           ruleList
+		rules           []ruleSpec
 		workers         int
 		generated       bool
 		continueOnError bool
@@ -66,7 +62,7 @@ type (
 		webReport       bool
 	}
 
-	runSession struct {
+	runSession = struct {
 		opts         *cliOptions
 		logger       *slog.Logger
 		format       reportingdomain.Format
@@ -75,7 +71,7 @@ type (
 		gating       bool
 	}
 
-	cliRuntime struct {
+	runtimeConfig = struct {
 		analyze        func(context.Context, *distance.Config) (distance.Report, error)
 		isTerminal     func() bool
 		createHelpTemp func(string, string) (*os.File, error)
@@ -90,26 +86,26 @@ type (
 		w *bufio.Writer
 	}
 
-	reportSink struct {
+	reportSink = struct {
 		io.WriteCloser
 	}
 
-	analyzeArgs struct {
+	analyzeArgs = struct {
 		cfg *distance.Config
 		log *slog.Logger
 	}
 
-	analyzeOut struct {
+	analyzeOut = struct {
 		report distance.Report
 		code   int
 	}
 
-	formatOut struct {
+	formatOut = struct {
 		format reportingdomain.Format
 		code   int
 	}
 
-	reportArgs struct {
+	reportArgs = struct {
 		report  *distance.Report
 		session *runSession
 	}
@@ -118,5 +114,10 @@ type (
 		log   *slog.Logger
 		path  string
 		guide bool
+	}
+
+	heapArgs = struct {
+		log  *slog.Logger
+		path string
 	}
 )

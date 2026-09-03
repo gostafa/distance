@@ -14,16 +14,19 @@ import (
 )
 
 type (
-	backendFunc func(context.Context, *distance.Config) (distance.Report, error)
+	backend struct {
+		analyze func(context.Context, *distance.Config) (distance.Report, error)
+	}
 
-	analyzeIn struct {
+	analyzeIn = struct {
 		cfg      *distance.Config
 		analyzer *projapp.Pipeline
 	}
 )
 
-func (fn backendFunc) Analyze(ctx context.Context, cfg *distance.Config) (distance.Report, error) {
-	report, err := fn(ctx, cfg)
+// Analyze runs the injected analyze function for cfg.
+func (b backend) Analyze(ctx context.Context, cfg *distance.Config) (distance.Report, error) {
+	report, err := b.analyze(ctx, cfg)
 	if err != nil {
 		return distance.Report{}, fmt.Errorf(errWrapBackend, err)
 	}
@@ -58,26 +61,28 @@ func analyzeWithPipeline(ctx context.Context, in *analyzeIn) (distance.Report, e
 	return report, nil
 }
 
-func backendFor(analyzer *projapp.Pipeline) backendFunc {
-	return func(ctx context.Context, cfg *distance.Config) (distance.Report, error) {
-		result, analyzeErr := analyzer.Analyze(ctx, toAppOptions(cfg))
-		if analyzeErr != nil {
-			return distance.Report{}, fmt.Errorf(errWrapBackend, analyzeErr)
-		}
+func backendFor(analyzer *projapp.Pipeline) backend {
+	return backend{
+		analyze: func(ctx context.Context, cfg *distance.Config) (distance.Report, error) {
+			result, analyzeErr := analyzer.Analyze(ctx, toAppOptions(cfg))
+			if analyzeErr != nil {
+				return distance.Report{}, fmt.Errorf(errWrapBackend, analyzeErr)
+			}
 
-		return fromAppResult(&result), nil
+			return fromAppResult(&result), nil
+		},
 	}
 }
 
 func toAppOptions(cfg *distance.Config) *projapp.Options {
 	return &projapp.Options{
 		Directory:        cfg.Directory,
-		Patterns:         cfg.PatternList(),
+		Patterns:         cfg.Patterns,
 		IncludeTests:     cfg.IncludeTests,
 		IncludeGenerated: cfg.IncludeGenerated,
 		BuildTags:        cfg.BuildTags,
 		Workers:          cfg.Workers,
-		DependencyScope:  wireScope(cfg.ScopeName()),
+		DependencyScope:  wireScope(cfg.DependencyScope),
 		ContinueOnError:  cfg.ContinueOnError,
 	}
 }

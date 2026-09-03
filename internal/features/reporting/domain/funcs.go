@@ -126,9 +126,9 @@ func efferentDoc() MetricDoc {
 
 // ParseFormat maps a format name to a Format value.
 func ParseFormat(name string) (Format, bool) {
-	switch Format(name) {
+	switch name {
 	case FormatText, FormatJSON, FormatCSV, FormatWeb:
-		return Format(name), true
+		return name, true
 	default:
 		return emptyString, false
 	}
@@ -175,27 +175,11 @@ func cellWidth(sizer cellSizer) int {
 	return sizer.width()
 }
 
-func paintWith(painter colorist, text, style string) string {
-	return painter.paint(text, style)
-}
-
-func findChild(finder childFinder, name string) *treeNode {
-	return finder.child(name)
-}
-
-func measureTable(measurer columnMeasurer) {
-	measurer.measureColumns()
-}
-
-func headerCells(emitter rowEmitter) []tableCell {
-	return emitter.headerRow()
-}
-
 func (cell *tableCell) width() int {
 	return utf8.RuneCountInString(cell.prefix) + utf8.RuneCountInString(cell.text)
 }
 
-func (opts *TextOptions) paint(text, style string) string {
+func paint(opts *TextOptions, text, style string) string {
 	if !opts.Color || style == emptyString {
 		return text
 	}
@@ -203,7 +187,7 @@ func (opts *TextOptions) paint(text, style string) string {
 	return style + text + ansiReset
 }
 
-func (node *treeNode) child(name string) *treeNode {
+func findChild(node *treeNode, name string) *treeNode {
 	for i := range node.children {
 		if node.children[i].name == name {
 			return node.children[i]
@@ -237,10 +221,10 @@ func aggregateTree(node *treeNode, summaries map[*treeNode]*treeSummary) *treeSu
 	return summary
 }
 
-func collectPackageStats(pkg *distance.PackageReport, pkgAgg map[string]*columnStats) {
-	for i := range pkg.Metrics {
-		if pkg.Metrics[i].Applicable {
-			addStat(pkgAgg, pkg.Metrics[i].Name, pkg.Metrics[i].Value)
+func collectPackageStats(pkg *treePkg, pkgAgg map[string]*columnStats) {
+	for i := range pkg.metrics {
+		if pkg.metrics[i].applicable {
+			addStat(pkgAgg, pkg.metrics[i].name, pkg.metrics[i].value)
 		}
 	}
 }
@@ -274,7 +258,7 @@ func mergeStats(dst, src map[string]*columnStats) {
 	}
 }
 
-func (node *treeNode) compress() {
+func compressNode(node *treeNode) {
 	for node.pkg == nil && len(node.children) == one {
 		only := node.children[zero]
 
@@ -284,8 +268,7 @@ func (node *treeNode) compress() {
 	}
 
 	for i := range node.children {
-		node.children[i].
-			compress()
+		compressNode(node.children[i])
 	}
 }
 
@@ -305,7 +288,7 @@ func insertPackage(root *treeNode, pkg *distance.PackageReport, module string) {
 	rel := relPath(pkg.Path, module)
 
 	if rel == pathDot {
-		root.pkg = pkg
+		root.pkg = toTreePkg(pkg)
 
 		return
 	}
@@ -320,13 +303,26 @@ func attachAtPath(root *treeNode, pkg *distance.PackageReport, rel string) {
 		node = findChild(node, seg)
 	}
 
-	node.pkg = pkg
+	node.pkg = toTreePkg(pkg)
+}
+
+func toTreePkg(pkg *distance.PackageReport) *treePkg {
+	metrics := make([]treeMetric, zero, len(pkg.Metrics))
+
+	for i := range pkg.Metrics {
+		metrics = append(metrics, treeMetric{
+			name:       pkg.Metrics[i].Name,
+			value:      pkg.Metrics[i].Value,
+			applicable: pkg.Metrics[i].Applicable,
+		})
+	}
+
+	return &treePkg{metrics: metrics}
 }
 
 func compressChildren(root *treeNode) {
 	for i := range root.children {
-		root.children[i].
-			compress()
+		compressNode(root.children[i])
 	}
 }
 
@@ -359,8 +355,13 @@ func Text(report *distance.Report, opts *TextOptions) string {
 	writeBuilder(&builder, newline)
 
 	table := newTextTable(report)
-	table.writeAligned(&builder, opts)
-	table.writeFooters(&builder, report, opts)
+	writeAligned(table, &builder, opts)
+	writeFooters(&writeFootersIn{
+		table: table,
+		buf:   &builder,
+		rep:   report,
+		opt:   opts,
+	})
 
 	return builder.String()
 }
@@ -381,7 +382,7 @@ func writeModuleLine(builder *strings.Builder, report *distance.Report, opts *Te
 	}
 
 	writeBuilder(builder, modulePrefix)
-	writeBuilder(builder, paintWith(opts, report.Module, ansiBold))
+	writeBuilder(builder, paint(opts, report.Module, ansiBold))
 	writeBuilder(builder, newline)
 }
 
@@ -389,90 +390,101 @@ func newTextTable(report *distance.Report) *textTable {
 	table := &textTable{pkgCols: packageColumns(report)}
 	summaries := make(map[*treeNode]*treeSummary)
 
-	table.rows = append(table.rows, headerCells(table))
+	table.rows = append(table.rows, headerRow(table))
 
 	root := buildTree(report)
 
 	root.name = pathDot
 	aggregateTree(root, summaries)
-	table.emitTreeBody(root, summaries)
+	emitTreeBody(table, root, summaries)
 
 	return table
 }
 
-func (t *textTable) headerRow() []tableCell {
-	header := make([]tableCell, zero, one+len(t.pkgCols))
+func headerRow(table *textTable) []tableCell {
+	header := make([]tableCell, zero, one+len(table.pkgCols))
 
 	header = append(header, tableCell{text: pathHeader, style: ansiDim})
 
-	for i := range t.pkgCols {
-		header = append(header, tableCell{text: abbrev(t.pkgCols[i]), style: ansiDim})
+	for i := range table.pkgCols {
+		header = append(header, tableCell{text: abbrev(table.pkgCols[i]), style: ansiDim})
 	}
 
 	return header
 }
 
-func (t *textTable) emitTreeBody(root *treeNode, summaries map[*treeNode]*treeSummary) {
+func emitTreeBody(table *textTable, root *treeNode, summaries map[*treeNode]*treeSummary) {
 	if root.pkg != nil {
-		t.emitModuleSummary(root, summaries[root])
+		emitModuleSummary(table, root, summaries[root])
 	}
 
 	for i := range root.children {
 		if root.pkg != nil || i > zero {
-			t.rows = append(t.rows, nil)
+			table.rows = append(table.rows, nil)
 		}
 
-		t.emitNode(root.children[i], summaries, &walkFrame{})
+		emitNode(&emitNodeIn{
+			table: table,
+			node:  root.children[i],
+			sums:  summaries,
+			frame: &walkFrame{},
+		})
 	}
 }
 
-func (t *textTable) writeAligned(builder *strings.Builder, opts *TextOptions) {
-	measureTable(t)
+func writeAligned(table *textTable, builder *strings.Builder, opts *TextOptions) {
+	measureColumns(table)
 
-	for i := range t.rows {
-		t.writeRow(builder, opts, t.rows[i])
+	for i := range table.rows {
+		writeRow(&writeRowIn{
+			table:   table,
+			builder: builder,
+			opts:    opts,
+			row:     table.rows[i],
+		})
 	}
 }
 
-func (t *textTable) measureColumns() {
-	count := one + len(t.pkgCols)
+func measureColumns(table *textTable) {
+	count := one + len(table.pkgCols)
 	widths := make([]int, zero, count)
 
 	for range count {
 		widths = append(widths, zero)
 	}
 
-	for i := range t.rows {
-		t.measureRow(t.rows[i], widths)
+	for i := range table.rows {
+		measureRow(table, table.rows[i], widths)
 	}
 
-	t.storeWidths(widths)
+	table.widths = widths
 }
 
-func (t *textTable) measureRow(row []tableCell, widths []int) {
+func measureRow(table *textTable, row []tableCell, widths []int) {
 	for col := range row {
 		widths[col] = max(widths[col], cellWidth(&row[col]))
 
 		if row[col].text == naCell {
-			t.sawNA = true
+			table.sawNA = true
 		}
 	}
 }
 
-func (t *textTable) storeWidths(widths []int) {
-	t.widths = widths
-}
-
-func (t *textTable) writeRow(builder *strings.Builder, opts *TextOptions, row []tableCell) {
-	if len(row) == zero {
-		writeBuilder(builder, newline)
+func writeRow(args *writeRowIn) {
+	if len(args.row) == zero {
+		writeBuilder(args.builder, newline)
 
 		return
 	}
 
-	last := lastNonEmptyCell(row)
-	opts.writeRowCells(builder, row[:last+one], t.widths)
-	writeBuilder(builder, newline)
+	last := lastNonEmptyCell(args.row)
+	writeRowCells(&writeRowCellsIn{
+		opts:    args.opts,
+		builder: args.builder,
+		cells:   args.row[:last+one],
+		widths:  args.table.widths,
+	})
+	writeBuilder(args.builder, newline)
 }
 
 func lastNonEmptyCell(row []tableCell) int {
@@ -485,25 +497,25 @@ func lastNonEmptyCell(row []tableCell) int {
 	return last
 }
 
-func (opts *TextOptions) writeRowCells(builder *strings.Builder, cells []tableCell, widths []int) {
-	last := len(cells) - one
+func writeRowCells(args *writeRowCellsIn) {
+	last := len(args.cells) - one
 
-	for col := range cells {
-		writeCellContent(builder, opts, &cells[col])
+	for col := range args.cells {
+		writeCellContent(args.builder, args.opts, &args.cells[col])
 
 		pad := zero
 
 		if col < last {
-			pad = widths[col] - cellWidth(&cells[col]) + two
+			pad = args.widths[col] - cellWidth(&args.cells[col]) + two
 		}
 
-		writeCellPad(builder, pad)
+		writeCellPad(args.builder, pad)
 	}
 }
 
 func writeCellContent(builder *strings.Builder, opts *TextOptions, cell *tableCell) {
 	writeBuilder(builder, cell.prefix)
-	writeBuilder(builder, paintWith(opts, cell.text, cell.style))
+	writeBuilder(builder, paint(opts, cell.text, cell.style))
 }
 
 func writeCellPad(builder *strings.Builder, pad int) {
@@ -514,46 +526,69 @@ func writeCellPad(builder *strings.Builder, pad int) {
 	writeBuilder(builder, strings.Repeat(spaceSep, pad))
 }
 
-func (t *textTable) writeFooters(buf *strings.Builder, rep *distance.Report, opt *TextOptions) {
-	if t.sawNA {
-		writeNALegend(buf, opt)
+func writeFooters(args *writeFootersIn) {
+	if args.table.sawNA {
+		writeNALegend(args.buf, args.opt)
 	}
 
-	if opt.Explain {
-		writeNotes(buf, rep, opt)
+	if args.opt.Explain {
+		writeNotes(args.buf, args.rep, args.opt)
 	}
 }
 
 func writeNALegend(builder *strings.Builder, opts *TextOptions) {
 	writeBuilder(builder, newline)
-	writeBuilder(builder, paintWith(opts, naCell+naLegendSuffix, ansiDim))
+	writeBuilder(builder, paint(opts, naCell+naLegendSuffix, ansiDim))
 	writeBuilder(builder, newline)
 }
 
-func (t *textTable) emitModuleSummary(node *treeNode, summary *treeSummary) {
-	t.nodeRow(node, summary, emptyString)
+func emitModuleSummary(table *textTable, node *treeNode, summary *treeSummary) {
+	nodeRow(&nodeRowIn{
+		table:   table,
+		node:    node,
+		summary: summary,
+		label:   emptyString,
+	})
 }
 
 func naTableCell() tableCell {
 	return tableCell{text: naCell, style: ansiDim}
 }
 
-func (t *textTable) emitNode(node *treeNode, sums map[*treeNode]*treeSummary, frame *walkFrame) {
-	t.nodeRow(node, sums[node], frame.prefix+frame.connector)
-	t.emitChildren(node, sums, childIndent(frame.prefix, frame.connector))
+func emitNode(args *emitNodeIn) {
+	nodeRow(&nodeRowIn{
+		table:   args.table,
+		node:    args.node,
+		summary: args.sums[args.node],
+		label:   args.frame.prefix + args.frame.connector,
+	})
+	emitChildren(&emitChildrenIn{
+		table:  args.table,
+		node:   args.node,
+		sums:   args.sums,
+		prefix: childIndent(args.frame.prefix, args.frame.connector),
+	})
 }
 
-func (t *textTable) emitChildren(node *treeNode, sums map[*treeNode]*treeSummary, prefix string) {
-	total := len(node.children)
+func emitChildren(args *emitChildrenIn) {
+	total := len(args.node.children)
 
-	for i := range node.children {
+	for i := range args.node.children {
 		if i > zero {
-			t.rows = append(t.rows, []tableCell{{prefix: prefix + pipeGlyph}})
+			args.table.rows = append(
+				args.table.rows,
+				[]tableCell{{prefix: args.prefix + pipeGlyph}},
+			)
 		}
 
-		t.emitNode(node.children[i], sums, &walkFrame{
-			prefix:    prefix,
-			connector: branchGlyph(i, total),
+		emitNode(&emitNodeIn{
+			table: args.table,
+			node:  args.node.children[i],
+			sums:  args.sums,
+			frame: &walkFrame{
+				prefix:    args.prefix,
+				connector: branchGlyph(i, total),
+			},
 		})
 	}
 }
@@ -577,13 +612,13 @@ func childIndent(prefix, connector string) string {
 	}
 }
 
-func (t *textTable) nodeRow(node *treeNode, summary *treeSummary, label string) {
-	row := make([]tableCell, zero, one+len(t.pkgCols))
+func nodeRow(args *nodeRowIn) {
+	row := make([]tableCell, zero, one+len(args.table.pkgCols))
 
-	row = append(row, tableCell{prefix: label, text: node.name, style: ansiBold})
-	row = append(row, nodePkgCells(node, summary, t.pkgCols)...)
+	row = append(row, tableCell{prefix: args.label, text: args.node.name, style: ansiBold})
+	row = append(row, nodePkgCells(args.node, args.summary, args.table.pkgCols)...)
 
-	t.rows = append(t.rows, row)
+	args.table.rows = append(args.table.rows, row)
 }
 
 func nodePkgCells(node *treeNode, summary *treeSummary, pkgCols []string) []tableCell {
@@ -604,18 +639,18 @@ func meanPkgCells(summary *treeSummary, pkgCols []string) []tableCell {
 	return cells
 }
 
-func metricsByName(results []distance.MetricResult) map[string]distance.MetricResult {
-	byName := make(map[string]distance.MetricResult, len(results))
+func metricsByName(results []treeMetric) map[string]treeMetric {
+	byName := make(map[string]treeMetric, len(results))
 
 	for i := range results {
-		byName[results[i].Name] = results[i]
+		byName[results[i].name] = results[i]
 	}
 
 	return byName
 }
 
-func packageMetricCells(pkg *distance.PackageReport, cols []string) []tableCell {
-	byName := metricsByName(pkg.Metrics)
+func packageMetricCells(pkg *treePkg, cols []string) []tableCell {
+	byName := metricsByName(pkg.metrics)
 	cells := make([]tableCell, zero, len(cols))
 
 	for i := range cols {
@@ -625,18 +660,18 @@ func packageMetricCells(pkg *distance.PackageReport, cols []string) []tableCell 
 	return cells
 }
 
-func metricCell(byName map[string]distance.MetricResult, name string) tableCell {
+func metricCell(byName map[string]treeMetric, name string) tableCell {
 	result, ok := byName[name]
 
 	switch {
 	case !ok:
 		return tableCell{}
-	case !result.Applicable:
+	case !result.applicable:
 		return naTableCell()
 	default:
 		return tableCell{
-			text:  formatCell(result.Value),
-			style: ansiBold + boundedColor(name, result.Value),
+			text:  formatCell(result.value),
+			style: ansiBold + boundedColor(name, result.value),
 		}
 	}
 }
@@ -707,19 +742,19 @@ func writeNotes(builder *strings.Builder, report *distance.Report, opts *TextOpt
 			headerDone = true
 		}
 
-		opts.writeNoteBlock(&noteIn{buf: builder, pkg: &report.Packages[i], notes: notes})
+		writeNoteBlock(opts, &noteIn{buf: builder, pkg: &report.Packages[i], notes: notes})
 	}
 }
 
 func writeNotesHeader(builder *strings.Builder, opts *TextOptions) {
 	writeBuilder(builder, newline)
-	writeBuilder(builder, paintWith(opts, notesTitle, ansiDim))
+	writeBuilder(builder, paint(opts, notesTitle, ansiDim))
 	writeBuilder(builder, newline)
 }
 
-func (opts *TextOptions) writeNoteBlock(input *noteIn) {
+func writeNoteBlock(opts *TextOptions, input *noteIn) {
 	writeBuilder(input.buf, notePkgIndent)
-	writeBuilder(input.buf, paintWith(opts, input.pkg.Path, ansiDim))
+	writeBuilder(input.buf, paint(opts, input.pkg.Path, ansiDim))
 	writeBuilder(input.buf, newline)
 
 	for i := range input.notes {
@@ -729,7 +764,7 @@ func (opts *TextOptions) writeNoteBlock(input *noteIn) {
 
 func writeNoteLine(builder *strings.Builder, note string, opts *TextOptions) {
 	writeBuilder(builder, noteLineIndent)
-	writeBuilder(builder, paintWith(opts, note, ansiDim))
+	writeBuilder(builder, paint(opts, note, ansiDim))
 	writeBuilder(builder, newline)
 }
 
@@ -777,7 +812,7 @@ func thresholdColor(direction string, score float64) string {
 // CSVHeader returns the fixed CSV column names.
 func CSVHeader() []string {
 	return []string{
-		string(DocScopePackage),
+		DocScopePackage,
 		csvColType,
 		csvColMetric,
 		csvColScope,

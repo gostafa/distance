@@ -31,14 +31,14 @@ import (
 
 // Run is the distance CLI entrypoint; it returns a process exit code.
 func Run(args []string) int {
-	app := defaultRuntime()
+	cfg := defaultRuntime()
 
-	return app.execute(args)
+	return execute(&cfg, args)
 }
 
-func (app *cliRuntime) announceWeb(ctx context.Context, logger *slog.Logger, path string) {
-	logger.InfoContext(ctx, msgReportWritten, slog.String(keyPath, path))
-	app.maybeOpen(ctx, &openArgs{log: logger, path: path})
+func announceWeb(ctx context.Context, app *runtimeConfig, args *openArgs) {
+	args.log.InfoContext(ctx, msgReportWritten, slog.String(keyPath, args.path))
+	maybeOpen(ctx, app, args)
 }
 
 func attachPolicy(ctx context.Context, session *runSession) int {
@@ -51,7 +51,7 @@ func attachPolicy(ctx context.Context, session *runSession) int {
 	return fillPolicy(ctx, session)
 }
 
-func (app *cliRuntime) execute(args []string) int {
+func execute(app *runtimeConfig, args []string) int {
 	opts, code := parseCLI(args)
 
 	if opts == nil {
@@ -62,7 +62,7 @@ func (app *cliRuntime) execute(args []string) int {
 		return handleVersion()
 	}
 
-	return app.runWithOptions(opts)
+	return runWithOptions(app, opts)
 }
 
 func fillPolicy(ctx context.Context, session *runSession) int {
@@ -83,14 +83,17 @@ func fillPolicy(ctx context.Context, session *runSession) int {
 	return zero
 }
 
-func (app *cliRuntime) finishReport(ctx context.Context, args *reportArgs) int {
-	heapCode := app.maybeWriteHeap(ctx, args.session.opts.memoryProfile, args.session.logger)
+func finishReport(ctx context.Context, app *runtimeConfig, args *reportArgs) int {
+	heapCode := maybeWriteHeap(ctx, app, &heapArgs{
+		path: args.session.opts.memoryProfile,
+		log:  args.session.logger,
+	})
 
 	if heapCode != zero {
 		return heapCode
 	}
 
-	writeCode := app.writeReport(ctx, args)
+	writeCode := writeReport(ctx, app, args)
 
 	if writeCode != zero {
 		return writeCode
@@ -99,8 +102,8 @@ func (app *cliRuntime) finishReport(ctx context.Context, args *reportArgs) int {
 	return policyExit(ctx, args.report, args.session)
 }
 
-func (app *cliRuntime) maybeOpen(ctx context.Context, args *openArgs) {
-	openErr := app.openBrowserIfTTY(args.path)
+func maybeOpen(ctx context.Context, app *runtimeConfig, args *openArgs) {
+	openErr := openBrowserIfTTY(app, args.path)
 	if openErr == nil {
 		return
 	}
@@ -114,7 +117,7 @@ func (app *cliRuntime) maybeOpen(ctx context.Context, args *openArgs) {
 	args.log.WarnContext(ctx, msgOpenReportFailed, slog.String(keyError, openErr.Error()))
 }
 
-func (app *cliRuntime) openBrowserIfTTY(path string) error {
+func openBrowserIfTTY(app *runtimeConfig, path string) error {
 	if !app.isTerminal() {
 		return nil
 	}
@@ -127,7 +130,7 @@ func (app *cliRuntime) openBrowserIfTTY(path string) error {
 	return nil
 }
 
-func (app *cliRuntime) maybeStartCPU(path string, logger *slog.Logger) (stop func(), code int) {
+func maybeStartCPU(app *runtimeConfig, path string, logger *slog.Logger) (stop func(), code int) {
 	if path == emptyString {
 		return noopStop, zero
 	}
@@ -146,14 +149,14 @@ func (app *cliRuntime) maybeStartCPU(path string, logger *slog.Logger) (stop fun
 	return stopCPUWithLog(stopProfile, logger), zero
 }
 
-func (app *cliRuntime) maybeWriteHeap(ctx context.Context, path string, log *slog.Logger) int {
-	if path == emptyString {
+func maybeWriteHeap(ctx context.Context, app *runtimeConfig, args *heapArgs) int {
+	if args.path == emptyString {
 		return zero
 	}
 
-	heapErr := app.writeHeap(path)
+	heapErr := app.writeHeap(args.path)
 	if heapErr != nil {
-		log.ErrorContext(ctx, msgHeapFailed, slog.String(keyError, heapErr.Error()))
+		args.log.ErrorContext(ctx, msgHeapFailed, slog.String(keyError, heapErr.Error()))
 
 		return one
 	}
@@ -169,12 +172,12 @@ func policyExit(ctx context.Context, report *distance.Report, session *runSessio
 	return enforcePolicy(ctx, report, session)
 }
 
-func (app *cliRuntime) runJob(session *runSession) int {
+func runJob(app *runtimeConfig, session *runSession) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 	defer stop()
 
-	stopCPU, cpuCode := app.maybeStartCPU(session.opts.cpuProfile, session.logger)
+	stopCPU, cpuCode := maybeStartCPU(app, session.opts.cpuProfile, session.logger)
 
 	if cpuCode != zero {
 		return cpuCode
@@ -182,17 +185,17 @@ func (app *cliRuntime) runJob(session *runSession) int {
 
 	defer stopCPU()
 
-	return app.analyzeAndReport(ctx, session)
+	return analyzeAndReport(ctx, app, session)
 }
 
-func (app *cliRuntime) analyzeAndReport(ctx context.Context, session *runSession) int {
+func analyzeAndReport(ctx context.Context, app *runtimeConfig, session *runSession) int {
 	policyCode := attachPolicy(ctx, session)
 
 	if policyCode != zero {
 		return policyCode
 	}
 
-	out := app.runAnalyze(ctx, &analyzeArgs{
+	out := runAnalyze(ctx, app, &analyzeArgs{
 		cfg: buildAnalyzeConfig(session.opts),
 		log: session.logger,
 	})
@@ -201,10 +204,10 @@ func (app *cliRuntime) analyzeAndReport(ctx context.Context, session *runSession
 		return out.code
 	}
 
-	return app.finishReport(ctx, &reportArgs{report: &out.report, session: session})
+	return finishReport(ctx, app, &reportArgs{report: &out.report, session: session})
 }
 
-func (app *cliRuntime) runAnalyze(ctx context.Context, args *analyzeArgs) analyzeOut {
+func runAnalyze(ctx context.Context, app *runtimeConfig, args *analyzeArgs) analyzeOut {
 	start := time.Now()
 
 	rep, analyzeErr := app.analyze(ctx, args.cfg)
@@ -226,11 +229,11 @@ func (app *cliRuntime) runAnalyze(ctx context.Context, args *analyzeArgs) analyz
 	return analyzeOut{report: rep}
 }
 
-func (app *cliRuntime) runWebHelp() int {
+func runWebHelp(app *runtimeConfig) int {
 	logger := newLogger(nil)
 	ctx := context.Background()
 
-	path, helpErr := app.writeHelpDocs()
+	path, helpErr := writeHelpDocs(app)
 	if helpErr != nil {
 		logger.ErrorContext(ctx, msgGuideFailed, slog.String(keyError, helpErr.Error()))
 
@@ -238,12 +241,12 @@ func (app *cliRuntime) runWebHelp() int {
 	}
 
 	logger.InfoContext(ctx, msgGuideWritten, slog.String(keyPath, path))
-	app.maybeOpen(ctx, &openArgs{log: logger, path: path, guide: true})
+	maybeOpen(ctx, app, &openArgs{log: logger, path: path, guide: true})
 
 	return zero
 }
 
-func (app *cliRuntime) runWithOptions(opts *cliOptions) int {
+func runWithOptions(app *runtimeConfig, opts *cliOptions) int {
 	logger := newLogger(logLevel(opts))
 	resolved := resolveReportFormat(opts, logger)
 
@@ -251,16 +254,16 @@ func (app *cliRuntime) runWithOptions(opts *cliOptions) int {
 		return resolved.code
 	}
 
-	return app.runJob(&runSession{opts: opts, format: resolved.format, logger: logger})
+	return runJob(app, &runSession{opts: opts, format: resolved.format, logger: logger})
 }
 
-func (app *cliRuntime) writeHelpDocs() (string, error) {
+func writeHelpDocs(app *runtimeConfig) (string, error) {
 	file, createErr := app.createHelpTemp(emptyString, helpTempPattern)
 	if createErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, createErr)
 	}
 
-	path, finishErr := app.finishHelpDocs(file)
+	path, finishErr := finishHelpDocs(app, file)
 	if finishErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, finishErr)
 	}
@@ -268,7 +271,7 @@ func (app *cliRuntime) writeHelpDocs() (string, error) {
 	return path, nil
 }
 
-func (app *cliRuntime) finishHelpDocs(file *os.File) (string, error) {
+func finishHelpDocs(app *runtimeConfig, file *os.File) (string, error) {
 	path := file.Name()
 
 	closeErr := app.closeHelpFile(file)
@@ -276,7 +279,7 @@ func (app *cliRuntime) finishHelpDocs(file *os.File) (string, error) {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, closeErr)
 	}
 
-	docsPath, docsErr := app.writeHelpDocsAt(path)
+	docsPath, docsErr := writeHelpDocsAt(app, path)
 	if docsErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, docsErr)
 	}
@@ -284,7 +287,7 @@ func (app *cliRuntime) finishHelpDocs(file *os.File) (string, error) {
 	return docsPath, nil
 }
 
-func (app *cliRuntime) writeHelpDocsAt(path string) (string, error) {
+func writeHelpDocsAt(app *runtimeConfig, path string) (string, error) {
 	writer, openErr := openOutput(path)
 	if openErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, openErr)
@@ -298,7 +301,7 @@ func (app *cliRuntime) writeHelpDocsAt(path string) (string, error) {
 	return path, nil
 }
 
-func (app *cliRuntime) writeReport(ctx context.Context, args *reportArgs) int {
+func writeReport(ctx context.Context, app *runtimeConfig, args *reportArgs) int {
 	outputPath, webDefault := resolveOutputPath(args.session.opts.output, args.session.format)
 
 	writer, openErr := openOutput(outputPath)
@@ -315,7 +318,7 @@ func (app *cliRuntime) writeReport(ctx context.Context, args *reportArgs) int {
 	}
 
 	if webDefault {
-		app.announceWeb(ctx, args.session.logger, outputPath)
+		announceWeb(ctx, app, &openArgs{log: args.session.logger, path: outputPath})
 	}
 
 	return zero
@@ -347,7 +350,7 @@ func applyWebFlag(opts *cliOptions, logger *slog.Logger) int {
 
 func applyWebFormat(opts *cliOptions, logger *slog.Logger) int {
 	conflict := flagWasSet(opts.flagSet, keyFormat) &&
-		opts.format != string(reportingdomain.FormatWeb)
+		opts.format != reportingdomain.FormatWeb
 
 	if conflict {
 		logger.ErrorContext(
@@ -359,7 +362,7 @@ func applyWebFormat(opts *cliOptions, logger *slog.Logger) int {
 		return exitUsage
 	}
 
-	opts.format = string(reportingdomain.FormatWeb)
+	opts.format = reportingdomain.FormatWeb
 
 	return zero
 }
@@ -427,10 +430,12 @@ func bindPolicyFlags(flagSet *flag.FlagSet, bindings *flagBindings) {
 		false,
 		"enforce -rule thresholds and exit 3 on violations",
 	)
-	flagSet.Var(
-		&bindings.rules,
+	flagSet.Func(
 		flagNameRule,
 		"policy rule pattern:max (repeatable; e.g. '**/internal/**':0.2; requires -check)",
+		func(value string) error {
+			return appendRule(&bindings.rules, value)
+		},
 	)
 }
 
@@ -459,8 +464,8 @@ func buildAnalyzeConfig(opts *cliOptions) *distance.Config {
 	}
 }
 
-func defaultRuntime() cliRuntime {
-	return cliRuntime{
+func defaultRuntime() runtimeConfig {
+	return runtimeConfig{
 		analyze:        wire.AnalyzeWithDefault,
 		isTerminal:     stdoutIsTerminal,
 		createHelpTemp: os.CreateTemp,
@@ -523,9 +528,9 @@ func flagWasSet(flagSet *flag.FlagSet, name string) bool {
 
 func handleParseError(parseErr error, args []string) int {
 	if errors.Is(parseErr, flag.ErrHelp) && wantsWebHelp(args) {
-		app := defaultRuntime()
+		cfg := defaultRuntime()
 
-		return app.runWebHelp()
+		return runWebHelp(&cfg)
 	}
 
 	return exitUsage
@@ -591,8 +596,28 @@ func openOutput(path string) (*reportSink, error) {
 	return &reportSink{WriteCloser: file}, nil
 }
 
+// Close flushes buffered stdout.
 func (stream *stdoutSink) Close() error {
-	flushErr := stream.w.Flush()
+	err := flushStdout(stream.w)
+	if err != nil {
+		return fmt.Errorf(errFmtStdoutClose, err)
+	}
+
+	return nil
+}
+
+// Write buffers p to stdout.
+func (stream *stdoutSink) Write(p []byte) (int, error) {
+	n, err := writeStdout(stream.w, p)
+	if err != nil {
+		return n, fmt.Errorf(errFmtStdoutWrite, err)
+	}
+
+	return n, nil
+}
+
+func flushStdout(w *bufio.Writer) error {
+	flushErr := w.Flush()
 	if flushErr != nil {
 		return fmt.Errorf("stdout flush: %w", flushErr)
 	}
@@ -600,13 +625,24 @@ func (stream *stdoutSink) Close() error {
 	return nil
 }
 
-func (stream *stdoutSink) Write(p []byte) (int, error) {
-	count, writeErr := stream.w.Write(p)
+func writeStdout(w *bufio.Writer, p []byte) (int, error) {
+	count, writeErr := w.Write(p)
 	if writeErr != nil {
-		return count, fmt.Errorf("stdout write: %w", writeErr)
+		return count, fmt.Errorf(errFmtStdoutWrite, writeErr)
 	}
 
 	return count, nil
+}
+
+func appendRule(rules *[]ruleSpec, value string) error {
+	spec, err := parseRuleSpec(value)
+	if err != nil {
+		return fmt.Errorf("set rule: %w", err)
+	}
+
+	*rules = append(*rules, spec)
+
+	return nil
 }
 
 func openBrowser(path string) error {
@@ -824,12 +860,12 @@ func policyDomainRules(specs []ruleSpec) []policydomain.Rule {
 	return rules
 }
 
-func resolvePolicy(rules ruleList) ([]policydomain.Rule, string, error) {
-	if len(rules.items) == zero {
+func resolvePolicy(rules []ruleSpec) ([]policydomain.Rule, string, error) {
+	if len(rules) == zero {
 		return nil, emptyString, errNoPolicyRules
 	}
 
-	domainRules := policyDomainRules(rules.items)
+	domainRules := policyDomainRules(rules)
 
 	validateErr := policydomain.Validate(domainRules)
 	if validateErr != nil {
@@ -837,28 +873,6 @@ func resolvePolicy(rules ruleList) ([]policydomain.Rule, string, error) {
 	}
 
 	return domainRules, policySourceFlagRules, nil
-}
-
-func (list *ruleList) Set(value string) error {
-	spec, err := parseRuleSpec(value)
-	if err != nil {
-		return fmt.Errorf("set rule: %w", err)
-	}
-
-	list.items = append(list.items, spec)
-
-	return nil
-}
-
-func (list *ruleList) String() string {
-	parts := make([]string, zero, len(list.items))
-
-	for i := range list.items {
-		parts = append(parts, list.items[i].pattern+":"+
-			strconv.FormatFloat(list.items[i].maximum, 'g', -one, floatBits))
-	}
-
-	return strings.Join(parts, commaSep)
 }
 
 func resolveReportFormat(opts *cliOptions, log *slog.Logger) formatOut {

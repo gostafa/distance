@@ -12,20 +12,15 @@ import (
 )
 
 type (
-	reportAnalyzer interface {
-		// Analyze evaluates one distance configuration.
-		Analyze(ctx context.Context, cfg *distance.Config) (distance.Report, error)
-	}
+	reportAnalyzer = func(ctx context.Context, cfg *distance.Config) (distance.Report, error)
 
-	analyzeFunc func(ctx context.Context, cfg *distance.Config) (distance.Report, error)
+	pkgViolations = map[string][]policydomain.Violation
 
-	pkgViolations map[string][]policydomain.Violation
-
-	runner struct {
+	runner = struct {
 		analyzer reportAnalyzer
 		err      error
 		byPkg    pkgViolations
-		settings *Settings
+		settings Settings
 		once     sync.Once
 	}
 
@@ -33,10 +28,6 @@ type (
 
 	scopeError struct {
 		value string
-	}
-
-	unknownFieldError struct {
-		key string
 	}
 
 	// RuleSettings is one inline policy rule in analyzer settings.
@@ -47,16 +38,25 @@ type (
 		Pattern string `json:"pattern"`
 	}
 
-	// Settings is the golangci-lint configuration block for the distance analyzer.
-	Settings struct {
-		Directory       string         `json:"directory"`
-		DependencyScope string         `json:"dependency_scope"`
-		Patterns        []string       `json:"patterns"`
-		BuildTags       []string       `json:"build_tags"`
-		Rules           []RuleSettings `json:"rules"`
-		Workers         int            `json:"workers"`
-		Tests           bool           `json:"tests"`
-		Generated       bool           `json:"generated"`
-		ContinueOnError bool           `json:"continue_on_error"`
+	// Settings configures the golangci-lint / go/analysis adapter.
+	Settings = struct {
+		// Directory is the module root used for analysis (empty = cwd).
+		Directory string `json:"directory"`
+		// DependencyScope selects which imports count toward coupling.
+		DependencyScope string `json:"dependency_scope"`
+		// Patterns are package patterns passed to the loader (default ./...).
+		Patterns []string `json:"patterns"`
+		// BuildTags are extra build tags for package loading.
+		BuildTags []string `json:"build_tags"`
+		// Rules are inline policy thresholds; empty uses recommended defaults.
+		Rules []RuleSettings `json:"rules"`
+		// Workers is the parallel worker count (0 = runtime default).
+		Workers int `json:"workers"`
+		// Tests includes _test.go packages when true.
+		Tests bool `json:"tests"`
+		// Generated includes generated files when true.
+		Generated bool `json:"generated"`
+		// ContinueOnError keeps analyzing after package load failures.
+		ContinueOnError bool `json:"continue_on_error"`
 	}
 )

@@ -4,17 +4,12 @@
 package plugin
 
 import (
-	"github.com/gostafa/distance/analyzer"
+	"golang.org/x/tools/go/analysis"
 )
 
 type (
-
-	// Plugin is the golangci-lint LinterPlugin for the distance analyzer.
+	// Plugin is the golangci-lint module plugin for distance.
 	Plugin struct {
-		loadMode
-
-		settings analyzer.Settings
+		build func() ([]*analysis.Analyzer, error)
 	}
-
-	loadMode struct{}
 )

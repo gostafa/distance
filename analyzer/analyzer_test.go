@@ -44,16 +44,18 @@ func TestNewAcceptsDefaults(t *testing.T) {
 func TestRunnerLoadGroupsViolations(t *testing.T) {
 	fixtureDir := filepath.Join(repoRoot(t), "testdata", "fixture")
 
-	r := newRunner((&Settings{
+	settings := Settings{
 		Directory: fixtureDir,
 		Patterns:  []string{"./isolated"},
 		Rules: []RuleSettings{{
 			Pattern: "**/isolated",
 			Max:     floatPtr(0),
 		}},
-	}).withDefaults())
+	}
+	s := settingsWithDefaults(&settings)
+	r := newRunner(&s)
 
-	r.load()
+	loadRunner(r)
 
 	if r.err != nil {
 		t.Fatal(r.err)

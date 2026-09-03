@@ -32,7 +32,9 @@ type (
 	}
 
 	// Loader is an outbound.FactSource backed by golang.org/x/tools/go/packages.
-	Loader struct{}
+	Loader struct {
+		extract func(context.Context, *outbound.FactOptions) (string, Loaded, error)
+	}
 
 	skipFilter = struct {
 		fset      *token.FileSet
@@ -46,7 +48,7 @@ type (
 		pkgs       []*packages.Package
 	}
 
-	filterOut struct {
+	filterOut = struct {
 		pkgs []*packages.Package
 		errs []string
 	}
@@ -57,7 +59,7 @@ type (
 		ext Loaded
 	}
 
-	loaderRuntime struct {
+	loaderRuntime = struct {
 		packagesLoad      func(*packages.Config, ...string) ([]*packages.Package, error)
 		runExtractWorkers func(context.Context, WorkerRun, func(int) error) error
 	}

@@ -12,8 +12,8 @@ import (
 // BuildDependencyGraph computes Ca/Ce for each package under scope.
 func BuildDependencyGraph(facts *typefacts.ProjectFacts, scope string) DependencyGraph {
 	graph := DependencyGraph{
-		Afferents: emptyCounts(facts.PackageCount()),
-		Efferents: emptyCounts(facts.PackageCount()),
+		Afferents: emptyCounts(len(facts.Packages)),
+		Efferents: emptyCounts(len(facts.Packages)),
 		scope:     normalizeScope(facts.ModulePath, scope),
 	}
 

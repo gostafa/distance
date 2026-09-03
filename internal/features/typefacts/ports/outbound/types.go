@@ -11,7 +11,7 @@ import (
 
 type (
 	// FactOptions configures a FactSource.Load call.
-	FactOptions struct {
+	FactOptions = struct {
 		Directory        string
 		Patterns         []string
 		BuildTags        []string

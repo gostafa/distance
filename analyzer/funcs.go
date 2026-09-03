@@ -4,6 +4,7 @@
 package analyzer
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"encoding/json"
@@ -12,6 +13,7 @@ import (
 	"math"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/distance/wire"
@@ -19,219 +21,162 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// New builds an analysis.Analyzer from the given Settings.
+// New returns a go/analysis Analyzer that loads the module once, evaluates the
+// distance policy, and emits diagnostics for the package under analysis.
 func New(settings *Settings) (*analysis.Analyzer, error) {
-	validated := settings.withDefaults()
+	resolved := settingsWithDefaults(settings)
 
-	validateErr := validated.validate()
-	if validateErr != nil {
-		return nil, fmt.Errorf(errWrapNew, validateErr)
+	err := validateSettings(&resolved)
+	if err != nil {
+		return nil, fmt.Errorf(errWrapNew, err)
 	}
 
-	return bindAnalyzer(validated), nil
-}
+	active := newRunner(&resolved)
 
-func (fn analyzeFunc) Analyze(ctx context.Context, cfg *distance.Config) (distance.Report, error) {
-	report, analyzeErr := fn(ctx, cfg)
-	if analyzeErr != nil {
-		return distance.Report{}, fmt.Errorf(errWrapAnalyze, analyzeErr)
-	}
-
-	return report, nil
-}
-
-func applyBool(raw json.RawMessage, dest *bool) error {
-	if raw == nil {
-		return nil
-	}
-
-	unmarshalErr := json.Unmarshal(raw, dest)
-	if unmarshalErr != nil {
-		return fmt.Errorf(errWrapSettings, unmarshalErr)
-	}
-
-	return nil
-}
-
-func applyInt(raw json.RawMessage, dest *int) error {
-	if raw == nil {
-		return nil
-	}
-
-	unmarshalErr := json.Unmarshal(raw, dest)
-	if unmarshalErr != nil {
-		return fmt.Errorf(errWrapSettings, unmarshalErr)
-	}
-
-	return nil
-}
-
-func applyNumber(raw json.RawMessage, dest *float64) error {
-	if raw == nil {
-		return nil
-	}
-
-	unmarshalErr := json.Unmarshal(raw, dest)
-	if unmarshalErr != nil {
-		return fmt.Errorf(errWrapRule, unmarshalErr)
-	}
-
-	return nil
-}
-
-func applyNumberPtr(raw json.RawMessage, dest **float64) error {
-	if raw == nil {
-		return nil
-	}
-
-	var value float64
-
-	numberErr := applyNumber(raw, &value)
-	if numberErr != nil {
-		return fmt.Errorf(errWrapApply, numberErr)
-	}
-
-	*dest = &value
-
-	return nil
-}
-
-func applyString(raw json.RawMessage, dest *string) error {
-	if raw == nil {
-		return nil
-	}
-
-	unmarshalErr := json.Unmarshal(raw, dest)
-	if unmarshalErr != nil {
-		return fmt.Errorf(errWrapSettings, unmarshalErr)
-	}
-
-	return nil
-}
-
-func applyStrings(raw json.RawMessage, dest *[]string) error {
-	if raw == nil {
-		return nil
-	}
-
-	unmarshalErr := json.Unmarshal(raw, dest)
-	if unmarshalErr != nil {
-		return fmt.Errorf(errWrapSettings, unmarshalErr)
-	}
-
-	return nil
-}
-
-func bindAnalyzer(settings *Settings) *analysis.Analyzer {
-	built := &analysis.Analyzer{
+	return &analysis.Analyzer{
 		Name:       Name,
 		Doc:        Doc,
 		ResultType: reflect.TypeFor[*runResult](),
-	}
-
-	bindRun(built, newRunner(settings))
-
-	return built
+		Run:        func(pass *analysis.Pass) (any, error) { return runRunner(active, pass) },
+	}, nil
 }
 
-func computeViolations(cfg *Settings, src reportAnalyzer) (pkgViolations, error) {
-	rules, policyErr := settingsRules(cfg)
-	if policyErr != nil {
-		return nil, fmt.Errorf(errWrapPolicy, policyErr)
-	}
-
-	report, analyzeErr := src.Analyze(context.Background(), cfg.toConfig())
-	if analyzeErr != nil {
-		return nil, fmt.Errorf(errWrapAnalyzeRun, analyzeErr)
-	}
-
-	return groupByPackage(policydomain.Evaluate(&report, rules)), nil
-}
-
-func decodeRuleSettings(raw json.RawMessage) (RuleSettings, error) {
-	fields, unmarshalErr := unmarshalObject(raw)
-	if unmarshalErr != nil {
-		return RuleSettings{}, fmt.Errorf(errWrapRule, unmarshalErr)
-	}
-
-	rule, fromErr := ruleSettingsFromFields(fields)
-	if fromErr != nil {
-		return RuleSettings{}, fmt.Errorf(errWrapApply, fromErr)
-	}
-
-	return rule, nil
-}
-
-func unmarshalObject(raw json.RawMessage) (map[string]json.RawMessage, error) {
-	fields := map[string]json.RawMessage{}
-
-	unmarshalErr := json.Unmarshal(raw, &fields)
-	if unmarshalErr != nil {
-		return nil, fmt.Errorf(errWrapSettings, unmarshalErr)
-	}
-
-	return fields, nil
-}
-
-func ruleSettingsFromFields(fields map[string]json.RawMessage) (RuleSettings, error) {
-	unknownErr := rejectUnknown(fields, ruleKeys())
-	if unknownErr != nil {
-		return RuleSettings{}, fmt.Errorf(errWrapApply, unknownErr)
-	}
-
-	rule, fromErr := ruleSettingsFrom(fields)
-	if fromErr != nil {
-		return RuleSettings{}, fmt.Errorf(errWrapApply, fromErr)
-	}
-
-	return rule, nil
-}
-
-func decodeRules(raw json.RawMessage) ([]RuleSettings, error) {
-	if raw == nil {
-		return nil, nil
-	}
-
-	var items []json.RawMessage
-
-	unmarshalErr := json.Unmarshal(raw, &items)
-	if unmarshalErr != nil {
-		return nil, fmt.Errorf(errWrapSettings, unmarshalErr)
-	}
-
-	rules, listErr := decodeRuleList(items)
-	if listErr != nil {
-		return nil, fmt.Errorf(errWrapApply, listErr)
-	}
-
-	return rules, nil
-}
-
-func decodeRuleList(items []json.RawMessage) ([]RuleSettings, error) {
-	rules := make([]RuleSettings, zero, len(items))
-
-	for i := range items {
-		rule, decodeErr := decodeRuleSettings(items[i])
-		if decodeErr != nil {
-			return nil, fmt.Errorf(errWrapApply, decodeErr)
-		}
-
-		rules = append(rules, rule)
-	}
-
-	return rules, nil
-}
-
-func firstRaw(raw map[string]json.RawMessage, keys ...string) json.RawMessage {
-	for i := range keys {
-		value, ok := raw[keys[i]]
-
-		if ok {
-			return value
-		}
+// UnmarshalSettings accepts snake_case tags and remaps kebab-case keys from
+// golangci-lint settings so DisallowUnknownFields still applies.
+func UnmarshalSettings(data []byte, settings *Settings) error {
+	err := decodeUnmarshaledSettings(settings, data)
+	if err != nil {
+		return fmt.Errorf("decode settings: %w", err)
 	}
 
 	return nil
+}
+
+func decodeUnmarshaledSettings(settings *Settings, data []byte) error {
+	remapped, err := remapKebabKeys(data)
+	if err != nil {
+		return fmt.Errorf(errFmtUnmarshal, err)
+	}
+
+	err = decodeSettings(settings, remapped)
+	if err != nil {
+		return fmt.Errorf(errFmtUnmarshal, err)
+	}
+
+	return nil
+}
+
+func decodeSettings(settings *Settings, data []byte) error {
+	type settingsAlias Settings
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+
+	var alias settingsAlias
+
+	err := decoder.Decode(&alias)
+	if err != nil {
+		return fmt.Errorf(errFmtUnmarshal, err)
+	}
+
+	*settings = Settings(alias)
+
+	return nil
+}
+
+func settingsRules(settings *Settings) ([]policydomain.Rule, error) {
+	if len(settings.Rules) == zero {
+		return policydomain.DefaultRules(), nil
+	}
+
+	parsed, err := parseSettingsRules(settings)
+	if err != nil {
+		return nil, fmt.Errorf("rules: %w", err)
+	}
+
+	return parsed, nil
+}
+
+func parseSettingsRules(settings *Settings) ([]policydomain.Rule, error) {
+	rules := make([]policydomain.Rule, zero, len(settings.Rules))
+
+	for index := range settings.Rules {
+		if settings.Rules[index].Max == nil {
+			return nil, fmt.Errorf("parseRules: rules[%d]: %w", index, errRuleMaxRequired)
+		}
+
+		rules = append(rules, policydomain.Rule{
+			Pattern: settings.Rules[index].Pattern,
+			Max:     *settings.Rules[index].Max,
+		})
+	}
+
+	err := policydomain.Validate(rules)
+	if err != nil {
+		return nil, fmt.Errorf("parseRules: %w", err)
+	}
+
+	return rules, nil
+}
+
+func settingsToConfig(settings *Settings) distance.Config {
+	return distance.Config{
+		Directory:        settings.Directory,
+		Patterns:         append([]string(nil), settings.Patterns...),
+		IncludeTests:     settings.Tests,
+		IncludeGenerated: settings.Generated,
+		BuildTags:        append([]string(nil), settings.BuildTags...),
+		Workers:          settings.Workers,
+		DependencyScope:  settings.DependencyScope,
+		ContinueOnError:  settings.ContinueOnError,
+	}
+}
+
+func validateSettings(settings *Settings) error {
+	err := validateDependencyScope(settings.DependencyScope)
+	if err != nil {
+		return fmt.Errorf(errFmtValidate, err)
+	}
+
+	rules, err := settingsRules(settings)
+	if err != nil {
+		return fmt.Errorf(errFmtValidate, err)
+	}
+
+	err = policydomain.Validate(rules)
+	if err != nil {
+		return fmt.Errorf(errFmtValidate, err)
+	}
+
+	return nil
+}
+
+func settingsWithDefaults(settings *Settings) Settings {
+	out := *settings
+
+	if len(out.Patterns) == zero {
+		out.Patterns = []string{defaultPackagePattern}
+	}
+
+	out.DependencyScope = cmp.Or(out.DependencyScope, distance.DependencyScopeModule)
+
+	return out
+}
+
+func computeViolations(settings *Settings, analyzer reportAnalyzer) (pkgViolations, error) {
+	rules, err := settingsRules(settings)
+	if err != nil {
+		return nil, fmt.Errorf(errWrapPolicy, err)
+	}
+
+	cfg := settingsToConfig(settings)
+
+	report, err := analyzer(context.Background(), &cfg)
+	if err != nil {
+		return nil, fmt.Errorf(errWrapAnalyzeRun, err)
+	}
+
+	return groupByPackage(policydomain.Evaluate(&report, rules)), nil
 }
 
 func formatNumber(value float64) string {
@@ -256,8 +201,8 @@ func formatViolation(violation *policydomain.Violation) string {
 func groupByPackage(violations []policydomain.Violation) map[string][]policydomain.Violation {
 	byPkg := make(map[string][]policydomain.Violation, len(violations))
 
-	for i := range violations {
-		violation := &violations[i]
+	for index := range violations {
+		violation := &violations[index]
 
 		byPkg[violation.Package] = append(byPkg[violation.Package], *violation)
 	}
@@ -266,60 +211,62 @@ func groupByPackage(violations []policydomain.Violation) map[string][]policydoma
 }
 
 func newRunner(settings *Settings) *runner {
-	return &runner{settings: settings, analyzer: analyzeFunc(wire.AnalyzeWithDefault)}
+	return &runner{settings: *settings, analyzer: wire.AnalyzeWithDefault}
 }
 
 func packagePos(pass *analysis.Pass) token.Pos {
-	for i := range pass.Files {
-		if pass.Files[i] != nil {
-			return pass.Files[i].Package
+	for index := range pass.Files {
+		if pass.Files[index] != nil {
+			return pass.Files[index].Package
 		}
 	}
 
 	return token.NoPos
 }
 
-func parseSettingsRules(settings *Settings) ([]policydomain.Rule, error) {
-	rules := make([]policydomain.Rule, zero, len(settings.Rules))
-
-	for index := range settings.Rules {
-		if settings.Rules[index].Max == nil {
-			return nil, fmt.Errorf("parseRules: rules[%d]: %w", index, errRuleMaxRequired)
-		}
-
-		rules = append(rules, policydomain.Rule{
-			Pattern: settings.Rules[index].Pattern,
-			Max:     *settings.Rules[index].Max,
-		})
+func remapKebabKeys(data []byte) ([]byte, error) {
+	raw, err := unmarshalSettingsMap(data)
+	if err != nil {
+		return nil, fmt.Errorf(errFmtRemap, err)
 	}
 
-	validateErr := policydomain.Validate(rules)
-	if validateErr != nil {
-		return nil, fmt.Errorf("parseRules: %w", validateErr)
+	encoded, err := marshalRemappedKeys(raw)
+	if err != nil {
+		return nil, fmt.Errorf(errFmtRemap, err)
 	}
 
-	return rules, nil
+	return encoded, nil
 }
 
-func ruleSettingsFrom(fields map[string]json.RawMessage) (RuleSettings, error) {
-	var rule RuleSettings
+func unmarshalSettingsMap(data []byte) (map[string]json.RawMessage, error) {
+	var raw map[string]json.RawMessage
 
-	patternErr := applyString(firstRaw(fields, keyPattern), &rule.Pattern)
-	if patternErr != nil {
-		return RuleSettings{}, fmt.Errorf(errWrapApply, patternErr)
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return nil, fmt.Errorf(errFmtRemap, err)
 	}
 
-	numberErr := applyNumberPtr(firstRaw(fields, keyMax), &rule.Max)
-	if numberErr != nil {
-		return RuleSettings{}, fmt.Errorf(errWrapApply, numberErr)
+	return raw, nil
+}
+
+func marshalRemappedKeys(raw map[string]json.RawMessage) ([]byte, error) {
+	out := make(map[string]json.RawMessage, len(raw))
+
+	for key := range raw {
+		out[strings.ReplaceAll(key, "-", "_")] = raw[key]
 	}
 
-	return rule, nil
+	encoded, err := json.Marshal(out)
+	if err != nil {
+		return nil, fmt.Errorf(errFmtRemap, err)
+	}
+
+	return encoded, nil
 }
 
 func reportViolations(pass *analysis.Pass, violations []policydomain.Violation) {
-	for i := range violations {
-		violation := &violations[i]
+	for index := range violations {
+		violation := &violations[index]
 
 		pass.Report(analysis.Diagnostic{
 			Pos:      packagePos(pass),
@@ -329,18 +276,18 @@ func reportViolations(pass *analysis.Pass, violations []policydomain.Violation) 
 	}
 }
 
-func (runner *runner) load() {
-	runner.byPkg, runner.err = computeViolations(runner.settings, runner.analyzer)
+func loadRunner(state *runner) {
+	state.byPkg, state.err = computeViolations(&state.settings, state.analyzer)
 }
 
-func (runner *runner) run(pass *analysis.Pass) (*runResult, error) {
-	runner.once.Do(runner.load)
+func runRunner(state *runner, pass *analysis.Pass) (*runResult, error) {
+	state.once.Do(func() { loadRunner(state) })
 
-	if runner.err != nil {
-		return nil, runner.err
+	if state.err != nil {
+		return nil, fmt.Errorf("run: %w", state.err)
 	}
 
-	reportViolations(pass, runner.byPkg[pass.Pkg.Path()])
+	reportViolations(pass, state.byPkg[pass.Pkg.Path()])
 
 	return &runResult{}, nil
 }
@@ -350,251 +297,6 @@ func (err scopeError) Error() string {
 		"invalid dependency-scope %q (want project, module, or all)",
 		err.value,
 	)
-}
-
-func settingsRules(settings *Settings) ([]policydomain.Rule, error) {
-	if len(settings.Rules) == zero {
-		return policydomain.DefaultRules(), nil
-	}
-
-	parsed, parseErr := parseSettingsRules(settings)
-	if parseErr != nil {
-		return nil, fmt.Errorf("rules: %w", parseErr)
-	}
-
-	return parsed, nil
-}
-
-func (settings *Settings) policy() ([]policydomain.Rule, error) {
-	rules, rulesErr := settingsRules(settings)
-	if rulesErr != nil {
-		return nil, fmt.Errorf("analyzer policy: %w", rulesErr)
-	}
-
-	return rules, nil
-}
-
-func (settings *Settings) toConfig() *distance.Config {
-	return &distance.Config{
-		Directory:        settings.Directory,
-		Patterns:         append([]string(nil), settings.Patterns...),
-		IncludeTests:     settings.Tests,
-		IncludeGenerated: settings.Generated,
-		BuildTags:        append([]string(nil), settings.BuildTags...),
-		Workers:          settings.Workers,
-		DependencyScope:  settings.DependencyScope,
-		ContinueOnError:  settings.ContinueOnError,
-	}
-}
-
-func (err unknownFieldError) Error() string {
-	return "unknown settings key " + err.key
-}
-
-// UnmarshalJSON decodes analyzer settings from kebab-case or snake_case JSON.
-func (settings *Settings) UnmarshalJSON(data []byte) error {
-	raw, unmarshalErr := unmarshalObject(data)
-	if unmarshalErr != nil {
-		return fmt.Errorf(errWrapSettings, unmarshalErr)
-	}
-
-	applyErr := settings.applyDecoded(raw)
-	if applyErr != nil {
-		return fmt.Errorf(errWrapApply, applyErr)
-	}
-
-	return nil
-}
-
-func (settings *Settings) applyDecoded(raw map[string]json.RawMessage) error {
-	unknownErr := rejectUnknown(raw, settingsKeys())
-	if unknownErr != nil {
-		return fmt.Errorf(errWrapApply, unknownErr)
-	}
-
-	applyErr := settings.applyRaw(raw)
-	if applyErr != nil {
-		return fmt.Errorf(errWrapApply, applyErr)
-	}
-
-	return nil
-}
-
-func rejectUnknown(raw map[string]json.RawMessage, known map[string]bool) error {
-	for key := range raw {
-		if !known[key] {
-			return unknownFieldError{key: key}
-		}
-	}
-
-	return nil
-}
-
-func settingsKeys() map[string]bool {
-	return map[string]bool{
-		keyDirectory:       true,
-		keyDependencyScope: true,
-		keyDependencyKebab: true,
-		keyPatterns:        true,
-		keyRules:           true,
-		keyBuildTags:       true,
-		keyBuildTagsKebab:  true,
-		keyWorkers:         true,
-		keyTests:           true,
-		keyGenerated:       true,
-		keyContinueOnError: true,
-		keyContinueKebab:   true,
-	}
-}
-
-func ruleKeys() map[string]bool {
-	return map[string]bool{
-		keyPattern: true,
-		keyMax:     true,
-	}
-}
-
-func (settings *Settings) applyRaw(raw map[string]json.RawMessage) error {
-	scalarErr := settings.applyScalars(raw)
-	if scalarErr != nil {
-		return fmt.Errorf(errWrapApply, scalarErr)
-	}
-
-	listErr := settings.applyLists(raw)
-	if listErr != nil {
-		return fmt.Errorf(errWrapApply, listErr)
-	}
-
-	return nil
-}
-
-func (settings *Settings) applyLists(raw map[string]json.RawMessage) error {
-	tagsErr := applyStrings(firstRaw(raw, keyBuildTags, keyBuildTagsKebab), &settings.BuildTags)
-	if tagsErr != nil {
-		return fmt.Errorf(errWrapApply, tagsErr)
-	}
-
-	patternsErr := applyStrings(firstRaw(raw, keyPatterns), &settings.Patterns)
-	if patternsErr != nil {
-		return fmt.Errorf(errWrapApply, patternsErr)
-	}
-
-	rulesErr := settings.applyRules(raw)
-	if rulesErr != nil {
-		return fmt.Errorf(errWrapApply, rulesErr)
-	}
-
-	return nil
-}
-
-func (settings *Settings) applyRules(raw map[string]json.RawMessage) error {
-	rules, rulesErr := decodeRules(firstRaw(raw, keyRules))
-	if rulesErr != nil {
-		return fmt.Errorf(errWrapApply, rulesErr)
-	}
-
-	settings.Rules = rules
-
-	return nil
-}
-
-func (settings *Settings) applyScalars(raw map[string]json.RawMessage) error {
-	dirErr := applyString(firstRaw(raw, keyDirectory), &settings.Directory)
-	if dirErr != nil {
-		return fmt.Errorf(errWrapApply, dirErr)
-	}
-
-	scopeErr := applyString(
-		firstRaw(raw, keyDependencyScope, keyDependencyKebab),
-		&settings.DependencyScope,
-	)
-	if scopeErr != nil {
-		return fmt.Errorf(errWrapApply, scopeErr)
-	}
-
-	flagsErr := settings.applyFlags(raw)
-	if flagsErr != nil {
-		return fmt.Errorf(errWrapApply, flagsErr)
-	}
-
-	return nil
-}
-
-func (settings *Settings) applyFlags(raw map[string]json.RawMessage) error {
-	workersErr := applyInt(firstRaw(raw, keyWorkers), &settings.Workers)
-	if workersErr != nil {
-		return fmt.Errorf(errWrapApply, workersErr)
-	}
-
-	flagsErr := settings.applyBoolFlags(raw)
-	if flagsErr != nil {
-		return fmt.Errorf(errWrapApply, flagsErr)
-	}
-
-	return nil
-}
-
-func (settings *Settings) applyBoolFlags(raw map[string]json.RawMessage) error {
-	testsErr := applyBool(firstRaw(raw, keyTests), &settings.Tests)
-	if testsErr != nil {
-		return fmt.Errorf(errWrapApply, testsErr)
-	}
-
-	generatedErr := applyBool(firstRaw(raw, keyGenerated), &settings.Generated)
-	if generatedErr != nil {
-		return fmt.Errorf(errWrapApply, generatedErr)
-	}
-
-	continueErr := applyBool(
-		firstRaw(raw, keyContinueOnError, keyContinueKebab),
-		&settings.ContinueOnError,
-	)
-	if continueErr != nil {
-		return fmt.Errorf(errWrapApply, continueErr)
-	}
-
-	return nil
-}
-
-func (settings *Settings) validate() error {
-	scopeErr := validateDependencyScope(settings.DependencyScope)
-	if scopeErr != nil {
-		return fmt.Errorf(errWrapValidate, scopeErr)
-	}
-
-	policyErr := settings.validatePolicy()
-	if policyErr != nil {
-		return fmt.Errorf(errWrapValidate, policyErr)
-	}
-
-	return nil
-}
-
-func (settings *Settings) validatePolicy() error {
-	rules, policyErr := settings.policy()
-	if policyErr != nil {
-		return fmt.Errorf(errWrapValidate, policyErr)
-	}
-
-	validateErr := policydomain.Validate(rules)
-	if validateErr != nil {
-		return fmt.Errorf(errWrapValidate, validateErr)
-	}
-
-	return nil
-}
-
-func (settings *Settings) withDefaults() *Settings {
-	if len(settings.Patterns) == zero {
-		settings.Patterns = []string{defaultPackagePattern}
-	}
-
-	settings.DependencyScope = cmp.Or(
-		settings.DependencyScope,
-		distance.DependencyScopeModule,
-	)
-
-	return settings
 }
 
 func validateDependencyScope(value string) error {

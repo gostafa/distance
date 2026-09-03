@@ -9,7 +9,7 @@ import (
 
 type (
 	// MetricResult is a computed package metric value.
-	MetricResult struct {
+	MetricResult = struct {
 		Name       string
 		Scope      string
 		Reason     string
@@ -23,22 +23,8 @@ type (
 		Analyze(ctx context.Context, cfg *Config) (Report, error)
 	}
 
-	reportReader interface {
-		ModulePath() string
-		PackageList() []PackageReport
-	}
-
-	configReader interface {
-		PatternList() []string
-		ScopeName() string
-	}
-
-	metricCarrier interface {
-		MetricResults() []MetricResult
-	}
-
 	// Config controls a single Analyze run.
-	Config struct {
+	Config = struct {
 		Directory        string
 		DependencyScope  DependencyScope
 		Patterns         []string
@@ -50,7 +36,7 @@ type (
 	}
 
 	// PackageReport holds metrics and coupling for one analyzed package.
-	PackageReport struct {
+	PackageReport = struct {
 		Path     string
 		Metrics  []MetricResult
 		Afferent int
@@ -58,17 +44,11 @@ type (
 	}
 
 	// Report is the complete analysis result for one configuration.
-	Report struct {
+	Report = struct {
 		SchemaVersion string
 		ToolName      string
 		ToolVersion   string
 		Module        string
 		Packages      []PackageReport
 	}
-)
-
-var (
-	_ reportReader  = (*Report)(nil)
-	_ configReader  = (*Config)(nil)
-	_ metricCarrier = (*PackageReport)(nil)
 )

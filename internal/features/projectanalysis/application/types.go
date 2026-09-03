@@ -14,7 +14,7 @@ import (
 
 type (
 	// Options configures one Pipeline.Analyze call.
-	Options struct {
+	Options = struct {
 		Directory        string
 		DependencyScope  string
 		Patterns         []string
@@ -26,7 +26,7 @@ type (
 	}
 
 	// MetricEntry is one computed metric value exposed by analysis results.
-	MetricEntry struct {
+	MetricEntry = struct {
 		Name       string
 		Scope      string
 		Reason     string
@@ -36,17 +36,23 @@ type (
 	}
 
 	// PackageResult holds metrics and coupling for one analyzed package.
-	PackageResult struct {
-		Path     string
-		Metrics  []MetricEntry
+	PackageResult = struct {
+		// Path is the package import path.
+		Path string
+		// Metrics are the computed package-level metric entries.
+		Metrics []MetricEntry
+		// Afferent is incoming coupling (Ca).
 		Afferent int
+		// Efferent is outgoing coupling (Ce).
 		Efferent int
 	}
 
 	// Result is the complete analysis outcome for one Options value.
-	Result struct {
+	Result = struct {
+		// ModulePath is the import path of the main module, when known.
 		ModulePath string
-		Packages   []PackageResult
+		// Packages are the analyzed package results in report order.
+		Packages []PackageResult
 	}
 
 	analyzer interface {
@@ -55,21 +61,23 @@ type (
 
 	// Pipeline orchestrates type-fact collection and package metric computation.
 	Pipeline struct {
-		facts   typefacts.Collector
-		runtime pipelineRuntime
+		analyze func(context.Context, *Options) (Result, error)
 	}
 
-	packageMetrics struct {
+	packageMetrics = struct {
 		abstractness MetricEntry
 		instability  MetricEntry
 		distance     MetricEntry
 	}
 
-	pipelineRuntime struct {
-		runWorkers func(context.Context, goloader.WorkerRun, func(int) error) error
+	pipelineRuntime = struct {
+		facts      typefacts.Collector
+		runWorkers workerRunFunc
 	}
 
-	analyzePackageInput struct {
+	workerRunFunc = func(context.Context, goloader.WorkerRun, func(int) error) error
+
+	analyzePackageInput = struct {
 		facts      *tfdomain.ProjectFacts
 		pkgResults []packageMetrics
 		afferent   int
@@ -77,18 +85,18 @@ type (
 		pkgID      int
 	}
 
-	assembleIn struct {
+	assembleIn = struct {
 		facts *tfdomain.ProjectFacts
 		opts  *Options
 	}
 
-	fillInput struct {
+	fillInput = struct {
 		facts *tfdomain.ProjectFacts
 		graph *coupling.DependencyGraph
 		rows  []PackageResult
 	}
 
-	computeIn struct {
+	computeIn = struct {
 		facts *tfdomain.ProjectFacts
 		graph coupling.CouplingGraph
 	}

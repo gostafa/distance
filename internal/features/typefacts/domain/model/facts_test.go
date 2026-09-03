@@ -16,7 +16,7 @@ func TestFormatNamed(t *testing.T) {
 	}
 }
 
-func TestNamedAndViews(t *testing.T) {
+func TestNamedAndExtractFields(t *testing.T) {
 	extract := PackageExtract{
 		Path:     "example.com/m",
 		Imports:  []string{"fmt"},
@@ -24,15 +24,15 @@ func TestNamedAndViews(t *testing.T) {
 		InModule: true,
 	}
 
-	if PathOf(&extract) != "example.com/m" {
-		t.Fatalf("PathOf = %q", PathOf(&extract))
+	if extract.Path != "example.com/m" {
+		t.Fatalf("Path = %q", extract.Path)
 	}
 
-	if !inModuleOf(&extract) {
+	if !extract.InModule {
 		t.Fatal("expected in module")
 	}
 
-	if len(ImportsOf(&extract)) != 1 || len(TypesOf(&extract)) != 1 {
-		t.Fatalf("imports/types = %d/%d", len(ImportsOf(&extract)), len(TypesOf(&extract)))
+	if len(extract.Imports) != 1 || len(extract.Types) != 1 {
+		t.Fatalf("imports/types = %d/%d", len(extract.Imports), len(extract.Types))
 	}
 }

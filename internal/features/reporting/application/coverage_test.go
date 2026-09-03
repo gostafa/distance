@@ -50,22 +50,16 @@ func TestWriteRenderErrors(t *testing.T) {
 }
 
 func TestJSONDebugStringsAndMarshalError(t *testing.T) {
-	reportSummary := (jsonReport{
+	reportSummary := jsonReportString(&jsonReport{
 		SchemaVersion: "3",
 		Tool:          jsonTool{Name: "distance", Version: "test"},
 		Packages:      []jsonPackage{{Path: "example.com/p"}},
-	}).String()
+	})
 
 	if !strings.Contains(reportSummary, "schema 3") ||
 		!strings.Contains(reportSummary, "1 packages") {
 
-		t.Fatalf("jsonReport.String() = %q", reportSummary)
-	}
-
-	packageSummary := (jsonPackage{Path: "example.com/p", Metrics: make(orderedMetrics, 2)}).String()
-
-	if packageSummary != "example.com/p: 2 metrics" {
-		t.Fatalf("jsonPackage.String() = %q", packageSummary)
+		t.Fatalf("jsonReportString() = %q", reportSummary)
 	}
 
 	_, err := encodeOrderedMetrics([]distance.MetricResult{{

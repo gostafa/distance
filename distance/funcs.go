@@ -44,29 +44,16 @@ func Analyze(ctx context.Context, config *Config, backend Backend) (Report, erro
 	return report, nil
 }
 
-// ModulePath returns the analyzed module path.
-func (report *Report) ModulePath() string {
-	return report.Module
-}
-
-// PackageList returns the analyzed package reports.
-func (report *Report) PackageList() []PackageReport {
-	return report.Packages
-}
-
-// MetricResults returns the metrics computed for the package.
-func (pkg *PackageReport) MetricResults() []MetricResult {
-	return pkg.Metrics
-}
-
-// PatternList returns the package patterns to analyze.
-func (config *Config) PatternList() []string {
-	return config.Patterns
-}
-
-// ScopeName returns the dependency scope name.
-func (config *Config) ScopeName() string {
-	return config.DependencyScope
+// ReportString returns a compact debug representation of the report.
+func ReportString(report *Report) string {
+	return fmt.Sprintf(
+		"schema %s tool %s@%s module %q packages %d",
+		report.SchemaVersion,
+		report.ToolName,
+		report.ToolVersion,
+		report.Module,
+		len(report.Packages),
+	)
 }
 
 // ToolIdent returns the tool identity fields for a Report.
@@ -100,11 +87,11 @@ func finalizeReport(report *Report) Report {
 }
 
 func configWithDefaults(config *Config) *Config {
-	if len(config.PatternList()) == zero {
+	if len(config.Patterns) == zero {
 		config.Patterns = []string{allPackagesPattern}
 	}
 
-	if config.ScopeName() == emptyString {
+	if config.DependencyScope == emptyString {
 		config.DependencyScope = DependencyScopeModule
 	}
 
@@ -121,12 +108,12 @@ func validateConfig(config *Config) error {
 
 		return nil
 	default:
-		return fmt.Errorf("%w: %q", errInvalidScope, config.ScopeName())
+		return fmt.Errorf("%w: %q", errInvalidScope, config.DependencyScope)
 	}
 }
 
 func validatePatterns(config *Config) error {
-	if slices.Contains(config.PatternList(), emptyString) {
+	if slices.Contains(config.Patterns, emptyString) {
 		return errEmptyPattern
 	}
 

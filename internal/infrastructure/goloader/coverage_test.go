@@ -103,7 +103,7 @@ func (Talker) Speak() {}
 `,
 	})
 
-	out := defaultLoaderRuntime().load(t.Context(), &outbound.FactOptions{
+	out := load(t.Context(), defaultLoaderRuntime(), &outbound.FactOptions{
 		Directory:        dir,
 		Patterns:         nil, // exercises ./... default
 		IncludeGenerated: true,
@@ -143,7 +143,7 @@ func (Talker) Speak() {}
 		t.Fatal("Generated type missing with IncludeGenerated=true")
 	}
 
-	out2 := defaultLoaderRuntime().load(t.Context(), &outbound.FactOptions{
+	out2 := load(t.Context(), defaultLoaderRuntime(), &outbound.FactOptions{
 		Directory: dir,
 		Patterns:  []string{"./shapes"},
 	})
@@ -229,8 +229,10 @@ func TestLoadPackagesSeamErrors(t *testing.T) {
 		return nil, sentinel
 	}
 
-	if _, err := runtime.loadPackages(
-		t.Context(), &outbound.FactOptions{Patterns: []string{"./"}},
+	if _, err := loadPackages(
+		t.Context(),
+		runtime,
+		&outbound.FactOptions{Patterns: []string{"./"}},
 	); !errors.Is(
 		err,
 		sentinel,
@@ -243,8 +245,10 @@ func TestLoadPackagesSeamErrors(t *testing.T) {
 		return nil, nil
 	}
 
-	if _, err := runtime.loadPackages(
-		t.Context(), &outbound.FactOptions{Patterns: []string{"./x"}},
+	if _, err := loadPackages(
+		t.Context(),
+		runtime,
+		&outbound.FactOptions{Patterns: []string{"./x"}},
 	); err == nil ||
 		!strings.Contains(err.Error(), "no packages matched") {
 
@@ -258,7 +262,7 @@ func TestLoadPackagesSeamErrors(t *testing.T) {
 		}}, nil
 	}
 
-	if _, err := runtime.loadPackages(t.Context(), &outbound.FactOptions{
+	if _, err := loadPackages(t.Context(), runtime, &outbound.FactOptions{
 		Patterns: []string{"./x"}, ContinueOnError: true,
 	}); err == nil || !strings.Contains(err.Error(), "no loadable packages") {
 		t.Fatalf("no loadable = %v", err)
@@ -274,8 +278,9 @@ func TestExtractAllWorkerError(t *testing.T) {
 	}
 
 	pkg := healthy("m/a", "a.go")
-	_, err := runtime.extractAll(
+	_, err := extractAll(
 		t.Context(),
+		runtime,
 		&extractJob{
 			pkgs:       []*packages.Package{pkg},
 			opts:       &outbound.FactOptions{},
@@ -290,7 +295,7 @@ func TestExtractAllWorkerError(t *testing.T) {
 	runtime.packagesLoad = func(*packages.Config, ...string) ([]*packages.Package, error) {
 		return []*packages.Package{healthy("m/a", "a.go")}, nil
 	}
-	loaded := runtime.load(t.Context(), &outbound.FactOptions{Patterns: []string{"./a"}})
+	loaded := load(t.Context(), runtime, &outbound.FactOptions{Patterns: []string{"./a"}})
 
 	if !errors.Is(loaded.err, sentinel) {
 		t.Fatalf("load extract error = %v", loaded.err)
@@ -307,7 +312,7 @@ type A int
 `,
 	})
 
-	out := defaultLoaderRuntime().load(t.Context(), &outbound.FactOptions{
+	out := load(t.Context(), defaultLoaderRuntime(), &outbound.FactOptions{
 		Directory: dir,
 		Patterns:  []string{"."},
 	})

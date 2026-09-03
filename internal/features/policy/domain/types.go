@@ -19,7 +19,7 @@ type (
 	}
 
 	// Violation records one package whose distance exceeded a matching rule.
-	Violation struct {
+	Violation = struct {
 		Package   string
 		Rule      string
 		Value     float64

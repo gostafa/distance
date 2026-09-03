@@ -23,30 +23,10 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-func (err *pathError) Error() string {
-	return err.op + " " + err.path + ": " + err.err.Error()
-}
-
-func (err *pathError) Unwrap() error {
-	return err.err
-}
-
-func (split *packageSplit) Marker() string {
-	return split.generatedMarker
-}
-
-func (split *packageSplit) Dir() string {
-	return split.dir
-}
-
-func (split *packageSplit) GoFiles() []string {
-	return split.goFiles
-}
-
-func (split *packageSplit) ReadFile(name string) ([]byte, error) {
+func splitReadFile(split *packageSplit, name string) ([]byte, error) {
 	file, err := split.root.Open(name)
 	if err != nil {
-		return nil, &pathError{op: opOpen, path: name, err: err}
+		return nil, fmt.Errorf(errFmtOpPathWrap, opOpen, name, err)
 	}
 
 	data, readErr := readOpenedFile(file, name)
@@ -57,10 +37,10 @@ func (split *packageSplit) ReadFile(name string) ([]byte, error) {
 	return data, nil
 }
 
-func (split *packageSplit) WriteFile(name string, data []byte) error {
+func splitWriteFile(split *packageSplit, name string, data []byte) error {
 	file, err := split.root.Create(name)
 	if err != nil {
-		return &pathError{op: "create", path: name, err: err}
+		return fmt.Errorf(errFmtOpPathWrap, opCreate, name, err)
 	}
 
 	writeErr := writeOpenedFile(file, name, data)
@@ -71,10 +51,10 @@ func (split *packageSplit) WriteFile(name string, data []byte) error {
 	return nil
 }
 
-func (split *packageSplit) RemoveFile(name string) error {
+func splitRemoveFile(split *packageSplit, name string) error {
 	err := split.root.Remove(name)
 	if err != nil {
-		return &pathError{op: "remove", path: name, err: err}
+		return fmt.Errorf(errFmtOpPathWrap, opRemove, name, err)
 	}
 
 	return nil
@@ -85,11 +65,11 @@ func readOpenedFile(file *os.File, name string) ([]byte, error) {
 	closeErr := file.Close()
 
 	if err != nil {
-		return nil, &pathError{op: "read", path: name, err: err}
+		return nil, fmt.Errorf(errFmtOpPathWrap, opRead, name, err)
 	}
 
 	if closeErr != nil {
-		return nil, &pathError{op: opClose, path: name, err: closeErr}
+		return nil, fmt.Errorf(errFmtOpPathWrap, opClose, name, closeErr)
 	}
 
 	return data, nil
@@ -100,15 +80,15 @@ func writeOpenedFile(file *os.File, name string, data []byte) error {
 	closeErr := file.Close()
 
 	if err != nil {
-		return &pathError{op: opWrite, path: name, err: err}
+		return fmt.Errorf(errFmtOpPathWrap, opWrite, name, err)
 	}
 
 	if written != len(data) {
-		return &pathError{op: opWrite, path: name, err: errShortWrite}
+		return fmt.Errorf(errFmtOpPathWrap, opWrite, name, errShortWrite)
 	}
 
 	if closeErr != nil {
-		return &pathError{op: opClose, path: name, err: closeErr}
+		return fmt.Errorf(errFmtOpPathWrap, opClose, name, closeErr)
 	}
 
 	return nil
@@ -118,7 +98,7 @@ func writeOpenedFile(file *os.File, name string, data []byte) error {
 func SplitPackage(dir string) error {
 	root, err := os.OpenRoot(dir)
 	if err != nil {
-		return &pathError{op: opOpen, path: dir, err: err}
+		return fmt.Errorf(errFmtOpPathWrap, opOpen, dir, err)
 	}
 
 	closeErr := closeRootAfter(splitOpened(root, dir), root)
@@ -137,7 +117,7 @@ func closeRootAfter(prior error, root *os.Root) error {
 	}
 
 	if closeErr != nil {
-		return &pathError{op: opClose, path: dotName, err: closeErr}
+		return fmt.Errorf(errFmtOpPathWrap, opClose, dotName, closeErr)
 	}
 
 	return nil
@@ -160,18 +140,18 @@ func splitOpened(root *os.Root, dir string) error {
 func readRootEntries(root *os.Root) ([]fs.DirEntry, error) {
 	file, err := root.Open(dotName)
 	if err != nil {
-		return nil, &pathError{op: opOpen, path: dotName, err: err}
+		return nil, fmt.Errorf(errFmtOpPathWrap, opOpen, dotName, err)
 	}
 
 	entries, readErr := file.ReadDir(-one)
 	closeErr := file.Close()
 
 	if readErr != nil {
-		return nil, &pathError{op: "readdir", path: dotName, err: readErr}
+		return nil, fmt.Errorf(errFmtOpPathWrap, opReaddir, dotName, readErr)
 	}
 
 	if closeErr != nil {
-		return nil, &pathError{op: opClose, path: dotName, err: closeErr}
+		return nil, fmt.Errorf(errFmtOpPathWrap, opClose, dotName, closeErr)
 	}
 
 	return entries, nil
@@ -179,7 +159,7 @@ func readRootEntries(root *os.Root) ([]fs.DirEntry, error) {
 
 func splitFromEntries(split *packageSplit, entries []fs.DirEntry) error {
 	if split.dir == emptyString {
-		return &pathError{op: "dir", path: emptyString, err: os.ErrInvalid}
+		return fmt.Errorf(errFmtOpPathWrap, opDir, emptyString, os.ErrInvalid)
 	}
 
 	split.goFiles = collectGoFiles(entries)
@@ -257,7 +237,7 @@ func parsePackageFiles(split *packageSplit) error {
 }
 
 func ingestGoFile(fset *token.FileSet, split *packageSplit, name string) error {
-	src, err := split.ReadFile(name)
+	src, err := splitReadFile(split, name)
 	if err != nil {
 		return fmt.Errorf(errWrapIngestGoFile, err)
 	}
@@ -289,7 +269,7 @@ func parseAndAccept(fset *token.FileSet, input *declCollect) error {
 func parseGoFile(fset *token.FileSet, path string, src []byte) (*ast.File, error) {
 	file, err := parser.ParseFile(fset, path, src, parser.ParseComments)
 	if err != nil {
-		return nil, &pathError{op: "parse", path: path, err: err}
+		return nil, fmt.Errorf(errFmtOpPathWrap, opParse, path, err)
 	}
 
 	return file, nil
@@ -328,7 +308,7 @@ func acceptPackageName(split *packageSplit, path, name string) error {
 	}
 
 	if name != split.pkgName {
-		return &pathError{op: "package-name", path: path}
+		return fmt.Errorf(errFmtSentinelPath, errPackageName, path)
 	}
 
 	return nil
@@ -367,30 +347,45 @@ func collectDecl(fset *token.FileSet, input *declCollect, decl ast.Decl) error {
 }
 
 func finishDecl(input *declCollect, decl ast.Decl, entry declEntry) error {
-	gen, isGen := decl.(*ast.GenDecl)
-	err := appendFuncDecl(input, decl, entry)
+	err := applyDecl(input, decl, entry)
+	if err != nil {
+		return fmt.Errorf(errWrapFinishDecl, err)
+	}
 
-	if isGen {
-		err = collectGenDecl(input, gen.Tok, entry)
+	return nil
+}
+
+func applyDecl(input *declCollect, decl ast.Decl, entry declEntry) error {
+	var err error
+
+	switch typed := decl.(type) {
+	case *ast.GenDecl:
+		err = collectGenDecl(input, typed.Tok, entry)
+	default:
+		err = appendFuncDecl(input, decl, entry)
 	}
 
 	if err != nil {
-		return fmt.Errorf("splitpkg finishDecl: %w", err)
+		return fmt.Errorf(errWrapApplyDecl, err)
 	}
 
 	return nil
 }
 
 func appendFuncDecl(input *declCollect, decl ast.Decl, entry declEntry) error {
-	funcDecl, isFunc := decl.(*ast.FuncDecl)
-
-	if !isFunc || funcDecl == nil {
-		return &pathError{op: "decl", path: input.path}
+	if !isFuncDecl(decl) {
+		return fmt.Errorf(errFmtSentinelPath, errDecl, input.path)
 	}
 
 	input.split.funcs = append(input.split.funcs, entry)
 
 	return nil
+}
+
+func isFuncDecl(decl ast.Decl) bool {
+	funcDecl, isFunc := decl.(*ast.FuncDecl)
+
+	return isFunc && funcDecl != nil
 }
 
 func collectGenDecl(input *declCollect, tok token.Token, entry declEntry) error {
@@ -406,7 +401,7 @@ func collectGenDecl(input *declCollect, tok token.Token, entry declEntry) error 
 		return nil
 	}
 
-	return &pathError{op: "gen-decl", path: input.path}
+	return fmt.Errorf(errFmtSentinelPath, errGenDecl, input.path)
 }
 
 func genDeclTarget(split *packageSplit, tok token.Token) *[]declEntry {
@@ -425,15 +420,20 @@ func genDeclTarget(split *packageSplit, tok token.Token) *[]declEntry {
 	return nil
 }
 
+func keepToolingCoupling() bool {
+	return distance.MetricDistance == projapp.MetricDistance && version.Version() != emptyString
+}
+
+func splitpkgReady() bool {
+	return keepToolingCoupling()
+}
+
 func ensurePackageDoc(split *packageSplit) {
 	if split.pkgDoc != nil {
 		return
 	}
 
-	sameName := distance.MetricDistance == projapp.MetricDistance
-	hasVersion := version.Version() != emptyString
-
-	if !sameName && !hasVersion {
+	if !splitpkgReady() {
 		return
 	}
 
@@ -597,7 +597,7 @@ func removeNonCategoryFiles(split *packageSplit) error {
 			continue
 		}
 
-		err := split.RemoveFile(name)
+		err := splitRemoveFile(split, name)
 		if err != nil {
 			return fmt.Errorf("splitpkg remove files: %w", err)
 		}
@@ -837,7 +837,7 @@ func formatAndWrite(writer *packageSplit, name string, src []byte) error {
 
 	formatted = groupSingleImports(formatted)
 
-	writeErr := writer.WriteFile(name, formatted)
+	writeErr := splitWriteFile(writer, name, formatted)
 	if writeErr != nil {
 		return fmt.Errorf("splitpkg formatAndWrite: %w", writeErr)
 	}

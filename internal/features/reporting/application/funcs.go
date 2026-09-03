@@ -24,7 +24,7 @@ func (err missingPlaceholderError) Error() string {
 }
 
 func (err unknownFormatError) Error() string {
-	return "unknown report format " + string(err.format)
+	return "unknown report format " + err.format
 }
 
 func closeAfter(prior error, closer io.Closer) error {
@@ -124,7 +124,7 @@ func toJSONMetricDoc(doc *reportdomain.MetricDoc) jsonMetricDoc {
 		Name:           doc.Name,
 		Label:          doc.Label,
 		FullName:       doc.FullName,
-		Scope:          string(doc.Scope),
+		Scope:          doc.Scope,
 		Definition:     doc.Definition,
 		FormulaMathML:  doc.FormulaMathML,
 		FormulaLaTeX:   doc.FormulaLaTeX,
@@ -272,14 +272,9 @@ func renderCSV(w io.Writer, report *distance.Report) error {
 	return nil
 }
 
-// String summarizes the report envelope for debugging.
-func (r jsonReport) String() string {
+// jsonReportString summarizes the report envelope for debugging.
+func jsonReportString(r *jsonReport) string {
 	return fmt.Sprintf("schema %s, tool %v, %d packages", r.SchemaVersion, r.Tool, len(r.Packages))
-}
-
-// String summarizes one package entry for debugging.
-func (p jsonPackage) String() string {
-	return fmt.Sprintf("%s: %d metrics", p.Path, len(p.Metrics))
 }
 
 // MarshalJSON writes the object with keys in the fixed metric order.
