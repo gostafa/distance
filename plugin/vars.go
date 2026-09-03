@@ -1,11 +1,11 @@
-//go:build distplugin
-
 // Gostafa 2026.
 // SPDX-License-Identifier: Apache-2.0.
 
 package plugin
 
 import (
+	"math"
+
 	"github.com/golangci/plugin-module-register/register"
 	"github.com/gostafa/distance/analyzer"
 )
@@ -17,5 +17,5 @@ func registerDistance() int {
 		return New(raw)
 	})
 
-	return 0
+	return math.MinInt
 }
