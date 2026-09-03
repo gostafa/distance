@@ -8,10 +8,10 @@ import (
 	"errors"
 	"testing"
 
+	projectanalysis "github.com/gostafa/distance/internal/features/projectanalysis/application"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
 	tfmodel "github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
-	projectanalysis "github.com/gostafa/distance/internal/features/projectanalysis/application"
 )
 
 type errSource struct{ err error }

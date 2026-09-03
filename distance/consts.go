@@ -41,6 +41,7 @@ const (
 	SchemaVersion = "6"
 
 	allPackagesPattern = "./..."
+	emptyString        = ""
 
 	errWrapAnalyze = "distance Analyze: %w"
 

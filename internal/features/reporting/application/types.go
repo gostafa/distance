@@ -4,6 +4,8 @@
 package application
 
 import (
+	"bytes"
+
 	"github.com/gostafa/distance/distance"
 	reportdomain "github.com/gostafa/distance/internal/features/reporting/domain"
 )
@@ -119,5 +121,11 @@ type (
 	orderedEntry struct {
 		result *distance.MetricResult
 		index  int
+	}
+
+	metricObjectIn struct {
+		runtime reportingRuntime
+		buffer  *bytes.Buffer
+		rows    []distance.MetricResult
 	}
 )

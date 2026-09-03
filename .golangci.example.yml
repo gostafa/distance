@@ -14,12 +14,8 @@ linters:
           tests: false
           generated: false
           dependency-scope: module
-          patterns: [./...]
-
-          # Most specific import-path glob wins. Empty rules defaults to
-          # [{pattern: "**", max: 0.5}].
           rules:
-            - pattern: "**"
+            - pattern: '**'
               max: 0.5
-            - pattern: "**/internal/**"
+            - pattern: '**/internal/**'
               max: 0.2

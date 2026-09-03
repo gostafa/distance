@@ -3,7 +3,9 @@
 
 package distance
 
-import "context"
+import (
+	"context"
+)
 
 type (
 	// MetricResult is a computed package metric value.
@@ -21,20 +23,17 @@ type (
 		Analyze(ctx context.Context, cfg *Config) (Report, error)
 	}
 
-	// ReportReader exposes the analyzed module path and package list.
-	ReportReader interface {
+	reportReader interface {
 		ModulePath() string
 		PackageList() []PackageReport
 	}
 
-	// ConfigReader exposes normalized config fields for backends.
-	ConfigReader interface {
+	configReader interface {
 		PatternList() []string
 		ScopeName() string
 	}
 
-	// MetricCarrier exposes computed package metrics.
-	MetricCarrier interface {
+	metricCarrier interface {
 		MetricResults() []MetricResult
 	}
 
@@ -69,7 +68,7 @@ type (
 )
 
 var (
-	_ ReportReader  = (*Report)(nil)
-	_ ConfigReader  = (*Config)(nil)
-	_ MetricCarrier = (*PackageReport)(nil)
+	_ reportReader  = (*Report)(nil)
+	_ configReader  = (*Config)(nil)
+	_ metricCarrier = (*PackageReport)(nil)
 )

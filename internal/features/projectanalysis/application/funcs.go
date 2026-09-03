@@ -10,7 +10,6 @@ import (
 
 	coupling "github.com/gostafa/distance/internal/features/packagemetrics/domain"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
-	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
 	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
 	"github.com/gostafa/distance/internal/infrastructure/goloader"
 )
@@ -62,11 +61,10 @@ func (pipe *Pipeline) buildResults(ctx context.Context, args *assembleIn) (Resul
 	graph := coupling.BuildDependencyGraph(args.facts, args.opts.DependencyScope)
 	packageResults := emptyPackageResults(args.facts.PackageCount())
 
-	err := pipe.runtime.runWorkers(ctx,
-		goloader.Workers(args.opts.Workers, args.facts.PackageCount()),
-		args.facts.PackageCount(),
-		fillPackageAt(&fillInput{facts: args.facts, graph: &graph, rows: packageResults}),
-	)
+	err := pipe.runtime.runWorkers(ctx, goloader.WorkerRun{
+		Workers: goloader.Workers(args.opts.Workers, args.facts.PackageCount()),
+		Tasks:   args.facts.PackageCount(),
+	}, fillPackageAt(&fillInput{facts: args.facts, graph: &graph, rows: packageResults}))
 	if err != nil {
 		return Result{}, fmt.Errorf("application buildPackageResults: %w", err)
 	}
@@ -85,7 +83,7 @@ func emptyPackageResults(count int) []PackageResult {
 }
 
 func fillPackageAt(input *fillInput) func(int) error {
-	pkgResults := computeForPackages(input.facts, input.graph)
+	pkgResults := computeForPackages(&computeIn{facts: input.facts, graph: input.graph})
 
 	return func(index int) error {
 		afferent, efferent := input.graph.PackageCoupling(index)
@@ -130,19 +128,19 @@ func analyzePackage(input *analyzePackageInput) PackageResult {
 	}
 }
 
-func computeForPackages(facts *tfdomain.ProjectFacts, graph coupling.CouplingGraph) []packageMetrics {
-	results := make([]packageMetrics, zero, facts.PackageCount())
+func computeForPackages(in *computeIn) []packageMetrics {
+	results := make([]packageMetrics, zero, in.facts.PackageCount())
 
-	for pkgID := range facts.Packages {
-		results = append(results, computeOne(facts, graph, pkgID))
+	for pkgID := range in.facts.Packages {
+		results = append(results, computeOne(in, pkgID))
 	}
 
 	return results
 }
 
-func computeOne(facts *tfdomain.ProjectFacts, graph coupling.CouplingGraph, pkgID int) packageMetrics {
-	interfaces, total := coupling.CountTypes(facts, pkgID)
-	afferent, efferent := graph.PackageCoupling(pkgID)
+func computeOne(in *computeIn, pkgID int) packageMetrics {
+	interfaces, total := coupling.CountTypes(in.facts, pkgID)
+	afferent, efferent := in.graph.PackageCoupling(pkgID)
 	abstractness := abstractnessMetric(interfaces, total)
 	instability := instabilityMetric(afferent, efferent)
 
@@ -189,6 +187,7 @@ func distanceMetric(abstractness, instability *MetricEntry) MetricEntry {
 func instabilityMetric(afferent, efferent int) MetricEntry {
 	if afferent+efferent == zero {
 		result := applicableMetric(MetricInstability, DefinitionInstability, float64(zero))
+
 		result.Reason = "package has no dependencies in scope (isolated); defined as 0"
 
 		return result

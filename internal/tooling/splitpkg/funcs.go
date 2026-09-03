@@ -5,7 +5,6 @@ package splitpkg
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -105,7 +104,7 @@ func writeOpenedFile(file *os.File, name string, data []byte) error {
 	}
 
 	if written != len(data) {
-		return &pathError{op: opWrite, path: name, err: errors.New(errShortWrite)}
+		return &pathError{op: opWrite, path: name, err: errShortWrite}
 	}
 
 	if closeErr != nil {
@@ -115,6 +114,7 @@ func writeOpenedFile(file *os.File, name string, data []byte) error {
 	return nil
 }
 
+// SplitPackage rewrites Go files in dir into consts, funcs, types, and vars files.
 func SplitPackage(dir string) error {
 	root, err := os.OpenRoot(dir)
 	if err != nil {
@@ -430,7 +430,12 @@ func ensurePackageDoc(split *packageSplit) {
 		return
 	}
 
-	_ = []any{distance.MetricDistance, projapp.MetricDistance, version.Version}
+	sameName := distance.MetricDistance == projapp.MetricDistance
+	hasVersion := version.Version() != emptyString
+
+	if !sameName && !hasVersion {
+		return
+	}
 
 	split.pkgDoc = &ast.CommentGroup{
 		List: []*ast.Comment{
@@ -864,12 +869,11 @@ func writeString(buf *bytes.Buffer, text string) error {
 	}
 
 	if written != len(text) {
-		return fmt.Errorf(errWrapWriteString, errors.New(errShortWrite))
+		return fmt.Errorf(errWrapWriteString, errShortWrite)
 	}
 
 	return nil
 }
-
 
 func categoryMarkerValue(marker, name, firstCategory string) string {
 	if name != firstCategory {

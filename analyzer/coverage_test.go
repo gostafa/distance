@@ -170,7 +170,9 @@ func TestSettingsRejectsLegacyKeys(t *testing.T) {
 		t.Fatal("packages key accepted")
 	}
 
-	if err := settings.UnmarshalJSON([]byte(`{"rules":[{"pattern":"**","max-distance":0.5}]}`)); err == nil {
+	if err := settings.UnmarshalJSON(
+		[]byte(`{"rules":[{"pattern":"**","max-distance":0.5}]}`),
+	); err == nil {
 		t.Fatal("max-distance key accepted")
 	}
 }

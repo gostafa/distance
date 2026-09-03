@@ -23,8 +23,8 @@ func TestRelPathEdges(t *testing.T) {
 func TestTextEmptyPackages(t *testing.T) {
 	got := Text(&distance.Report{
 		SchemaVersion: "1",
-		ToolName: "distance", ToolVersion: "test",
-		Module:        "example.com/m",
+		ToolName:      "distance", ToolVersion: "test",
+		Module: "example.com/m",
 	}, &TextOptions{})
 
 	if !strings.Contains(got, "module example.com/m") || strings.Contains(got, "PATH / TYPE") {
@@ -35,8 +35,8 @@ func TestTextEmptyPackages(t *testing.T) {
 func TestTextMultiSectionSpacerAndMissingMetrics(t *testing.T) {
 	report := distance.Report{
 		SchemaVersion: "1",
-		ToolName: "distance", ToolVersion: "test",
-		Module:        "example.com/m",
+		ToolName:      "distance", ToolVersion: "test",
+		Module: "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path: "example.com/m",
@@ -90,8 +90,8 @@ func TestTextMultiSectionSpacerAndMissingMetrics(t *testing.T) {
 func TestTextExplainAllTypesAndSkipEmptyNotes(t *testing.T) {
 	report := distance.Report{
 		SchemaVersion: "1",
-		ToolName: "distance", ToolVersion: "test",
-		Module:        "example.com/m",
+		ToolName:      "distance", ToolVersion: "test",
+		Module: "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path: "example.com/m/quiet",
@@ -130,8 +130,8 @@ func TestTextTrailingBlankPackageMetric(t *testing.T) {
 	// trailing cell is trimmed when the row is written.
 	report := distance.Report{
 		SchemaVersion: "1",
-		ToolName: "distance", ToolVersion: "test",
-		Module:        "example.com/m",
+		ToolName:      "distance", ToolVersion: "test",
+		Module: "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path: "example.com/m/a",

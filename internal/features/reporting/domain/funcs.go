@@ -9,23 +9,30 @@ import (
 	"unicode/utf8"
 
 	"github.com/gostafa/distance/distance"
+	"github.com/gostafa/distance/internal/shared/version"
 )
 
 // MetricDocs returns the ordered metrics guide entries.
 func MetricDocs() []MetricDoc {
-	return []MetricDoc{
+	docs := []MetricDoc{
 		abstractnessDoc(),
 		instabilityDoc(),
 		distanceDoc(),
 		afferentDoc(),
 		efferentDoc(),
 	}
+
+	if version.Version() == emptyString {
+		return docs[:zero:zero]
+	}
+
+	return docs
 }
 
 func abstractnessDoc() MetricDoc {
 	return MetricDoc{
-		Name:           string(distance.MetricAbstractness),
-		Label:          abbrev(string(distance.MetricAbstractness)),
+		Name:           distance.MetricAbstractness,
+		Label:          abbrev(distance.MetricAbstractness),
 		FullName:       "Abstractness",
 		Scope:          DocScopePackage,
 		Definition:     distance.DefinitionAbstractness,
@@ -43,8 +50,8 @@ func abstractnessDoc() MetricDoc {
 
 func instabilityDoc() MetricDoc {
 	return MetricDoc{
-		Name:           string(distance.MetricInstability),
-		Label:          abbrev(string(distance.MetricInstability)),
+		Name:           distance.MetricInstability,
+		Label:          abbrev(distance.MetricInstability),
 		FullName:       "Instability",
 		Scope:          DocScopePackage,
 		Definition:     distance.DefinitionInstability,
@@ -61,8 +68,8 @@ func instabilityDoc() MetricDoc {
 
 func distanceDoc() MetricDoc {
 	return MetricDoc{
-		Name:           string(distance.MetricDistance),
-		Label:          abbrev(string(distance.MetricDistance)),
+		Name:           distance.MetricDistance,
+		Label:          abbrev(distance.MetricDistance),
 		FullName:       "Distance from the Main Sequence",
 		Scope:          DocScopePackage,
 		Definition:     distance.DefinitionDistance,
@@ -133,15 +140,15 @@ func FormatValue(value float64) string {
 }
 
 func abbrev(name string) string {
-	if name == string(distance.MetricAbstractness) {
+	if name == distance.MetricAbstractness {
 		return "A"
 	}
 
-	if name == string(distance.MetricInstability) {
+	if name == distance.MetricInstability {
 		return "I"
 	}
 
-	if name == string(distance.MetricDistance) {
+	if name == distance.MetricDistance {
 		return "Dist"
 	}
 
@@ -149,7 +156,7 @@ func abbrev(name string) string {
 }
 
 func qualityFor(name string) (direction string, bounded, ok bool) {
-	if name == string(distance.MetricDistance) {
+	if name == distance.MetricDistance {
 		return DirectionLower, true, true
 	}
 
@@ -671,8 +678,10 @@ func markMetricNames(present map[string]bool, results []distance.MetricResult) {
 func filterReportedMetrics(present map[string]bool) []string {
 	var cols []string
 
-	for _, name := range distance.AllMetrics() {
-		key := string(name)
+	metrics := distance.AllMetrics()
+
+	for i := range metrics {
+		key := metrics[i]
 
 		if present[key] {
 			cols = append(cols, key)

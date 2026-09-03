@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	reporting "github.com/gostafa/distance/internal/features/reporting/application"
 	"github.com/gostafa/distance/distance"
+	reporting "github.com/gostafa/distance/internal/features/reporting/application"
 )
 
 type bufWriteCloser struct{ *bytes.Buffer }

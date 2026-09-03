@@ -7,12 +7,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gostafa/distance/distance"
+	projectanalysis "github.com/gostafa/distance/internal/features/projectanalysis/application"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
 	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
 	tfmodel "github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
-	projectanalysis "github.com/gostafa/distance/internal/features/projectanalysis/application"
-	"github.com/gostafa/distance/distance"
 )
 
 // fakeSource feeds canned extracts so the whole pipeline runs without loading
@@ -29,7 +29,11 @@ func (f fakeSource) Load(
 	return f.mod, f.pkgs, nil
 }
 
-func findMetric(t *testing.T, results []projectanalysis.MetricEntry, name string) projectanalysis.MetricEntry {
+func findMetric(
+	t *testing.T,
+	results []projectanalysis.MetricEntry,
+	name string,
+) projectanalysis.MetricEntry {
 	t.Helper()
 
 	for _, r := range results {
@@ -103,7 +107,11 @@ func TestPipelineAnalyzeEndToEnd(t *testing.T) {
 		t.Errorf("a distance = %+v, want applicable", got)
 	}
 
-	if got := findMetric(t, result.Packages[1].Metrics, string(distance.MetricDistance)); !got.Applicable {
+	if got := findMetric(
+		t,
+		result.Packages[1].Metrics,
+		string(distance.MetricDistance),
+	); !got.Applicable {
 		t.Errorf("b distance = %+v, want applicable", got)
 	}
 }

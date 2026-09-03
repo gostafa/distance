@@ -3,7 +3,21 @@
 
 package domain
 
+import (
+	"github.com/gostafa/distance/distance"
+)
+
 type (
+	// PathMatcher matches import paths against a policy pattern.
+	PathMatcher interface {
+		Matches(importPath string) bool
+	}
+
+	// RuleGate exposes the exclusive maximum distance for a matching rule.
+	RuleGate interface {
+		MaxDistance() float64
+	}
+
 	// Violation records one package whose distance exceeded a matching rule.
 	Violation struct {
 		Package   string
@@ -23,7 +37,7 @@ type (
 		Max float64
 	}
 
-	matchPos struct {
+	matchPos = struct {
 		pi, si int
 	}
 
@@ -33,5 +47,12 @@ type (
 		threshold float64
 		value     float64
 		ok        bool
+	}
+
+	gateInput = struct {
+		pkg       *distance.PackageReport
+		res       *distance.MetricResult
+		pattern   string
+		threshold float64
 	}
 )

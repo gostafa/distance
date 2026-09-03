@@ -24,8 +24,8 @@ func sampleReport() *distance.Report {
 
 	return &distance.Report{
 		SchemaVersion: "1",
-		ToolName: "distance", ToolVersion: "test",
-		Module:        "example.com/m",
+		ToolName:      "distance", ToolVersion: "test",
+		Module: "example.com/m",
 		Packages: []distance.PackageReport{{
 			Path:     "example.com/m/a",
 			Afferent: 1,

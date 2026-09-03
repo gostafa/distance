@@ -66,7 +66,6 @@ func TestDomainPurity(t *testing.T) {
 
 	var dirs []string
 
-
 	features, err := os.ReadDir("internal/features")
 	if err != nil {
 		t.Fatal(err)

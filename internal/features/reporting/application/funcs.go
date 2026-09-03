@@ -103,7 +103,7 @@ func marshalDocsWith(runtime reportingRuntime, toolVersion string) ([]byte, erro
 	entries := reportdomain.MetricDocs()
 
 	out := docsPayload{
-		Tool: jsonTool{Name: string(distance.MetricDistance), Version: toolVersion},
+		Tool: jsonTool{Name: distance.MetricDistance, Version: toolVersion},
 		Docs: make([]jsonMetricDoc, indexZero, len(entries)),
 	}
 
@@ -306,7 +306,7 @@ func encodeOrderedMetrics(results []distance.MetricResult) ([]byte, error) {
 func encodeOrderedMetricsWith(rtm reportingRuntime, rows []distance.MetricResult) ([]byte, error) {
 	var buf bytes.Buffer
 
-	err := writeMetricObject(rtm, &buf, rows)
+	err := writeMetricObject(&metricObjectIn{runtime: rtm, buffer: &buf, rows: rows})
 	if err != nil {
 		return nil, fmt.Errorf(errWrapEncodeOrdered, err)
 	}
@@ -314,18 +314,18 @@ func encodeOrderedMetricsWith(rtm reportingRuntime, rows []distance.MetricResult
 	return buf.Bytes(), nil
 }
 
-func writeMetricObject(rtm reportingRuntime, buf *bytes.Buffer, rows []distance.MetricResult) error {
-	openErr := writeBufferByte(buf, '{')
+func writeMetricObject(input *metricObjectIn) error {
+	openErr := writeBufferByte(input.buffer, '{')
 	if openErr != nil {
 		return fmt.Errorf(errWrapEncodeOrdered, openErr)
 	}
 
-	entriesErr := writeEntries(rtm, buf, rows)
+	entriesErr := writeEntries(input.runtime, input.buffer, input.rows)
 	if entriesErr != nil {
 		return fmt.Errorf(errWrapEncodeOrdered, entriesErr)
 	}
 
-	closeErr := writeBufferByte(buf, '}')
+	closeErr := writeBufferByte(input.buffer, '}')
 	if closeErr != nil {
 		return fmt.Errorf(errWrapEncodeOrdered, closeErr)
 	}

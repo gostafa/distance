@@ -151,10 +151,18 @@ func TestRenderCSVWriteErrors(t *testing.T) {
 	for i := range 200 {
 		big.Packages = append(big.Packages, distance.PackageReport{
 			Path: fmt.Sprintf("example.com/m/p%d", i),
-			Metrics: []distance.MetricResult{{
-				Name: string(distance.MetricDistance), Scope: distance.ScopePackage, Value: float64(i),
-				Applicable: true, Definition: "d", Reason: strings.Repeat("x", 64),
-			}},
+			Metrics: []distance.MetricResult{
+				{
+					Name: string(
+						distance.MetricDistance,
+					),
+					Scope:      distance.ScopePackage,
+					Value:      float64(i),
+					Applicable: true,
+					Definition: "d",
+					Reason:     strings.Repeat("x", 64),
+				},
+			},
 		})
 	}
 
@@ -184,9 +192,16 @@ func TestJSONMarshalSeamErrors(t *testing.T) {
 		t.Fatalf("renderWeb = %v, want sentinel", err)
 	}
 
-	if _, err := encodeOrderedMetricsWith(runtime, []distance.MetricResult{{
-		Name: string(distance.MetricDistance), Scope: distance.ScopePackage, Value: 1, Applicable: true,
-	}}); !errors.Is(err, sentinel) {
+	if _, err := encodeOrderedMetricsWith(runtime, []distance.MetricResult{
+		{
+			Name: string(
+				distance.MetricDistance,
+			),
+			Scope:      distance.ScopePackage,
+			Value:      1,
+			Applicable: true,
+		},
+	}); !errors.Is(err, sentinel) {
 		t.Fatalf("encodeOrderedMetrics = %v, want sentinel", err)
 	}
 }

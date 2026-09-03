@@ -3,4 +3,4 @@
 
 package application
 
-var _ Analyzer = (*Pipeline)(nil)
+var _ analyzer = (*Pipeline)(nil)

@@ -14,8 +14,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	tfdom "github.com/gostafa/distance/internal/features/typefacts/domain"
+	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	fo "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
 	"golang.org/x/tools/go/packages"
 )
@@ -219,8 +219,10 @@ func (rtm loaderRuntime) extractAll(ctx context.Context, job *extractJob) (pkgEx
 
 	err := rtm.runExtractWorkers(
 		ctx,
-		Workers(job.opts.Workers, len(job.pkgs)),
-		len(job.pkgs),
+		WorkerRun{
+			Workers: Workers(job.opts.Workers, len(job.pkgs)),
+			Tasks:   len(job.pkgs),
+		},
 		extractAt(job, extracts),
 	)
 	if err != nil {
@@ -382,13 +384,11 @@ func firstAnyModule(pkgs []*packages.Package) string {
 	return emptyString
 }
 
-// RunWorkers executes task(i) for each i in [0, tasks) using workers goroutines.
-func RunWorkers(ctx context.Context, workers, tasks int, task func(int) error) error {
-	cfg := workerConfig{workers: workers, tasks: tasks}
-
+// RunWorkers executes task(i) for each i in [0, cfg.Tasks) using cfg.Workers goroutines.
+func RunWorkers(ctx context.Context, cfg WorkerRun, task func(int) error) error {
 	runErr := runWorkersEmpty(ctx)
 
-	if cfg.tasks != workerZero {
+	if cfg.Tasks != emptyLen {
 		runErr = runWorkersIndexed(ctx, &cfg, task)
 	}
 
@@ -401,9 +401,9 @@ func RunWorkers(ctx context.Context, workers, tasks int, task func(int) error) e
 
 // Workers returns how many goroutines to use for taskCount tasks.
 func Workers(configured, taskCount int) int {
-	workers := min(runtime.GOMAXPROCS(workerZero), taskCount)
+	workers := min(runtime.GOMAXPROCS(emptyLen), taskCount)
 
-	if configured > workerZero {
+	if configured > emptyLen {
 		workers = min(configured, taskCount)
 	}
 
@@ -429,7 +429,7 @@ func workerContextError(ctx context.Context, prefix string) error {
 }
 
 func emptyWorkerErrors(count int) []error {
-	errs := make([]error, workerZero, count)
+	errs := make([]error, emptyLen, count)
 
 	for range count {
 		errs = append(errs, nil)
@@ -462,14 +462,14 @@ func firstWorkerError(errs []error) error {
 	return nil
 }
 
-func runWorkersIndexed(ctx context.Context, cfg *workerConfig, task func(int) error) error {
-	errs := emptyWorkerErrors(cfg.tasks)
+func runWorkersIndexed(ctx context.Context, cfg *WorkerRun, task func(int) error) error {
+	errs := emptyWorkerErrors(cfg.Tasks)
 	tasks := make(chan int)
 
 	waitGroup := startWorkerDraining(cfg, func() {
 		drainWorkerTasks(tasks, errs, task)
 	})
-	sendWorkerTasks(ctx, tasks, cfg.tasks)
+	sendWorkerTasks(ctx, tasks, cfg.Tasks)
 	close(tasks)
 	waitGroup.Wait()
 
@@ -481,10 +481,10 @@ func runWorkersIndexed(ctx context.Context, cfg *workerConfig, task func(int) er
 	return nil
 }
 
-func startWorkerDraining(cfg *workerConfig, start func()) *sync.WaitGroup {
+func startWorkerDraining(cfg *WorkerRun, start func()) *sync.WaitGroup {
 	waitGroup := new(sync.WaitGroup)
 
-	startWorkerPool(waitGroup, Workers(cfg.workers, cfg.tasks), start)
+	startWorkerPool(waitGroup, Workers(cfg.Workers, cfg.Tasks), start)
 
 	return waitGroup
 }

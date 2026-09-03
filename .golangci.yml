@@ -2,7 +2,13 @@
 version: '2'
 linters:
   default: all
-  disable: [wsl, gomodguard, nonamedreturns, testpackage, godot, exhaustruct]
+  disable:
+    - wsl
+    - gomodguard
+    - nonamedreturns
+    - testpackage
+    - godot
+    - exhaustruct
   enable: [distance]
   settings:
     custom:
@@ -13,9 +19,8 @@ linters:
           tests: false
           generated: false
           dependency-scope: module
-          patterns: [./...]
           rules:
-            - pattern: "**"
+            - pattern: '**'
               max: 0.3
     asasalint:
       exclude: []
@@ -666,8 +671,7 @@ linters:
         - cuddle-group
       disable: []
   exclusions:
-    paths:
-      - ".*_test\\.go"
+    paths: [.*_test\.go]
     generated: disable
     warn-unused: true
 issues:

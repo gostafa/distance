@@ -12,4 +12,7 @@ var (
 	errPatternEmpty  = errors.New("pattern must be non-empty")
 	errMaxOutOfRange = errors.New("max must be in [0, 1]")
 	errNegativeWrite = errors.New("negative write count")
+
+	_ PathMatcher = Rule{}
+	_ RuleGate    = Rule{}
 )

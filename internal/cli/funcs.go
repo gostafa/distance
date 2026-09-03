@@ -9,13 +9,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
+	goruntime "runtime"
 	"runtime/pprof"
 	"strconv"
 	"strings"
@@ -32,14 +31,14 @@ import (
 
 // Run is the distance CLI entrypoint; it returns a process exit code.
 func Run(args []string) int {
-	runtime := defaultRuntime()
+	app := defaultRuntime()
 
-	return runtime.execute(args)
+	return app.execute(args)
 }
 
-func (runtime *cliRuntime) announceWeb(ctx context.Context, logger *slog.Logger, path string) {
+func (app *cliRuntime) announceWeb(ctx context.Context, logger *slog.Logger, path string) {
 	logger.InfoContext(ctx, msgReportWritten, slog.String(keyPath, path))
-	runtime.maybeOpen(ctx, &openArgs{log: logger, path: path})
+	app.maybeOpen(ctx, &openArgs{log: logger, path: path})
 }
 
 func attachPolicy(ctx context.Context, session *runSession) int {
@@ -52,7 +51,7 @@ func attachPolicy(ctx context.Context, session *runSession) int {
 	return fillPolicy(ctx, session)
 }
 
-func (runtime *cliRuntime) execute(args []string) int {
+func (app *cliRuntime) execute(args []string) int {
 	opts, code := parseCLI(args)
 
 	if opts == nil {
@@ -63,7 +62,7 @@ func (runtime *cliRuntime) execute(args []string) int {
 		return handleVersion()
 	}
 
-	return runtime.runWithOptions(opts)
+	return app.runWithOptions(opts)
 }
 
 func fillPolicy(ctx context.Context, session *runSession) int {
@@ -84,14 +83,14 @@ func fillPolicy(ctx context.Context, session *runSession) int {
 	return zero
 }
 
-func (runtime *cliRuntime) finishReport(ctx context.Context, args *reportArgs) int {
-	heapCode := runtime.maybeWriteHeap(ctx, args.session.opts.memoryProfile, args.session.logger)
+func (app *cliRuntime) finishReport(ctx context.Context, args *reportArgs) int {
+	heapCode := app.maybeWriteHeap(ctx, args.session.opts.memoryProfile, args.session.logger)
 
 	if heapCode != zero {
 		return heapCode
 	}
 
-	writeCode := runtime.writeReport(ctx, args)
+	writeCode := app.writeReport(ctx, args)
 
 	if writeCode != zero {
 		return writeCode
@@ -100,8 +99,8 @@ func (runtime *cliRuntime) finishReport(ctx context.Context, args *reportArgs) i
 	return policyExit(ctx, args.report, args.session)
 }
 
-func (runtime *cliRuntime) maybeOpen(ctx context.Context, args *openArgs) {
-	openErr := runtime.openBrowserIfTTY(args.path)
+func (app *cliRuntime) maybeOpen(ctx context.Context, args *openArgs) {
+	openErr := app.openBrowserIfTTY(args.path)
 	if openErr == nil {
 		return
 	}
@@ -115,12 +114,12 @@ func (runtime *cliRuntime) maybeOpen(ctx context.Context, args *openArgs) {
 	args.log.WarnContext(ctx, msgOpenReportFailed, slog.String(keyError, openErr.Error()))
 }
 
-func (runtime *cliRuntime) openBrowserIfTTY(path string) error {
-	if !runtime.isTerminal() {
+func (app *cliRuntime) openBrowserIfTTY(path string) error {
+	if !app.isTerminal() {
 		return nil
 	}
 
-	openErr := runtime.openBrowser(path)
+	openErr := app.openBrowser(path)
 	if openErr != nil {
 		return fmt.Errorf("cli open browser: %w", openErr)
 	}
@@ -128,12 +127,12 @@ func (runtime *cliRuntime) openBrowserIfTTY(path string) error {
 	return nil
 }
 
-func (runtime *cliRuntime) maybeStartCPU(path string, logger *slog.Logger) (stop func(), code int) {
+func (app *cliRuntime) maybeStartCPU(path string, logger *slog.Logger) (stop func(), code int) {
 	if path == emptyString {
 		return noopStop, zero
 	}
 
-	stopProfile, startErr := runtime.startCPU(path)
+	stopProfile, startErr := app.startCPU(path)
 	if startErr != nil {
 		logger.ErrorContext(
 			context.Background(),
@@ -147,12 +146,12 @@ func (runtime *cliRuntime) maybeStartCPU(path string, logger *slog.Logger) (stop
 	return stopCPUWithLog(stopProfile, logger), zero
 }
 
-func (runtime *cliRuntime) maybeWriteHeap(ctx context.Context, path string, log *slog.Logger) int {
+func (app *cliRuntime) maybeWriteHeap(ctx context.Context, path string, log *slog.Logger) int {
 	if path == emptyString {
 		return zero
 	}
 
-	heapErr := runtime.writeHeap(path)
+	heapErr := app.writeHeap(path)
 	if heapErr != nil {
 		log.ErrorContext(ctx, msgHeapFailed, slog.String(keyError, heapErr.Error()))
 
@@ -170,12 +169,12 @@ func policyExit(ctx context.Context, report *distance.Report, session *runSessio
 	return enforcePolicy(ctx, report, session)
 }
 
-func (runtime *cliRuntime) runJob(session *runSession) int {
+func (app *cliRuntime) runJob(session *runSession) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 	defer stop()
 
-	stopCPU, cpuCode := runtime.maybeStartCPU(session.opts.cpuProfile, session.logger)
+	stopCPU, cpuCode := app.maybeStartCPU(session.opts.cpuProfile, session.logger)
 
 	if cpuCode != zero {
 		return cpuCode
@@ -183,17 +182,17 @@ func (runtime *cliRuntime) runJob(session *runSession) int {
 
 	defer stopCPU()
 
-	return runtime.analyzeAndReport(ctx, session)
+	return app.analyzeAndReport(ctx, session)
 }
 
-func (runtime *cliRuntime) analyzeAndReport(ctx context.Context, session *runSession) int {
+func (app *cliRuntime) analyzeAndReport(ctx context.Context, session *runSession) int {
 	policyCode := attachPolicy(ctx, session)
 
 	if policyCode != zero {
 		return policyCode
 	}
 
-	out := runtime.runAnalyze(ctx, &analyzeArgs{
+	out := app.runAnalyze(ctx, &analyzeArgs{
 		cfg: buildAnalyzeConfig(session.opts),
 		log: session.logger,
 	})
@@ -202,13 +201,13 @@ func (runtime *cliRuntime) analyzeAndReport(ctx context.Context, session *runSes
 		return out.code
 	}
 
-	return runtime.finishReport(ctx, &reportArgs{report: &out.report, session: session})
+	return app.finishReport(ctx, &reportArgs{report: &out.report, session: session})
 }
 
-func (runtime *cliRuntime) runAnalyze(ctx context.Context, args *analyzeArgs) analyzeOut {
+func (app *cliRuntime) runAnalyze(ctx context.Context, args *analyzeArgs) analyzeOut {
 	start := time.Now()
 
-	rep, analyzeErr := runtime.analyze(ctx, args.cfg)
+	rep, analyzeErr := app.analyze(ctx, args.cfg)
 	if analyzeErr != nil {
 		return analyzeOut{report: rep, code: analyzeExitCode(ctx, args.log, analyzeErr)}
 	}
@@ -227,11 +226,11 @@ func (runtime *cliRuntime) runAnalyze(ctx context.Context, args *analyzeArgs) an
 	return analyzeOut{report: rep}
 }
 
-func (runtime *cliRuntime) runWebHelp() int {
+func (app *cliRuntime) runWebHelp() int {
 	logger := newLogger(nil)
 	ctx := context.Background()
 
-	path, helpErr := runtime.writeHelpDocs()
+	path, helpErr := app.writeHelpDocs()
 	if helpErr != nil {
 		logger.ErrorContext(ctx, msgGuideFailed, slog.String(keyError, helpErr.Error()))
 
@@ -239,12 +238,12 @@ func (runtime *cliRuntime) runWebHelp() int {
 	}
 
 	logger.InfoContext(ctx, msgGuideWritten, slog.String(keyPath, path))
-	runtime.maybeOpen(ctx, &openArgs{log: logger, path: path, guide: true})
+	app.maybeOpen(ctx, &openArgs{log: logger, path: path, guide: true})
 
 	return zero
 }
 
-func (runtime *cliRuntime) runWithOptions(opts *cliOptions) int {
+func (app *cliRuntime) runWithOptions(opts *cliOptions) int {
 	logger := newLogger(logLevel(opts))
 	resolved := resolveReportFormat(opts, logger)
 
@@ -252,16 +251,16 @@ func (runtime *cliRuntime) runWithOptions(opts *cliOptions) int {
 		return resolved.code
 	}
 
-	return runtime.runJob(&runSession{opts: opts, format: resolved.format, logger: logger})
+	return app.runJob(&runSession{opts: opts, format: resolved.format, logger: logger})
 }
 
-func (runtime *cliRuntime) writeHelpDocs() (string, error) {
-	file, createErr := runtime.createHelpTemp(emptyString, helpTempPattern)
+func (app *cliRuntime) writeHelpDocs() (string, error) {
+	file, createErr := app.createHelpTemp(emptyString, helpTempPattern)
 	if createErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, createErr)
 	}
 
-	path, finishErr := runtime.finishHelpDocs(file)
+	path, finishErr := app.finishHelpDocs(file)
 	if finishErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, finishErr)
 	}
@@ -269,20 +268,29 @@ func (runtime *cliRuntime) writeHelpDocs() (string, error) {
 	return path, nil
 }
 
-func (runtime *cliRuntime) finishHelpDocs(file *os.File) (string, error) {
+func (app *cliRuntime) finishHelpDocs(file *os.File) (string, error) {
 	path := file.Name()
 
-	closeErr := runtime.closeHelpFile(file)
+	closeErr := app.closeHelpFile(file)
 	if closeErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, closeErr)
 	}
 
+	docsPath, docsErr := app.writeHelpDocsAt(path)
+	if docsErr != nil {
+		return emptyString, fmt.Errorf(errWrapWriteHelp, docsErr)
+	}
+
+	return docsPath, nil
+}
+
+func (app *cliRuntime) writeHelpDocsAt(path string) (string, error) {
 	writer, openErr := openOutput(path)
 	if openErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, openErr)
 	}
 
-	docsErr := runtime.writeDocs(writer, version.Version())
+	docsErr := app.writeDocs(writer, version.Version())
 	if docsErr != nil {
 		return emptyString, fmt.Errorf(errWrapWriteHelp, docsErr)
 	}
@@ -290,7 +298,7 @@ func (runtime *cliRuntime) finishHelpDocs(file *os.File) (string, error) {
 	return path, nil
 }
 
-func (runtime *cliRuntime) writeReport(ctx context.Context, args *reportArgs) int {
+func (app *cliRuntime) writeReport(ctx context.Context, args *reportArgs) int {
 	outputPath, webDefault := resolveOutputPath(args.session.opts.output, args.session.format)
 
 	writer, openErr := openOutput(outputPath)
@@ -300,14 +308,14 @@ func (runtime *cliRuntime) writeReport(ctx context.Context, args *reportArgs) in
 
 	writeErr := reporting.Write(args.report, writer, &reporting.WriteOptions{
 		Format: args.session.format,
-		Text:   textOptions(outputPath, args.session, runtime.isTerminal),
+		Text:   textOptions(outputPath, args.session, app.isTerminal),
 	})
 	if writeErr != nil {
 		return failWrite(ctx, args.session, writeErr)
 	}
 
 	if webDefault {
-		runtime.announceWeb(ctx, args.session.logger, outputPath)
+		app.announceWeb(ctx, args.session.logger, outputPath)
 	}
 
 	return zero
@@ -446,7 +454,7 @@ func buildAnalyzeConfig(opts *cliOptions) *distance.Config {
 		IncludeGenerated: opts.generated,
 		BuildTags:        splitList(opts.buildTags),
 		Workers:          opts.workers,
-		DependencyScope:  distance.DependencyScope(opts.dependencyScope),
+		DependencyScope:  opts.dependencyScope,
 		ContinueOnError:  opts.continueOnError,
 	}
 }
@@ -515,9 +523,9 @@ func flagWasSet(flagSet *flag.FlagSet, name string) bool {
 
 func handleParseError(parseErr error, args []string) int {
 	if errors.Is(parseErr, flag.ErrHelp) && wantsWebHelp(args) {
-		runtime := defaultRuntime()
+		app := defaultRuntime()
 
-		return runtime.runWebHelp()
+		return app.runWebHelp()
 	}
 
 	return exitUsage
@@ -570,17 +578,17 @@ func resolveOutputPath(outputPath string, format reportingdomain.Format) (string
 	return outputPath, webDefault
 }
 
-func openOutput(path string) (io.WriteCloser, error) {
+func openOutput(path string) (*reportSink, error) {
 	if path == emptyString {
-		return &stdoutSink{w: bufio.NewWriter(os.Stdout)}, nil
+		return &reportSink{WriteCloser: &stdoutSink{w: bufio.NewWriter(os.Stdout)}}, nil
 	}
 
-	file, createErr := os.Create(path)
+	file, createErr := createFileAt(path)
 	if createErr != nil {
 		return nil, fmt.Errorf("create report file: %w", createErr)
 	}
 
-	return file, nil
+	return &reportSink{WriteCloser: file}, nil
 }
 
 func (stream *stdoutSink) Close() error {
@@ -602,7 +610,7 @@ func (stream *stdoutSink) Write(p []byte) (int, error) {
 }
 
 func openBrowser(path string) error {
-	name, args := browserOpenCommand(runtime.GOOS, path)
+	name, args := browserOpenCommand(goruntime.GOOS, path)
 
 	cmd := &exec.Cmd{
 		Path: name,
@@ -636,16 +644,29 @@ func browserOpenCommand(goos, path string) (name string, args []string) {
 func startCPUProfile(path string) (stop func() error, err error) {
 	file, err := createProfileFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("profiling startCPU: %w", err)
+		return nil, fmt.Errorf(errFmtStartCPU, err)
 	}
 
+	stopFn, startErr := startCPUOnFile(file)
+	if startErr != nil {
+		return nil, fmt.Errorf(errFmtStartCPU, startErr)
+	}
+
+	return stopFn, nil
+}
+
+func startCPUOnFile(file *os.File) (func() error, error) {
 	startErr := pprof.StartCPUProfile(file)
 	if startErr != nil {
 		closeErr := file.Close()
 
-		return nil, fmt.Errorf("profiling startCPU: %w", errors.Join(startErr, closeErr))
+		return nil, errors.Join(startErr, closeErr)
 	}
 
+	return stopCPUProfile(file), nil
+}
+
+func stopCPUProfile(file *os.File) func() error {
 	return func() error {
 		pprof.StopCPUProfile()
 
@@ -655,52 +676,79 @@ func startCPUProfile(path string) (stop func() error, err error) {
 		}
 
 		return nil
-	}, nil
+	}
 }
 
 func writeHeapProfile(path string) error {
 	file, err := createProfileFile(path)
 	if err != nil {
-		return fmt.Errorf("profiling writeHeap: %w", err)
+		return fmt.Errorf(errFmtWriteHeap, err)
 	}
 
 	writeErr := pprof.WriteHeapProfile(file)
 	closeErr := file.Close()
 
 	if writeErr != nil {
-		return fmt.Errorf("profiling writeHeap: %w", writeErr)
+		return fmt.Errorf(errFmtWriteHeap, writeErr)
 	}
 
 	if closeErr != nil {
-		return fmt.Errorf("profiling writeHeap: %w", closeErr)
+		return fmt.Errorf(errFmtWriteHeap, closeErr)
 	}
 
 	return nil
 }
 
 func createProfileFile(path string) (*os.File, error) {
+	file, err := createFileAt(path)
+	if err != nil {
+		return nil, fmt.Errorf(errFmtCreateProfile, err)
+	}
+
+	return file, nil
+}
+
+func createFileAt(path string) (*os.File, error) {
 	dir, name := filepath.Split(path)
 
 	if dir == emptyString {
 		dir = "."
 	}
 
-	root, err := os.OpenRoot(dir)
+	file, err := createNamedFile(dir, name)
 	if err != nil {
-		return nil, fmt.Errorf("open profile directory: %w", err)
+		return nil, fmt.Errorf("create file at path: %w", err)
 	}
 
+	return file, nil
+}
+
+func createNamedFile(dir, name string) (*os.File, error) {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, fmt.Errorf("open file directory: %w", err)
+	}
+
+	file, createErr := createInRoot(root, name)
+	if createErr != nil {
+		return nil, fmt.Errorf("create named file: %w", createErr)
+	}
+
+	return file, nil
+}
+
+func createInRoot(root *os.Root, name string) (*os.File, error) {
 	file, createErr := root.Create(name)
 	rootCloseErr := root.Close()
 
 	if createErr != nil {
-		return nil, fmt.Errorf("create profile file: %w", createErr)
+		return nil, errors.Join(createErr, rootCloseErr)
 	}
 
 	if rootCloseErr != nil {
 		discardErr := file.Close()
 
-		return nil, fmt.Errorf("create profile file: %w", errors.Join(rootCloseErr, discardErr))
+		return nil, errors.Join(rootCloseErr, discardErr)
 	}
 
 	return file, nil

@@ -269,7 +269,7 @@ func TestExtractAllWorkerError(t *testing.T) {
 	sentinel := errors.New("extract failed")
 	runtime := defaultLoaderRuntime()
 
-	runtime.runExtractWorkers = func(context.Context, int, int, func(int) error) error {
+	runtime.runExtractWorkers = func(context.Context, WorkerRun, func(int) error) error {
 		return sentinel
 	}
 

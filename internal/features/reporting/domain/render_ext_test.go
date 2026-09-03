@@ -33,8 +33,8 @@ func TestTextAndCSVRendering(t *testing.T) {
 
 	rep := distance.Report{
 		SchemaVersion: "1",
-		ToolName: "distance", ToolVersion: "t",
-		Module:        "example.com/m",
+		ToolName:      "distance", ToolVersion: "t",
+		Module: "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path: "example.com/m/a",

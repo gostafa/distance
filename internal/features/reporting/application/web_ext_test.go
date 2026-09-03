@@ -19,7 +19,11 @@ func TestWriteWeb(t *testing.T) {
 
 	sink := &bytes.Buffer{}
 
-	err := reporting.Write(report(), bufWriteCloser{sink}, &reporting.WriteOptions{Format: domain.FormatWeb})
+	err := reporting.Write(
+		report(),
+		bufWriteCloser{sink},
+		&reporting.WriteOptions{Format: domain.FormatWeb},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +109,11 @@ func TestWriteWebEscapesScriptTerminator(t *testing.T) {
 
 	sink := &bytes.Buffer{}
 
-	err := reporting.Write(rep, bufWriteCloser{sink}, &reporting.WriteOptions{Format: domain.FormatWeb})
+	err := reporting.Write(
+		rep,
+		bufWriteCloser{sink},
+		&reporting.WriteOptions{Format: domain.FormatWeb},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +143,11 @@ func TestWriteWebPayloadCannotSpoofDocsPlaceholder(t *testing.T) {
 
 	sink := &bytes.Buffer{}
 
-	err := reporting.Write(rep, bufWriteCloser{sink}, &reporting.WriteOptions{Format: domain.FormatWeb})
+	err := reporting.Write(
+		rep,
+		bufWriteCloser{sink},
+		&reporting.WriteOptions{Format: domain.FormatWeb},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

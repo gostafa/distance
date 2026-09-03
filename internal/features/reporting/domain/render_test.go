@@ -14,8 +14,8 @@ import (
 func tableReport() distance.Report {
 	return distance.Report{
 		SchemaVersion: "1",
-		ToolName: "distance", ToolVersion: "test",
-		Module:        "example.com/mod",
+		ToolName:      "distance", ToolVersion: "test",
+		Module: "example.com/mod",
 		Packages: []distance.PackageReport{{
 			Path: "example.com/mod",
 			Metrics: []distance.MetricResult{

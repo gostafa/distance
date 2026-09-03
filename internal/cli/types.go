@@ -90,6 +90,10 @@ type (
 		w *bufio.Writer
 	}
 
+	reportSink struct {
+		io.WriteCloser
+	}
+
 	analyzeArgs struct {
 		cfg *distance.Config
 		log *slog.Logger

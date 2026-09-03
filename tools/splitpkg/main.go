@@ -11,6 +11,13 @@ import (
 	"github.com/gostafa/distance/internal/tooling/splitpkg"
 )
 
+const (
+	exitOK          = 0
+	exitFail        = 1
+	exitUsageCode   = 2
+	errFmtWriteLine = "splitpkg writeLine: %w"
+)
+
 var errShortWrite = errors.New("short write")
 
 func main() {
@@ -18,24 +25,24 @@ func main() {
 }
 
 func run(args []string) int {
-	if len(args) < 2 {
+	if len(args) < exitUsageCode {
 		return usageExit()
 	}
 
 	if splitDirs(args[1:]) {
-		return 1
+		return exitFail
 	}
 
-	return 0
+	return exitOK
 }
 
 func usageExit() int {
 	err := writeLine(os.Stderr, "usage: splitpkg <dir> [<dir>...]")
 	if err != nil {
-		return 1
+		return exitFail
 	}
 
-	return 2
+	return exitUsageCode
 }
 
 func splitDirs(dirs []string) bool {
@@ -68,11 +75,11 @@ func reportSplit(dir string) (abort, failed bool) {
 func writeLine(file *os.File, text string) error {
 	written, err := fmt.Fprintln(file, text)
 	if err != nil {
-		return fmt.Errorf("splitpkg writeLine: %w", err)
+		return fmt.Errorf(errFmtWriteLine, err)
 	}
 
-	if written == 0 {
-		return fmt.Errorf("splitpkg writeLine: %w", errShortWrite)
+	if written == exitOK {
+		return fmt.Errorf(errFmtWriteLine, errShortWrite)
 	}
 
 	return nil

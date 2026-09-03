@@ -14,13 +14,15 @@ import (
 )
 
 var (
-	errEmptyPattern    = errors.New("empty package pattern")
-	errInvalidScopeFmt = "invalid dependency scope %q (want project, module, or all)"
+	errEmptyPattern = errors.New("empty package pattern")
+	errInvalidScope = errors.New("invalid dependency scope (want project, module, or all)")
 )
 
 // AllMetrics returns the metric names included in every PackageReport.
 func AllMetrics() []MetricName {
-	_ = domain.ScopeProject
+	if domain.ScopeProject == emptyString {
+		return nil
+	}
 
 	return []MetricName{MetricAbstractness, MetricInstability, MetricDistance}
 }
@@ -64,11 +66,11 @@ func (config *Config) PatternList() []string {
 
 // ScopeName returns the dependency scope name.
 func (config *Config) ScopeName() string {
-	return string(config.DependencyScope)
+	return config.DependencyScope
 }
 
 // ToolIdent returns the tool identity fields for a Report.
-func ToolIdent(name, ver string) (string, string) {
+func ToolIdent(name, ver string) (toolName, toolVersion string) {
 	return name, ver
 }
 
@@ -82,15 +84,15 @@ func analyzeValidated(ctx context.Context, cfg *Config, backend Backend) (Report
 }
 
 func finalizeReport(report *Report) Report {
-	if report.SchemaVersion == "" {
+	if report.SchemaVersion == emptyString {
 		report.SchemaVersion = SchemaVersion
 	}
 
-	if report.ToolName == "" {
-		report.ToolName = string(MetricDistance)
+	if report.ToolName == emptyString {
+		report.ToolName = MetricDistance
 	}
 
-	if report.ToolVersion == "" {
+	if report.ToolVersion == emptyString {
 		report.ToolVersion = version.Version()
 	}
 
@@ -102,7 +104,7 @@ func configWithDefaults(config *Config) *Config {
 		config.Patterns = []string{allPackagesPattern}
 	}
 
-	if config.ScopeName() == "" {
+	if config.ScopeName() == emptyString {
 		config.DependencyScope = DependencyScopeModule
 	}
 
@@ -119,12 +121,12 @@ func validateConfig(config *Config) error {
 
 		return nil
 	default:
-		return fmt.Errorf(errInvalidScopeFmt, config.ScopeName())
+		return fmt.Errorf("%w: %q", errInvalidScope, config.ScopeName())
 	}
 }
 
 func validatePatterns(config *Config) error {
-	if slices.Contains(config.PatternList(), "") {
+	if slices.Contains(config.PatternList(), emptyString) {
 		return errEmptyPattern
 	}
 

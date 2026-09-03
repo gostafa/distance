@@ -23,8 +23,8 @@ func (nopCloser) Close() error { return nil }
 func report() *distance.Report {
 	return &distance.Report{
 		SchemaVersion: "6",
-		ToolName: "distance", ToolVersion: "test",
-		Module:        "example.com/m",
+		ToolName:      "distance", ToolVersion: "test",
+		Module: "example.com/m",
 		Packages: []distance.PackageReport{
 			{
 				Path:     "example.com/m/a",
@@ -64,7 +64,11 @@ func TestWriteText(t *testing.T) {
 
 	sink := &bytes.Buffer{}
 
-	err := reporting.Write(report(), nopCloser{sink}, &reporting.WriteOptions{Format: domain.FormatText})
+	err := reporting.Write(
+		report(),
+		nopCloser{sink},
+		&reporting.WriteOptions{Format: domain.FormatText},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +86,11 @@ func TestWriteJSON(t *testing.T) {
 
 	sink := &bytes.Buffer{}
 
-	err := reporting.Write(report(), nopCloser{sink}, &reporting.WriteOptions{Format: domain.FormatJSON})
+	err := reporting.Write(
+		report(),
+		nopCloser{sink},
+		&reporting.WriteOptions{Format: domain.FormatJSON},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,11 +8,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/gostafa/distance/distance"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
 	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
 	tfmodel "github.com/gostafa/distance/internal/features/typefacts/domain/model"
 	tfoutbound "github.com/gostafa/distance/internal/features/typefacts/ports/outbound"
-	"github.com/gostafa/distance/distance"
+	"github.com/gostafa/distance/internal/infrastructure/goloader"
 )
 
 type coverageSource struct{}
@@ -36,7 +37,7 @@ func TestAssembleResultWorkerError(t *testing.T) {
 	sentinel := errors.New("workers failed")
 	pipeline := NewPipeline(typefacts.NewService(coverageSource{}))
 
-	pipeline.runtime.runWorkers = func(context.Context, int, int, func(int) error) error {
+	pipeline.runtime.runWorkers = func(context.Context, goloader.WorkerRun, func(int) error) error {
 		return sentinel
 	}
 
@@ -61,7 +62,11 @@ func TestReportedMetrics(t *testing.T) {
 	}
 
 	pkg := result.Packages[0]
-	want := []string{string(distance.MetricAbstractness), string(distance.MetricInstability), string(distance.MetricDistance)}
+	want := []string{
+		string(distance.MetricAbstractness),
+		string(distance.MetricInstability),
+		string(distance.MetricDistance),
+	}
 
 	if len(pkg.Metrics) != len(want) {
 		t.Fatalf("package metrics = %v, want %v", pkg.Metrics, want)

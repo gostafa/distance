@@ -9,12 +9,6 @@ import (
 )
 
 type (
-
-
-
-
-
-
 	declEntry struct {
 		source string
 	}

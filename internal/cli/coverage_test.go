@@ -6,12 +6,12 @@ package cli
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/gostafa/distance/distance"
-	"io"
 )
 
 func execute(args []string) int {
@@ -24,8 +24,8 @@ func stubAnalyze(runtime *cliRuntime) {
 	runtime.analyze = func(context.Context, *distance.Config) (distance.Report, error) {
 		return distance.Report{
 			SchemaVersion: "6",
-			ToolName: "distance", ToolVersion: "test",
-			Module:        "example.com/m",
+			ToolName:      "distance", ToolVersion: "test",
+			Module: "example.com/m",
 		}, nil
 	}
 }

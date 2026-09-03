@@ -16,12 +16,17 @@ type (
 	// Loaded is the package-extract list returned by Loader.Load.
 	Loaded = []model.PackageExtract
 
+	// PackageLoader loads packages into type-fact extracts.
+	PackageLoader interface {
+		Load(ctx context.Context, opt *outbound.FactOptions) (mod string, ext Loaded, err error)
+	}
+
 	pkgExtracts = []model.PackageExtract
 	loadedPkgs  = []*packages.Package
 	pkgByPath   = map[string]*packages.Package
 	factOpts    = outbound.FactOptions
 
-	extractorOptions struct {
+	extractorOptions = struct {
 		modulePath       string
 		includeGenerated bool
 	}
@@ -29,13 +34,13 @@ type (
 	// Loader is an outbound.FactSource backed by golang.org/x/tools/go/packages.
 	Loader struct{}
 
-	skipFilter struct {
+	skipFilter = struct {
 		fset      *token.FileSet
 		generated map[string]bool
 		opts      *extractorOptions
 	}
 
-	extractJob struct {
+	extractJob = struct {
 		opts       *outbound.FactOptions
 		modulePath string
 		pkgs       []*packages.Package
@@ -46,7 +51,7 @@ type (
 		errs []string
 	}
 
-	loadOut struct {
+	loadOut = struct {
 		err error
 		mod string
 		ext Loaded
@@ -54,11 +59,12 @@ type (
 
 	loaderRuntime struct {
 		packagesLoad      func(*packages.Config, ...string) ([]*packages.Package, error)
-		runExtractWorkers func(context.Context, int, int, func(int) error) error
+		runExtractWorkers func(context.Context, WorkerRun, func(int) error) error
 	}
 
-	workerConfig struct {
-		workers int
-		tasks   int
+	// WorkerRun configures a RunWorkers invocation.
+	WorkerRun struct {
+		Workers int
+		Tasks   int
 	}
 )

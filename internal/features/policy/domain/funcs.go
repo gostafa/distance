@@ -178,7 +178,7 @@ func matchSegments(pattern, path []string) bool {
 }
 
 func matchingCandidate(rule *Rule, importPath, currentPattern string) *Rule {
-	if !MatchPackage(rule.Pattern, importPath) {
+	if !rule.Matches(importPath) {
 		return nil
 	}
 
@@ -197,7 +197,7 @@ func matchingRule(importPath string, rules []Rule) (threshold float64, pattern s
 			continue
 		}
 
-		threshold = rule.Max
+		threshold = rule.MaxDistance()
 		pattern = rule.Pattern
 	}
 
@@ -244,7 +244,12 @@ func scanMetrics(pkg *distance.PackageReport, pattern string, threshold float64)
 	violations := make([]Violation, zero, len(pkg.Metrics))
 
 	for index := range pkg.Metrics {
-		item, hit := distanceViolation(metricGate(pkg, &pkg.Metrics[index], pattern, threshold))
+		item, hit := distanceViolation(metricGate(&gateInput{
+			pkg:       pkg,
+			res:       &pkg.Metrics[index],
+			pattern:   pattern,
+			threshold: threshold,
+		}))
 
 		if hit {
 			violations = append(violations, item)
@@ -254,23 +259,28 @@ func scanMetrics(pkg *distance.PackageReport, pattern string, threshold float64)
 	return violations
 }
 
-func metricGate(
-	pkg *distance.PackageReport,
-	res *distance.MetricResult,
-	pattern string,
-	threshold float64,
-) *packageGate {
-	if res.Name != string(distance.MetricDistance) || !res.Applicable {
-		return &packageGate{pkg: pkg.Path, pattern: pattern, threshold: threshold}
+func metricGate(input *gateInput) *packageGate {
+	if input.res.Name != distance.MetricDistance || !input.res.Applicable {
+		return &packageGate{pkg: input.pkg.Path, pattern: input.pattern, threshold: input.threshold}
 	}
 
 	return &packageGate{
-		pkg:       pkg.Path,
-		pattern:   pattern,
-		threshold: threshold,
-		value:     res.Value,
+		pkg:       input.pkg.Path,
+		pattern:   input.pattern,
+		threshold: input.threshold,
+		value:     input.res.Value,
 		ok:        true,
 	}
+}
+
+// Matches reports whether the rule pattern matches importPath.
+func (rule Rule) Matches(importPath string) bool {
+	return MatchPackage(rule.Pattern, importPath)
+}
+
+// MaxDistance returns the exclusive maximum distance for this rule.
+func (rule Rule) MaxDistance() float64 {
+	return rule.Max
 }
 
 func splitPattern(pattern string) []string {

@@ -16,7 +16,7 @@ func TestNewAnalyzerImplementsPort(t *testing.T) {
 	requireAnalyzer(t, NewAnalyzer(goloader.New()))
 }
 
-func requireAnalyzer(t *testing.T, a application.Analyzer) {
+func requireAnalyzer(t *testing.T, a *application.Pipeline) {
 	t.Helper()
 
 	if a == nil {

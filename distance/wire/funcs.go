@@ -10,38 +10,63 @@ import (
 	"github.com/gostafa/distance/distance"
 	"github.com/gostafa/distance/internal/features/packagemetrics/domain"
 	projapp "github.com/gostafa/distance/internal/features/projectanalysis/application"
-	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
 	"github.com/gostafa/distance/internal/shared/version"
 )
 
-type backendFunc func(context.Context, *distance.Config) (distance.Report, error)
+type (
+	backendFunc func(context.Context, *distance.Config) (distance.Report, error)
+
+	analyzeIn struct {
+		cfg      *distance.Config
+		analyzer *projapp.Pipeline
+	}
+)
 
 func (fn backendFunc) Analyze(ctx context.Context, cfg *distance.Config) (distance.Report, error) {
-	return fn(ctx, cfg)
+	report, err := fn(ctx, cfg)
+	if err != nil {
+		return distance.Report{}, fmt.Errorf(errWrapBackend, err)
+	}
+
+	return report, nil
 }
 
 // AnalyzeWithDefault runs Analyze using the built-in analyzer backend.
 func AnalyzeWithDefault(ctx context.Context, cfg *distance.Config) (distance.Report, error) {
-	_ = []any{domain.ScopeProject, version.Version, typefacts.NewService}
-
-	analyzer := projapp.NewDefaultPipeline()
-
-	report, err := distance.Analyze(ctx, cfg, backendFunc(func(
-		ctx context.Context,
-		cfg *distance.Config,
-	) (distance.Report, error) {
-		result, analyzeErr := analyzer.Analyze(ctx, toAppOptions(cfg))
-		if analyzeErr != nil {
-			return distance.Report{}, fmt.Errorf("wire backend analyze: %w", analyzeErr)
-		}
-
-		return fromAppResult(&result), nil
-	}))
+	report, err := analyzeWithPipeline(ctx, &analyzeIn{
+		cfg:      cfg,
+		analyzer: projapp.NewDefaultPipeline(),
+	})
 	if err != nil {
-		return distance.Report{}, fmt.Errorf("wire AnalyzeWithDefault: %w", err)
+		return distance.Report{}, fmt.Errorf(errWrapAnalyze, err)
+	}
+
+	report.ToolName, report.ToolVersion = distance.ToolIdent(
+		distance.MetricDistance,
+		version.Version(),
+	)
+
+	return report, nil
+}
+
+func analyzeWithPipeline(ctx context.Context, in *analyzeIn) (distance.Report, error) {
+	report, err := distance.Analyze(ctx, in.cfg, backendFor(in.analyzer))
+	if err != nil {
+		return distance.Report{}, fmt.Errorf(errWrapAnalyze, err)
 	}
 
 	return report, nil
+}
+
+func backendFor(analyzer *projapp.Pipeline) backendFunc {
+	return func(ctx context.Context, cfg *distance.Config) (distance.Report, error) {
+		result, analyzeErr := analyzer.Analyze(ctx, toAppOptions(cfg))
+		if analyzeErr != nil {
+			return distance.Report{}, fmt.Errorf(errWrapBackend, analyzeErr)
+		}
+
+		return fromAppResult(&result), nil
+	}
 }
 
 func toAppOptions(cfg *distance.Config) *projapp.Options {
@@ -52,41 +77,66 @@ func toAppOptions(cfg *distance.Config) *projapp.Options {
 		IncludeGenerated: cfg.IncludeGenerated,
 		BuildTags:        cfg.BuildTags,
 		Workers:          cfg.Workers,
-		DependencyScope:  cfg.ScopeName(),
+		DependencyScope:  wireScope(cfg.ScopeName()),
 		ContinueOnError:  cfg.ContinueOnError,
 	}
 }
 
-func fromAppResult(result *projapp.Result) distance.Report {
-	packages := make([]distance.PackageReport, 0, len(result.Packages))
+func wireScope(scope string) string {
+	scopes := [...]string{domain.ScopeProject, domain.ScopeModule, domain.ScopeAll}
 
-	for i := range result.Packages {
-		pkg := &result.Packages[i]
-		metrics := make([]distance.MetricResult, 0, len(pkg.Metrics))
-
-		for j := range pkg.Metrics {
-			entry := &pkg.Metrics[j]
-
-			metrics = append(metrics, distance.MetricResult{
-				Name:       entry.Name,
-				Scope:      entry.Scope,
-				Reason:     entry.Reason,
-				Definition: entry.Definition,
-				Value:      entry.Value,
-				Applicable: entry.Applicable,
-			})
+	for i := range scopes {
+		if scope == scopes[i] {
+			return scopes[i]
 		}
-
-		packages = append(packages, distance.PackageReport{
-			Path:     pkg.Path,
-			Metrics:  metrics,
-			Afferent: pkg.Afferent,
-			Efferent: pkg.Efferent,
-		})
 	}
 
+	return scope
+}
+
+func fromAppResult(result *projapp.Result) distance.Report {
 	return distance.Report{
 		Module:   result.ModulePath,
-		Packages: packages,
+		Packages: mapPackages(result.Packages),
+	}
+}
+
+func mapPackages(pkgs []projapp.PackageResult) []distance.PackageReport {
+	packages := make([]distance.PackageReport, zero, len(pkgs))
+
+	for i := range pkgs {
+		packages = append(packages, mapPackage(&pkgs[i]))
+	}
+
+	return packages
+}
+
+func mapPackage(pkg *projapp.PackageResult) distance.PackageReport {
+	return distance.PackageReport{
+		Path:     pkg.Path,
+		Metrics:  mapMetrics(pkg.Metrics),
+		Afferent: pkg.Afferent,
+		Efferent: pkg.Efferent,
+	}
+}
+
+func mapMetrics(entries []projapp.MetricEntry) []distance.MetricResult {
+	metrics := make([]distance.MetricResult, zero, len(entries))
+
+	for i := range entries {
+		metrics = append(metrics, mapMetric(&entries[i]))
+	}
+
+	return metrics
+}
+
+func mapMetric(entry *projapp.MetricEntry) distance.MetricResult {
+	return distance.MetricResult{
+		Name:       entry.Name,
+		Scope:      entry.Scope,
+		Reason:     entry.Reason,
+		Definition: entry.Definition,
+		Value:      entry.Value,
+		Applicable: entry.Applicable,
 	}
 }

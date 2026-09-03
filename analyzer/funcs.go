@@ -382,7 +382,7 @@ func (settings *Settings) toConfig() *distance.Config {
 		IncludeGenerated: settings.Generated,
 		BuildTags:        append([]string(nil), settings.BuildTags...),
 		Workers:          settings.Workers,
-		DependencyScope:  distance.DependencyScope(settings.DependencyScope),
+		DependencyScope:  settings.DependencyScope,
 		ContinueOnError:  settings.ContinueOnError,
 	}
 }
@@ -479,6 +479,15 @@ func (settings *Settings) applyLists(raw map[string]json.RawMessage) error {
 		return fmt.Errorf(errWrapApply, patternsErr)
 	}
 
+	rulesErr := settings.applyRules(raw)
+	if rulesErr != nil {
+		return fmt.Errorf(errWrapApply, rulesErr)
+	}
+
+	return nil
+}
+
+func (settings *Settings) applyRules(raw map[string]json.RawMessage) error {
 	rules, rulesErr := decodeRules(firstRaw(raw, keyRules))
 	if rulesErr != nil {
 		return fmt.Errorf(errWrapApply, rulesErr)
@@ -553,9 +562,23 @@ func (settings *Settings) validate() error {
 		return fmt.Errorf(errWrapValidate, scopeErr)
 	}
 
-	_, policyErr := settings.policy()
+	policyErr := settings.validatePolicy()
 	if policyErr != nil {
 		return fmt.Errorf(errWrapValidate, policyErr)
+	}
+
+	return nil
+}
+
+func (settings *Settings) validatePolicy() error {
+	rules, policyErr := settings.policy()
+	if policyErr != nil {
+		return fmt.Errorf(errWrapValidate, policyErr)
+	}
+
+	validateErr := policydomain.Validate(rules)
+	if validateErr != nil {
+		return fmt.Errorf(errWrapValidate, validateErr)
 	}
 
 	return nil
@@ -568,14 +591,14 @@ func (settings *Settings) withDefaults() *Settings {
 
 	settings.DependencyScope = cmp.Or(
 		settings.DependencyScope,
-		string(distance.DependencyScopeModule),
+		distance.DependencyScopeModule,
 	)
 
 	return settings
 }
 
 func validateDependencyScope(value string) error {
-	switch distance.DependencyScope(value) {
+	switch value {
 	case distance.DependencyScopeProject,
 		distance.DependencyScopeModule,
 		distance.DependencyScopeAll:

@@ -42,6 +42,4 @@ const (
 	errWrapWriteNewline     = "splitpkg write newline: %w"
 	errWrapFinishCategory   = "splitpkg finishCategoryFile: %w"
 	errWrapWriteString      = "write string: %w"
-
-	errShortWrite = "short write"
 )

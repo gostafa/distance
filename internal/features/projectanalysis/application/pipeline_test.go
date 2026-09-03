@@ -5,7 +5,6 @@ package application
 
 import (
 	"testing"
-
 )
 
 // White-box: the request→fact-options mapping.

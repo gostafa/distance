@@ -11,6 +11,7 @@ import (
 
 var (
 	_ outbound.FactSource = (*Loader)(nil)
+	_ PackageLoader       = (*Loader)(nil)
 
 	errNoMatchedPackages   = errors.New("no packages matched patterns")
 	errNoLoadablePackages  = errors.New("no loadable packages matched patterns")

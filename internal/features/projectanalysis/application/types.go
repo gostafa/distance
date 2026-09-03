@@ -9,10 +9,11 @@ import (
 	coupling "github.com/gostafa/distance/internal/features/packagemetrics/domain"
 	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
 	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
+	"github.com/gostafa/distance/internal/infrastructure/goloader"
 )
 
 type (
-	// Options configures one Analyzer.Analyze call.
+	// Options configures one Pipeline.Analyze call.
 	Options struct {
 		Directory        string
 		DependencyScope  string
@@ -48,8 +49,7 @@ type (
 		Packages   []PackageResult
 	}
 
-	// Analyzer runs project-level package-distance analysis.
-	Analyzer interface {
+	analyzer interface {
 		Analyze(ctx context.Context, opts *Options) (Result, error)
 	}
 
@@ -66,7 +66,7 @@ type (
 	}
 
 	pipelineRuntime struct {
-		runWorkers func(context.Context, int, int, func(int) error) error
+		runWorkers func(context.Context, goloader.WorkerRun, func(int) error) error
 	}
 
 	analyzePackageInput struct {
@@ -86,5 +86,10 @@ type (
 		facts *tfdomain.ProjectFacts
 		graph *coupling.DependencyGraph
 		rows  []PackageResult
+	}
+
+	computeIn struct {
+		facts *tfdomain.ProjectFacts
+		graph coupling.CouplingGraph
 	}
 )
