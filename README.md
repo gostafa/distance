@@ -79,7 +79,7 @@ The plugin must be included in a custom `golangci-lint` binary.
 Create `.custom-gcl.yml`:
 
 ```yaml
-version: v2.12.2
+version: v2.14.0
 name: custom-golangci-lint
 destination: ./bin
 plugins:
