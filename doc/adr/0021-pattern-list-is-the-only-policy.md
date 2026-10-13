@@ -1,4 +1,4 @@
-# 21. Pattern list is the only policy; size counts are gone
+# 21. Pattern List Is the Only Policy; Size Counts Are Gone
 
 Date: 2026-09-02
 

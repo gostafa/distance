@@ -1,4 +1,4 @@
-# 23. Glob import-path rules; load patterns are independent
+# 23. Glob Import-Path Rules; Load Patterns Are Independent
 
 Date: 2026-09-03
 
@@ -49,10 +49,10 @@ size-count gates and ADR 0022's "only distance is gateable" remain.
 
 ## Consequences
 
-- CLI and plugin share one glob-rule policy shape with reusability.
-- Callers must pass `--rule` with `--check`; `--check` alone is a usage
+* CLI and plugin share one glob-rule policy shape with reusability.
+* Callers must pass `--rule` with `--check`; `--check` alone is a usage
   error.
-- Plugin configs migrate from `packages: [{pattern, max-distance}]` to
+* Plugin configs migrate from `packages: [{pattern, max-distance}]` to
   `rules: [{pattern, max}]` plus optional `patterns`.
-- A later, equally specific rule overrides an earlier one; a more specific
+* A later, equally specific rule overrides an earlier one; a more specific
   glob can tighten or loosen the baseline without list-order tricks.

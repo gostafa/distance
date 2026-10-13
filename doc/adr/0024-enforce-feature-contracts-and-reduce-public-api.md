@@ -1,4 +1,4 @@
-# 24. Enforce feature contracts and reduce the public API
+# 24. Enforce Feature Contracts and Reduce the Public API
 
 Date: 2026-10-13
 

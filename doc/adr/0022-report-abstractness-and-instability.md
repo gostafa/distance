@@ -1,4 +1,4 @@
-# 22. Report abstractness and instability alongside distance
+# 22. Report Abstractness and Instability Alongside Distance
 
 Date: 2026-09-02
 
