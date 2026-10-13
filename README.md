@@ -1,5 +1,7 @@
 # distance
 
+[![LICENSE](https://img.shields.io/github/license/gostafa/distance)](/LICENSE) [![`Workflow for distance Action`](https://github.com/gostafa/distance/actions/workflows/main.yml/badge.svg)](https://github.com/gostafa/distance/actions/workflows/main.yml) [![codecov](https://codecov.io/gh/gostafa/distance/graph/badge.svg)](https://codecov.io/gh/gostafa/distance) [![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/gostafa/distance?utm_source=badge) [![Go Reference](https://pkg.go.dev/badge/github.com/gostafa/distance)](https://pkg.go.dev/github.com/gostafa/distance)
+
 `distance` analyzes Go packages and reports each package's **distance from the
 main sequence** (`|A + I − 1|`), plus the **abstractness** and **instability**
 that feed it. Abstractness and instability are shown in reports but are not
