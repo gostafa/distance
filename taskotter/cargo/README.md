@@ -1,8 +1,8 @@
 # Cargo
 
 A [TaskOtter](https://github.com/task-otter/store) module for the
-[Rust](https://www.rust-lang.org/) toolchain and its [Cargo](https://doc.rust-lang.org/cargo/)
-build tool.
+[Rust](https://www.rust-lang.org/) toolchain and its
+[Cargo](https://doc.rust-lang.org/cargo/) build tool.
 
 ## What Is This Taskfile?
 
@@ -42,7 +42,8 @@ Pin a revision by overriding the installable, for example
 ## Building and Testing
 
 Cargo tasks run in the directory where you invoke `task`, so run them from a
-crate root (where `Cargo.toml` lives). Pass extra Cargo flags with `CARGO_EXTRA_ARGS`:
+crate root (where `Cargo.toml` lives). Pass extra Cargo flags with
+`CARGO_EXTRA_ARGS`:
 
 ```sh
 task cargo:build CARGO_EXTRA_ARGS=--release
@@ -102,8 +103,13 @@ task cargo:build RUST_TOOLCHAIN=1.79.0 CARGO_EXTRA_ARGS=--release
 
 ## Notes
 
-* Install uses Nix on Linux and macOS (`CARGO_NIX_INSTALLABLE`) and WinGet on Windows (`CARGO_WINGET_INSTALLABLE`, default `Rustlang.Rustup`).
+* Install uses Nix on Linux and macOS (`CARGO_NIX_INSTALLABLE`) and WinGet on
+  Windows (`CARGO_WINGET_INSTALLABLE`, default `Rustlang.Rustup`).
 
-* On Windows, `CARGO_LOAD` reloads User Path and prepends `%USERPROFILE%\.cargo\bin` so cargo-installed binaries from earlier in the same Task process are on PATH.
+* On Windows, `CARGO_LOAD` reloads User Path and prepends
+  `%USERPROFILE%\.cargo\bin` so cargo-installed binaries from earlier in the
+  same Task process are on PATH.
 
-* `fmt` and `lint` need `rustfmt` and `clippy` on PATH. Override `CARGO_NIX_INSTALLABLE` to add them, for example `nixpkgs#cargo nixpkgs#clippy nixpkgs#rustfmt`.
+* `fmt` and `lint` need `rustfmt` and `clippy` on PATH. Override
+  `CARGO_NIX_INSTALLABLE` to add them, for example
+  `nixpkgs#cargo nixpkgs#clippy nixpkgs#rustfmt`.

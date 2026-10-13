@@ -4,7 +4,8 @@ Date: 2026-09-02
 
 ## Status
 
-Accepted (matching, `--max-distance`, and load-from-rules superseded by ADR 0023)
+Accepted (matching, `--max-distance`, and load-from-rules superseded by ADR
+0023)
 
 ## Context
 

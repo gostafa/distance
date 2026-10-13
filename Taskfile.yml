@@ -10,6 +10,12 @@ includes:
       YAMLFIX_EXTRA_ARGS: '{{.YAMLFIX_EXTRA_ARGS | default `--exclude "taskotter/**/*"`}}'
 
 tasks:
+  test:reports:
+    desc: Regenerate test logs and coverage for repository verification
+    cmds:
+      - >-
+        bash -o pipefail -c
+        'task taskotter:go:test -- -coverpkg=./... -coverprofile=coverage.out ./... | tee test-result.txt'
   default:
     run: once
     desc: Show all available TaskOtter tasks

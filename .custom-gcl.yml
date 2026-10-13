@@ -7,6 +7,7 @@
 version: v2.14.0
 name: custom-gcl
 destination: .
+
 plugins:
   - module: github.com/gostafa/coverlint
     import: github.com/gostafa/coverlint/plugin

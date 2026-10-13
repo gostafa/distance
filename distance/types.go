@@ -3,10 +3,6 @@
 
 package distance
 
-import (
-	"context"
-)
-
 type (
 	// MetricResult is a computed package metric value.
 	MetricResult = struct {
@@ -18,15 +14,10 @@ type (
 		Applicable bool
 	}
 
-	// Backend runs package-distance analysis for config.
-	Backend interface {
-		Analyze(ctx context.Context, cfg *Config) (Report, error)
-	}
-
 	// Config controls a single Analyze run.
 	Config = struct {
 		Directory        string
-		DependencyScope  DependencyScope
+		DependencyScope  string
 		Patterns         []string
 		BuildTags        []string
 		Workers          int

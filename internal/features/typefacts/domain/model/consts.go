@@ -5,9 +5,11 @@ package model
 
 const (
 	// KindStruct marks a named type whose underlying type is a struct.
-	KindStruct uint8 = iota
+	KindStruct uint8 = 0
+
 	// KindInterface marks a named type whose underlying type is an interface.
-	KindInterface
+	KindInterface uint8 = 1
+
 	// KindOther marks any other named type (basic, slice, func, …).
-	KindOther
+	KindOther uint8 = 2
 )

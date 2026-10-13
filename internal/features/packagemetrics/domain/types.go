@@ -4,16 +4,44 @@
 package domain
 
 type (
-
-	// CouplingGraph looks up afferent and efferent counts by package ID.
-	CouplingGraph interface {
-		PackageCoupling(packageID int) (afferent, efferent int)
-	}
-
 	// DependencyGraph stores coupling counts indexed by package ID.
-	DependencyGraph struct {
+	DependencyGraph = struct {
 		scope     string
 		Afferents []int
 		Efferents []int
+	}
+
+	// ProjectFacts is the assembled type graph for one analysis run.
+	ProjectFacts = struct {
+		ModulePath string
+		Packages   []PackageFacts
+		Types      []TypeFacts
+	}
+
+	// PackageFacts holds one package's assembled facts and type IDs.
+	PackageFacts = struct {
+		Path     string
+		Imports  []string
+		TypeIDs  []int
+		ID       int
+		InModule bool
+	}
+
+	// TypeFacts holds one named type's assembled facts.
+	TypeFacts = struct {
+		Name      string
+		ID        int
+		PackageID int
+		Kind      uint8
+	}
+
+	// MetricEntry is one computed metric with applicability and formula metadata.
+	MetricEntry = struct {
+		Name       string
+		Scope      string
+		Reason     string
+		Definition string
+		Value      float64
+		Applicable bool
 	}
 )

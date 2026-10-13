@@ -10,6 +10,9 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Generate current test and coverage reports
+      shell: bash
+      run: task test:reports
     - name: Run CI
       shell: bash
       run: YAMLFIX_EXTRA_ARGS='--exclude ".github/workflows/**/*" --exclude "taskotter/**/*"' task taskotter:ci:fix
@@ -17,6 +20,9 @@ runs:
       uses: $/.github/actions/auto-fix
       with:
         token: ${{ inputs.github-token }}
+    - name: Refresh reports after automatic fixes
+      shell: bash
+      run: task test:reports
     - name: Run all CI checks
       shell: bash
       run: task taskotter:ci

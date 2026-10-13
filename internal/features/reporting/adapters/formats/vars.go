@@ -1,0 +1,29 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
+package formats
+
+import (
+	_ "embed"
+	"errors"
+
+	"github.com/gostafa/distance/internal/features/reporting/ports/outbound"
+)
+
+var (
+	// docsTemplate is the self-contained metrics guide page: inline CSS and
+	// vanilla JS, native MathML formulas, no external requests.
+	//
+	//go:embed web_docs_template.html
+	docsTemplate string
+
+	// webTemplate is the self-contained HTML page: inline CSS and vanilla JS,
+	// no external requests, usable straight from file://.
+	//
+	//go:embed web_template.html
+	webTemplate string
+
+	errShortWrite = errors.New("short write")
+
+	_ outbound.Output = Output{}
+)

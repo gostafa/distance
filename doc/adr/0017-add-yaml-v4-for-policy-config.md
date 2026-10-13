@@ -39,11 +39,11 @@ already provides.
 This ADR originally added `go.yaml.in/yaml/v4` as the second direct dependency.
 This is the canonical home of the Go YAML library (the successor to
 `gopkg.in/yaml.v3`); v4 is chosen over the legacy import path so the project
-tracks the maintained line. Its use is quarantined to one infrastructure adapter,
-`internal/infrastructure/policyconfig`, which maps the decoded document onto the
-pure policy domain. The domain, the facade, and every other package remain
-yaml-free; the architecture guard (ADR 0004) keeps `policy/domain` pure, so the
-dependency cannot leak inward.
+tracks the maintained line. Its use is quarantined to one infrastructure
+adapter, `internal/infrastructure/policyconfig`, which maps the decoded document
+onto the pure policy domain. The domain, the facade, and every other package
+remain yaml-free; the architecture guard (ADR 0004) keeps `policy/domain` pure,
+so the dependency cannot leak inward.
 
 The golangci-lint Module Plugin added by ADR 0019 does not use this adapter. Its
 policy is decoded directly from the custom linter's inline `.golangci.yml`

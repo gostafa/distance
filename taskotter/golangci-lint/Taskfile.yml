@@ -170,6 +170,9 @@ tasks:
     sources:
       - .custom-gcl.yml
       - go.mod
+      - go.sum
+      - '**/*.go'
+      - internal/features/reporting/adapters/formats/*.html
     generates:
       - '{{.CUSTOM_GCL_BINARY}}'
     # The builder uses a temporary clone, outside this project's go.mod.

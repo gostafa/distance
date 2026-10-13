@@ -12,8 +12,8 @@ import (
 	"os"
 
 	"github.com/gostafa/distance/distance"
-	policydomain "github.com/gostafa/distance/internal/features/policy/domain"
-	reportingdomain "github.com/gostafa/distance/internal/features/reporting/domain"
+	policydomain "github.com/gostafa/distance/internal/features/policy/public"
+	reporting "github.com/gostafa/distance/internal/features/reporting/public"
 )
 
 type (
@@ -65,7 +65,7 @@ type (
 	runSession = struct {
 		opts         *cliOptions
 		logger       *slog.Logger
-		format       reportingdomain.Format
+		format       string
 		policySource string
 		policy       []policydomain.Rule
 		gating       bool
@@ -76,6 +76,7 @@ type (
 		isTerminal     func() bool
 		createHelpTemp func(string, string) (*os.File, error)
 		closeHelpFile  func(*os.File) error
+		writeReport    func(*distance.Report, io.WriteCloser, *reportOptions) error
 		writeDocs      func(io.WriteCloser, string) error
 		openBrowser    func(string) error
 		startCPU       func(string) (func() error, error)
@@ -101,7 +102,7 @@ type (
 	}
 
 	formatOut = struct {
-		format reportingdomain.Format
+		format string
 		code   int
 	}
 
@@ -119,5 +120,15 @@ type (
 	heapArgs = struct {
 		log  *slog.Logger
 		path string
+	}
+
+	textOptionsValue = struct {
+		Color   bool
+		Explain bool
+	}
+
+	reportOptions = struct {
+		Format string
+		Text   reporting.TextOptions
 	}
 )

@@ -4,26 +4,7 @@
 package application
 
 import (
-	_ "embed"
-	"errors"
-
-	"github.com/gostafa/distance/internal/shared/version"
+	reporting "github.com/gostafa/distance/internal/features/reporting/public"
 )
 
-var (
-
-	// docsTemplate is the self-contained metrics guide page: inline CSS and
-	// vanilla JS, native MathML formulas, no external requests.
-	//
-	//go:embed web_docs_template.html
-	docsTemplate string
-
-	// webTemplate is the self-contained HTML page: inline CSS and vanilla JS,
-	// no external requests, usable straight from file://.
-	//
-	//go:embed web_template.html
-	webTemplate string
-
-	errShortWrite = errors.New("short write")
-	_             = version.Version
-)
+var _ reporting.Output = (*Service)(nil)

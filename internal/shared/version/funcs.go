@@ -9,13 +9,7 @@ import (
 
 // Version returns the module version from build info, or "dev" for local builds.
 func Version() string {
-	info, ok := debug.ReadBuildInfo()
-
-	if !ok {
-		return fallbackVersion
-	}
-
-	return versionFromInfo(info.Main.Version)
+	return versionWith(debug.ReadBuildInfo)
 }
 
 func versionFromInfo(value string) string {
@@ -24,4 +18,14 @@ func versionFromInfo(value string) string {
 	}
 
 	return value
+}
+
+func versionWith(read func() (*debug.BuildInfo, bool)) string {
+	info, ok := read()
+
+	if !ok {
+		return fallbackVersion
+	}
+
+	return versionFromInfo(info.Main.Version)
 }

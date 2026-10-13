@@ -3,6 +3,10 @@
 
 package domain
 
+import (
+	"github.com/gostafa/distance/internal/features/typefacts/domain/model"
+)
+
 type (
 	// ProjectFacts is the assembled type graph for one analysis run.
 	ProjectFacts = struct {
@@ -26,5 +30,12 @@ type (
 		ID        int
 		PackageID int
 		Kind      uint8
+	}
+
+	packageAssemble = struct {
+		extract *model.PackageExtract
+		typeID  *int
+		facts   *ProjectFacts
+		pkgID   int
 	}
 )

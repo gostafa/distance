@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package orders
 
 import (
@@ -7,7 +10,7 @@ import (
 )
 
 func (o *Order) GrandTotal(tax float64) float64 {
-	if tax > 0 && o.Total > 0 {
+	if tax > zero && o.Total > zero {
 		return o.Total * (1 + tax)
 	}
 	return o.Total

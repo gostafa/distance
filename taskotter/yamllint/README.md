@@ -57,9 +57,11 @@ Pin a revision by overriding the installable, for example
 
 ## Notes
 
-* Unix install uses Nix (`YAMLLINT_NIX_INSTALLABLE`). Windows installs via `uv:tool:install` (`YAMLLINT_UV_TOOL`).
+* Unix install uses Nix (`YAMLLINT_NIX_INSTALLABLE`). Windows installs via
+  `uv:tool:install` (`YAMLLINT_UV_TOOL`).
 
 **`config:init`** writes a `.yamllint` file in the current directory and is
 skipped if the file already exists. To regenerate, delete `.yamllint` first.
 
-For YAML auto-formatting, use the separate [`yamlfix`](../yamlfix/README.md) module.
+For YAML auto-formatting, use the separate [`yamlfix`](../yamlfix/README.md)
+module.

@@ -113,6 +113,10 @@ Pin a revision by overriding the installable, for example
 
 ## Notes
 
-* Install uses Nix on Linux and macOS (`GOLANGCI_LINT_NIX_INSTALLABLE`) and WinGet on Windows (`GOLANGCI_LINT_WINGET_INSTALLABLE`, default `GolangCI.golangci-lint`).
+* Install uses Nix on Linux and macOS (`GOLANGCI_LINT_NIX_INSTALLABLE`) and
+  WinGet on Windows (`GOLANGCI_LINT_WINGET_INSTALLABLE`, default
+  `GolangCI.golangci-lint`).
 
-* On Unix the default Nix installable includes both `nixpkgs#go` and `nixpkgs#golangci-lint`. On Windows, `go:install` runs first, then WinGet installs golangci-lint.
+* On Unix the default Nix installable includes both `nixpkgs#go` and
+  `nixpkgs#golangci-lint`. On Windows, `go:install` runs first, then WinGet
+  installs golangci-lint.

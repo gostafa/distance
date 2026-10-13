@@ -2,9 +2,9 @@
 
 ## What Is This Taskfile?
 
-A Taskfile for installing Trivy, showing its version and running strict CI scans.
-Uses the shared Nix
-installer on Linux and macOS and the shared WinGet installer on Windows.
+A Taskfile for installing Trivy, showing its version and running strict CI
+scans. Uses the shared Nix installer on Linux and macOS and the shared WinGet
+installer on Windows.
 
 ## Usage
 
@@ -87,8 +87,8 @@ Scan failures propagate to Task on all supported operating systems.
 This repository's top-level `ci` task uses the module's strict defaults without
 policy overrides. Findings fail CI, including LOW license notices and UNKNOWN
 licenses, except licenses explicitly approved in the repository's `trivy.yaml`
-allowlist. BlueOak-1.0.0 is approved via `license.ignored`. Full license scanning
-and development dependency scanning remain enabled.
+allowlist. BlueOak-1.0.0 is approved via `license.ignored`. Full license
+scanning and development dependency scanning remain enabled.
 
 Use `TRIVY_SCANNERS` to select scanners when using the default policy flags.
 Repeating `--scanners` in extra arguments adds scanners rather than replacing
@@ -116,8 +116,12 @@ working directory and honor Trivy configuration, ignore files and suppressions;
 the strict defaults do not bypass project exceptions or enable experimental
 scanners. Use a current Trivy release that supports the documented flags.
 
-Flag references: [image CLI](https://trivy.dev/docs/latest/references/configuration/cli/trivy_image/)
-and [filesystem CLI](https://trivy.dev/docs/latest/references/configuration/cli/trivy_filesystem/).
+Flag references:
+[image CLI](https://trivy.dev/docs/latest/references/configuration/cli/trivy_image/)
+and
+[filesystem CLI](https://trivy.dev/docs/latest/references/configuration/cli/trivy_filesystem/).
 
-Package references: [Trivy installation documentation](https://www.trivy.dev/docs/latest/getting-started/installation/)
-and [Microsoft WinGet manifests](https://github.com/microsoft/winget-pkgs/tree/master/manifests/a/AquaSecurity/Trivy).
+Package references:
+[Trivy installation documentation](https://www.trivy.dev/docs/latest/getting-started/installation/)
+and
+[Microsoft WinGet manifests](https://github.com/microsoft/winget-pkgs/tree/master/manifests/a/AquaSecurity/Trivy).

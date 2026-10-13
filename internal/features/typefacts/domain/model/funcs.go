@@ -5,13 +5,16 @@ package model
 
 import (
 	"fmt"
-
-	"github.com/gostafa/distance/internal/shared/version"
 )
+
+// DumpExtract returns a compact debug representation of pkg.
+func DumpExtract(pkg *PackageExtract) string {
+	return PackageExtractString(pkg)
+}
 
 // FormatNamed returns a compact debug representation of a named type extract.
 func FormatNamed(name string, kind uint8) string {
-	return fmt.Sprintf("type %q (kind %d, abstractness, tool %s)", name, kind, version.Version())
+	return fmt.Sprintf("type %q (kind %d, abstractness)", name, kind)
 }
 
 // Named returns a type extract with the given name and kind.
@@ -28,9 +31,4 @@ func PackageExtractString(pkg *PackageExtract) string {
 		len(pkg.Types),
 		pkg.InModule,
 	)
-}
-
-// DumpExtract returns a compact debug representation of pkg.
-func DumpExtract(pkg *PackageExtract) string {
-	return PackageExtractString(pkg)
 }

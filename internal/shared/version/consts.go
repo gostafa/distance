@@ -5,6 +5,8 @@ package version
 
 const (
 	fallbackVersion = "dev"
-	develVersion    = "(devel)"
-	emptyVersion    = ""
+
+	develVersion = "(devel)"
+
+	emptyVersion = ""
 )

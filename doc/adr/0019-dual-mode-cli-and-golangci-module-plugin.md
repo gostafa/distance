@@ -4,7 +4,8 @@ Date: 2026-07-17
 
 ## Status
 
-Accepted
+Accepted. Public analyzer construction is superseded by
+[ADR 0024](0024-enforce-feature-contracts-and-reduce-public-api.md).
 
 ## Context
 

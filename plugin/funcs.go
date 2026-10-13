@@ -4,35 +4,27 @@
 package plugin
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/golangci/plugin-module-register/register"
-	"github.com/gostafa/distance/analyzer"
+	analyzer "github.com/gostafa/distance/internal/features/projectanalysis/adapters/goanalysis"
 	"golang.org/x/tools/go/analysis"
 )
 
-func registerDistance() int {
-	register.Plugin(analyzer.Name, func(raw any) (register.LinterPlugin, error) {
-		pluginInstance, err := New(raw)
-		if err != nil {
-			return nil, fmt.Errorf("registerDistance: %w", err)
-		}
-
-		return pluginInstance, nil
-	})
-
-	return registerDone
-}
-
-// New constructs the Module Plugin from golangci-lint custom settings.
-func New(raw any) (*Plugin, error) {
-	settings, err := decodePluginSettings(raw)
+// BuildAnalyzers returns the distance go/analysis Analyzer.
+func (plugin *pluginInstance) BuildAnalyzers() ([]*analysis.Analyzer, error) {
+	analyzers, err := runBuild(plugin.build)
 	if err != nil {
-		return nil, fmt.Errorf("New: %w", err)
+		return nil, fmt.Errorf(errFmtBuildAnalyzers, err)
 	}
 
-	return &Plugin{build: analyzerBuilder(&settings)}, nil
+	return analyzers, nil
+}
+
+// GetLoadMode requests type information so diagnostics can locate package
+// positions accurately.
+func (plugin *pluginInstance) GetLoadMode() string {
+	return loadModeFor(plugin.build)
 }
 
 func analyzerBuilder(settings *analyzer.Settings) func() ([]*analysis.Analyzer, error) {
@@ -46,40 +38,31 @@ func analyzerBuilder(settings *analyzer.Settings) func() ([]*analysis.Analyzer, 
 	}
 }
 
-func decodePluginSettings(raw any) (analyzer.Settings, error) {
-	if raw == nil {
-		return analyzer.Settings{}, nil
-	}
-
-	data, err := json.Marshal(raw)
-	if err != nil {
-		return analyzer.Settings{}, fmt.Errorf("marshal settings: %w", err)
-	}
-
-	var settings analyzer.Settings
-
-	err = analyzer.UnmarshalSettings(data, &settings)
-	if err != nil {
-		return analyzer.Settings{}, fmt.Errorf("decode settings: %w", err)
-	}
-
-	return settings, nil
+func loadModeFor(func() ([]*analysis.Analyzer, error)) string {
+	return register.LoadModeTypesInfo
 }
 
-// BuildAnalyzers returns the distance go/analysis Analyzer.
-func (plugin *Plugin) BuildAnalyzers() ([]*analysis.Analyzer, error) {
-	analyzers, err := runBuild(plugin.build)
+// newPlugin constructs the module plugin from inline settings.
+func newPlugin(raw any) (*pluginInstance, error) {
+	settings, err := analyzer.DecodeSettings(raw)
 	if err != nil {
-		return nil, fmt.Errorf(errFmtBuildAnalyzers, err)
+		return nil, fmt.Errorf("new plugin: %w", err)
 	}
 
-	return analyzers, nil
+	return &pluginInstance{build: analyzerBuilder(&settings)}, nil
 }
 
-// GetLoadMode requests type information so diagnostics can locate package
-// positions accurately.
-func (plugin *Plugin) GetLoadMode() string {
-	return loadModeFor(plugin.build)
+func registerDistance() int {
+	register.Plugin(analyzer.Name, func(raw any) (register.LinterPlugin, error) {
+		pluginInstance, err := newPlugin(raw)
+		if err != nil {
+			return nil, fmt.Errorf("registerDistance: %w", err)
+		}
+
+		return pluginInstance, nil
+	})
+
+	return registerDone
 }
 
 func runBuild(build func() ([]*analysis.Analyzer, error)) ([]*analysis.Analyzer, error) {
@@ -89,8 +72,4 @@ func runBuild(build func() ([]*analysis.Analyzer, error)) ([]*analysis.Analyzer,
 	}
 
 	return analyzers, nil
-}
-
-func loadModeFor(func() ([]*analysis.Analyzer, error)) string {
-	return register.LoadModeTypesInfo
 }

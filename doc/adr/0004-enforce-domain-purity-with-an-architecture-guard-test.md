@@ -4,7 +4,8 @@ Date: 2026-07-11
 
 ## Status
 
-Accepted
+Superseded by
+[ADR 0024](0024-enforce-feature-contracts-and-reduce-public-api.md).
 
 ## Context
 

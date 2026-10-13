@@ -3,4 +3,8 @@
 
 package application
 
-var _ Collector = (*Service)(nil)
+import (
+	typefacts "github.com/gostafa/distance/internal/features/typefacts/public"
+)
+
+var _ typefacts.Collector = (*Service)(nil)

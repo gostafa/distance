@@ -8,8 +8,8 @@ import (
 )
 
 type (
-	// Plugin is the golangci-lint module plugin for distance.
-	Plugin struct {
+	// pluginInstance is the golangci-lint module plugin for distance.
+	pluginInstance struct {
 		build func() ([]*analysis.Analyzer, error)
 	}
 )

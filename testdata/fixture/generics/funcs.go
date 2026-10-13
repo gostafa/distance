@@ -1,3 +1,6 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package generics
 
 func (p *Pair[T]) SetFirst(v T) { p.First = v }

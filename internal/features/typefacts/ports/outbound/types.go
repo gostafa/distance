@@ -23,6 +23,8 @@ type (
 
 	// FactSource loads raw package extracts for later assembly.
 	FactSource interface {
+		// Load is read-only. Cancellation preserves context error identity.
+		// Other failures use the stable errors declared in this package.
 		// Load returns the main module path (empty when unknown) and one
 		// PackageExtract per analyzed package, honoring the ordering contract
 		// documented on model.PackageExtract.

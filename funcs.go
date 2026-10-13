@@ -9,14 +9,14 @@ import (
 	"github.com/gostafa/distance/internal/cli"
 )
 
-func main() {
-	defaultRuntime().start(os.Args[1:])
+func (runtime mainRuntime) start(args []string) {
+	runtime.exit(runtime.run(args))
 }
 
 func defaultRuntime() mainRuntime {
 	return mainRuntime{run: cli.Run, exit: os.Exit}
 }
 
-func (runtime mainRuntime) start(args []string) {
-	runtime.exit(runtime.run(args))
+func main() {
+	defaultRuntime().start(os.Args[1:])
 }

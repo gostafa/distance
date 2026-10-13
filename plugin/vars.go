@@ -8,6 +8,7 @@ import (
 )
 
 var (
-	_ register.LinterPlugin = (*Plugin)(nil)
-	_                       = registerDistance()
+	_ register.LinterPlugin = (*pluginInstance)(nil)
+
+	_ = registerDistance()
 )

@@ -3,4 +3,8 @@
 
 package application
 
-var _ analyzer = (*Pipeline)(nil)
+import (
+	projectanalysis "github.com/gostafa/distance/internal/features/projectanalysis/public"
+)
+
+var _ projectanalysis.Pipeline = (*Pipeline)(nil)

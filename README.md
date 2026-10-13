@@ -1,6 +1,10 @@
 # distance
 
-[![LICENSE](https://img.shields.io/github/license/gostafa/distance)](/LICENSE) [![`Workflow for distance Action`](https://github.com/gostafa/distance/actions/workflows/main.yml/badge.svg)](https://github.com/gostafa/distance/actions/workflows/main.yml) [![codecov](https://codecov.io/gh/gostafa/distance/graph/badge.svg)](https://codecov.io/gh/gostafa/distance) [![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/gostafa/distance?utm_source=badge) [![Go Reference](https://pkg.go.dev/badge/github.com/gostafa/distance)](https://pkg.go.dev/github.com/gostafa/distance)
+[![LICENSE](https://img.shields.io/github/license/gostafa/distance)](/LICENSE)
+[![`Workflow for distance Action`](https://github.com/gostafa/distance/actions/workflows/main.yml/badge.svg)](https://github.com/gostafa/distance/actions/workflows/main.yml)
+[![codecov](https://codecov.io/gh/gostafa/distance/graph/badge.svg)](https://codecov.io/gh/gostafa/distance)
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/gostafa/distance?utm_source=badge)
+[![Go Reference](https://pkg.go.dev/badge/github.com/gostafa/distance/distance)](https://pkg.go.dev/github.com/gostafa/distance/distance)
 
 `distance` analyzes Go packages and reports each package's **distance from the
 main sequence** (`|A + I − 1|`), plus the **abstractness** and **instability**
@@ -72,6 +76,33 @@ go build -o ./bin/distance ./cmd/distance
 ./bin/distance
 ```
 
+## Use as a Go library
+
+Import the library facade and call the default analysis entry point:
+
+```go
+import "github.com/gostafa/distance/distance"
+
+report, err := distance.Analyze(ctx, &distance.Config{
+    Directory: "./project",
+    Patterns:  []string{"./..."},
+})
+```
+
+Passing nil configuration selects the defaults. Analysis copies configuration
+and its slices. Use `errors.Is` with `distance.ErrInvalidConfig`,
+`distance.ErrAnalysis`, `context.Canceled`, or `context.DeadlineExceeded` to
+classify failures. Internal and vendor error types are not exposed.
+
+Existing callers should replace `wire.AnalyzeWithDefault` or backend-injected
+`distance.Analyze` calls with the two-argument API above. The public `analyzer`
+and `distance/wire` packages, `plugin.New`, `distance.Backend`,
+`distance.ToolIdent`, and `distance.ReportString` have been removed.
+`DependencyScope` and `MetricName` no longer define named aliases; use strings
+and the retained scope and metric constants. The
+[architecture decision](doc/adr/0024-enforce-feature-contracts-and-reduce-public-api.md)
+documents ownership and migration.
+
 ## Use as a golangci-lint plugin
 
 The plugin must be included in a custom `golangci-lint` binary.
@@ -130,3 +161,22 @@ Always run the generated `custom-golangci-lint` binary. The standard
 * `1`: analysis or write error
 * `2`: command usage error
 * `3`: policy violation
+
+## Verify repository changes
+
+Run these commands from the repository root. Regenerate reports after fixes
+so coverage checks use the final source locations:
+
+```sh
+task test:reports
+task taskotter:ci:fix
+task test:reports
+task taskotter:ci
+task taskotter:go-junit-report:report
+go test -race ./...
+go build ./...
+```
+
+The test suite includes recursive architecture checks and negative fixtures.
+Go packages use the filenames and declaration categories specified in
+`AGENTS.md`, including package-named tests and documented `doc.go` files.

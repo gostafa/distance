@@ -6,10 +6,8 @@ package application
 import (
 	"context"
 
-	coupling "github.com/gostafa/distance/internal/features/packagemetrics/domain"
-	typefacts "github.com/gostafa/distance/internal/features/typefacts/application"
-	tfdomain "github.com/gostafa/distance/internal/features/typefacts/domain"
-	"github.com/gostafa/distance/internal/infrastructure/goloader"
+	executionport "github.com/gostafa/distance/internal/features/projectanalysis/ports/execution"
+	"github.com/gostafa/distance/internal/features/projectanalysis/ports/outbound"
 )
 
 type (
@@ -55,49 +53,20 @@ type (
 		Packages []PackageResult
 	}
 
-	analyzer interface {
-		Analyze(ctx context.Context, opts *Options) (Result, error)
-	}
-
 	// Pipeline orchestrates type-fact collection and package metric computation.
 	Pipeline struct {
 		analyze func(context.Context, *Options) (Result, error)
 	}
 
-	packageMetrics = struct {
-		abstractness MetricEntry
-		instability  MetricEntry
-		distance     MetricEntry
-	}
-
 	pipelineRuntime = struct {
-		facts      typefacts.Collector
+		facts      outbound.FactCollector
 		runWorkers workerRunFunc
 	}
 
-	workerRunFunc = func(context.Context, goloader.WorkerRun, func(int) error) error
-
-	analyzePackageInput = struct {
-		facts      *tfdomain.ProjectFacts
-		pkgResults []packageMetrics
-		afferent   int
-		efferent   int
-		pkgID      int
-	}
+	workerRunFunc = func(context.Context, executionport.WorkerRun, func(int) error) error
 
 	assembleIn = struct {
-		facts *tfdomain.ProjectFacts
+		facts *outbound.ProjectFacts
 		opts  *Options
-	}
-
-	fillInput = struct {
-		facts *tfdomain.ProjectFacts
-		graph *coupling.DependencyGraph
-		rows  []PackageResult
-	}
-
-	computeIn = struct {
-		facts *tfdomain.ProjectFacts
-		graph coupling.CouplingGraph
 	}
 )

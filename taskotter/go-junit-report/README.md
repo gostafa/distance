@@ -16,7 +16,8 @@ Taskfile.
 
 ```sh
 task -t taskfiles/go-junit-report/Taskfile.yml verify
-task -t taskfiles/go-junit-report/Taskfile.yml report GO_JUNIT_REPORT_IN=gotest.log GO_JUNIT_REPORT_OUT=junit.xml
+task -t taskfiles/go-junit-report/Taskfile.yml report \
+  GO_JUNIT_REPORT_IN=gotest.log GO_JUNIT_REPORT_OUT=junit.xml
 ```
 
 ### Included
@@ -78,8 +79,10 @@ dependents run `go:install`.
 
 ## Notes
 
-* Unix install uses Nix (`GO_JUNIT_REPORT_NIX_INSTALLABLE`). On Windows, install uses `go:install:pkg` with `GO_JUNIT_REPORT_GO_PKG`.
-* `report`, `which`, `verify`, and `version` auto-install `go-junit-report`.
-  Go is installed through the included module only when the Windows installer needs it.
-* `report` validates required paths, a readable input file, and a writable output
-  location before installation. Input and output must differ.
+* Unix install uses Nix (`GO_JUNIT_REPORT_NIX_INSTALLABLE`). On Windows, install
+  uses `go:install:pkg` with `GO_JUNIT_REPORT_GO_PKG`.
+* `report`, `which`, `verify`, and `version` auto-install `go-junit-report`. Go
+  is installed through the included module only when the Windows installer needs
+  it.
+* `report` validates required paths, a readable input file, and a writable
+  output location before installation. Input and output must differ.

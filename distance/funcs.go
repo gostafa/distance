@@ -9,65 +9,80 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/gostafa/distance/internal/features/packagemetrics/domain"
+	"github.com/gostafa/distance/internal/composition"
+	projapp "github.com/gostafa/distance/internal/features/projectanalysis/public"
 	"github.com/gostafa/distance/internal/shared/version"
 )
 
-var (
-	errEmptyPattern = errors.New("empty package pattern")
-	errInvalidScope = errors.New("invalid dependency scope (want project, module, or all)")
-)
-
 // AllMetrics returns the metric names included in every PackageReport.
-func AllMetrics() []MetricName {
-	if domain.ScopeProject == emptyString {
-		return nil
-	}
-
-	return []MetricName{MetricAbstractness, MetricInstability, MetricDistance}
+func AllMetrics() []string {
+	return []string{MetricAbstractness, MetricInstability, MetricDistance}
 }
 
 // Analyze runs package-distance analysis for config and returns a Report.
-func Analyze(ctx context.Context, config *Config, backend Backend) (Report, error) {
+func Analyze(ctx context.Context, config *Config) (Report, error) {
 	cfg := configWithDefaults(config)
+
+	var empty Report
 
 	validateErr := validateConfig(cfg)
 	if validateErr != nil {
-		return Report{}, fmt.Errorf(errWrapAnalyze, validateErr)
+		return empty, fmt.Errorf(errPublicDetails, ErrInvalidConfig, validateErr)
 	}
 
-	report, analyzeErr := analyzeValidated(ctx, cfg, backend)
+	report, analyzeErr := analyzeValidated(ctx, cfg)
 	if analyzeErr != nil {
-		return Report{}, fmt.Errorf(errWrapAnalyze, analyzeErr)
+		return empty, fmt.Errorf("distance analyze: %w", publicAnalysisError(analyzeErr))
 	}
 
 	return report, nil
 }
 
-// ReportString returns a compact debug representation of the report.
-func ReportString(report *Report) string {
-	return fmt.Sprintf(
-		"schema %s tool %s@%s module %q packages %d",
-		report.SchemaVersion,
-		report.ToolName,
-		report.ToolVersion,
-		report.Module,
-		len(report.Packages),
-	)
-}
-
-// ToolIdent returns the tool identity fields for a Report.
-func ToolIdent(name, ver string) (toolName, toolVersion string) {
-	return name, ver
-}
-
-func analyzeValidated(ctx context.Context, cfg *Config, backend Backend) (Report, error) {
-	report, analyzeErr := backend.Analyze(ctx, cfg)
-	if analyzeErr != nil {
-		return Report{}, fmt.Errorf("distance analyze: %w", analyzeErr)
+func analyzeValidated(ctx context.Context, cfg *Config) (Report, error) {
+	result, err := composition.DefaultAnalyzer().Analyze(ctx, toAppOptions(cfg))
+	if err != nil {
+		return Report{
+			SchemaVersion: "",
+			ToolName:      "",
+			ToolVersion:   "",
+			Module:        "",
+			Packages:      nil,
+		}, fmt.Errorf(
+			"distance pipeline: %w",
+			err,
+		)
 	}
 
+	report := fromAppResult(&result)
+
 	return finalizeReport(&report), nil
+}
+
+func cloneConfig(config *Config) *Config {
+	if config == nil {
+		return new(Config)
+	}
+
+	cloned := *config
+
+	cloned.Patterns = slices.Clone(config.Patterns)
+	cloned.BuildTags = slices.Clone(config.BuildTags)
+
+	return &cloned
+}
+
+func configWithDefaults(config *Config) *Config {
+	config = cloneConfig(config)
+
+	if len(config.Patterns) == zero {
+		config.Patterns = []string{allPackagesPattern}
+	}
+
+	if config.DependencyScope == emptyString {
+		config.DependencyScope = DependencyScopeModule
+	}
+
+	return config
 }
 
 func finalizeReport(report *Report) Report {
@@ -86,16 +101,76 @@ func finalizeReport(report *Report) Report {
 	return *report
 }
 
-func configWithDefaults(config *Config) *Config {
-	if len(config.Patterns) == zero {
-		config.Patterns = []string{allPackagesPattern}
+func fromAppResult(result *projapp.Result) Report {
+	return Report{
+		Module:   result.ModulePath,
+		Packages: mapPackages(result.Packages), SchemaVersion: "", ToolName: "", ToolVersion: "",
+	}
+}
+
+func mapMetric(entry *projapp.MetricEntry) MetricResult {
+	return MetricResult{
+		Name:       entry.Name,
+		Scope:      entry.Scope,
+		Reason:     entry.Reason,
+		Definition: entry.Definition,
+		Value:      entry.Value,
+		Applicable: entry.Applicable,
+	}
+}
+
+func mapMetrics(entries []projapp.MetricEntry) []MetricResult {
+	metrics := make([]MetricResult, zero, len(entries))
+
+	for i := range entries {
+		metrics = append(metrics, mapMetric(&entries[i]))
 	}
 
-	if config.DependencyScope == emptyString {
-		config.DependencyScope = DependencyScopeModule
+	return metrics
+}
+
+func mapPackage(pkg *projapp.PackageResult) PackageReport {
+	return PackageReport{
+		Path:     pkg.Path,
+		Metrics:  mapMetrics(pkg.Metrics),
+		Afferent: pkg.Afferent,
+		Efferent: pkg.Efferent,
+	}
+}
+
+func mapPackages(pkgs []projapp.PackageResult) []PackageReport {
+	packages := make([]PackageReport, zero, len(pkgs))
+
+	for i := range pkgs {
+		packages = append(packages, mapPackage(&pkgs[i]))
 	}
 
-	return config
+	return packages
+}
+
+func publicAnalysisError(err error) error {
+	if errors.Is(err, context.Canceled) {
+		return fmt.Errorf(errContextAnalysis, errors.Join(ErrAnalysis, context.Canceled))
+	}
+
+	if errors.Is(err, context.DeadlineExceeded) {
+		return fmt.Errorf(errContextAnalysis, errors.Join(ErrAnalysis, context.DeadlineExceeded))
+	}
+
+	return fmt.Errorf(errPublicDetails, ErrAnalysis, err)
+}
+
+func toAppOptions(cfg *Config) *projapp.Options {
+	return &projapp.Options{
+		Directory:        cfg.Directory,
+		Patterns:         cfg.Patterns,
+		IncludeTests:     cfg.IncludeTests,
+		IncludeGenerated: cfg.IncludeGenerated,
+		BuildTags:        cfg.BuildTags,
+		Workers:          cfg.Workers,
+		DependencyScope:  cfg.DependencyScope,
+		ContinueOnError:  cfg.ContinueOnError,
+	}
 }
 
 func validateConfig(config *Config) error {

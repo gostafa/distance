@@ -6,10 +6,7 @@ package domain
 import (
 	"fmt"
 	"math"
-	"strconv"
 	"strings"
-
-	"github.com/gostafa/distance/distance"
 )
 
 // DefaultRules returns the recommended baseline when no rules are configured
@@ -21,7 +18,7 @@ func DefaultRules() []Rule {
 // Evaluate checks a report against rules and returns violations. When no rules
 // are given, DefaultRules applies. Packages are already sorted in the report,
 // so the result order is deterministic.
-func Evaluate(report *distance.Report, rules []Rule) []Violation {
+func Evaluate(report *Report, rules []Rule) []Violation {
 	if len(rules) == zero {
 		rules = DefaultRules()
 	}
@@ -33,28 +30,6 @@ func Evaluate(report *distance.Report, rules []Rule) []Violation {
 	}
 
 	return violations
-}
-
-// FormatViolations renders violations as a human-readable summary. The empty
-// slice yields the empty string, so callers can print unconditionally.
-func FormatViolations(violations []Violation) string {
-	if len(violations) == zero {
-		return emptyString
-	}
-
-	var builder strings.Builder
-
-	err := writeViolationHeader(&builder, len(violations))
-	if err != nil {
-		return emptyString
-	}
-
-	err = writeViolationLines(&builder, violations)
-	if err != nil {
-		return emptyString
-	}
-
-	return builder.String()
 }
 
 // MatchPackage reports whether pattern matches importPath. * matches exactly
@@ -92,11 +67,11 @@ func comparisonTolerance(value, threshold float64) float64 {
 
 func distanceViolation(gate *packageGate) (Violation, bool) {
 	if !gate.ok {
-		return Violation{}, false
+		return Violation{Package: "", Rule: "", Value: zero, Threshold: zero}, false
 	}
 
 	if gate.value-gate.threshold <= comparisonTolerance(gate.value, gate.threshold) {
-		return Violation{}, false
+		return Violation{Package: "", Rule: "", Value: zero, Threshold: zero}, false
 	}
 
 	return Violation{
@@ -107,7 +82,7 @@ func distanceViolation(gate *packageGate) (Violation, bool) {
 	}, true
 }
 
-func evaluatePackage(pkg *distance.PackageReport, rules []Rule) []Violation {
+func evaluatePackage(pkg *PackageReport, rules []Rule) []Violation {
 	threshold, pattern := matchingRule(pkg.Path, rules)
 
 	if pattern == emptyString {
@@ -115,14 +90,6 @@ func evaluatePackage(pkg *distance.PackageReport, rules []Rule) []Violation {
 	}
 
 	return scanMetrics(pkg, pattern, threshold)
-}
-
-func formatNumber(value float64) string {
-	if value == math.Trunc(value) && !math.IsInf(value, zero) {
-		return strconv.FormatFloat(value, 'f', -one, floatBits)
-	}
-
-	return strconv.FormatFloat(value, 'f', two, floatBits)
 }
 
 func matchDoubleStar(pattern, path []string, pos matchPos) bool {
@@ -174,11 +141,11 @@ func matchOne(pattern, path []string, pos *matchPos) bool {
 }
 
 func matchSegments(pattern, path []string) bool {
-	return matchFrom(pattern, path, matchPos{})
+	return matchFrom(pattern, path, matchPos{pi: zero, si: zero})
 }
 
 func matchingCandidate(rule *Rule, importPath, currentPattern string) *Rule {
-	if !rule.Matches(importPath) {
+	if !MatchPackage(rule.Pattern, importPath) {
 		return nil
 	}
 
@@ -197,11 +164,31 @@ func matchingRule(importPath string, rules []Rule) (threshold float64, pattern s
 			continue
 		}
 
-		threshold = rule.MaxDistance()
+		threshold = rule.Max
 		pattern = rule.Pattern
 	}
 
 	return threshold, pattern
+}
+
+func metricGate(input *gateInput) *packageGate {
+	if input.res.Name != MetricDistance || !input.res.Applicable {
+		return &packageGate{
+			pkg:       input.pkg.Path,
+			pattern:   input.pattern,
+			threshold: input.threshold,
+			value:     zero,
+			ok:        false,
+		}
+	}
+
+	return &packageGate{
+		pkg:       input.pkg.Path,
+		pattern:   input.pattern,
+		threshold: input.threshold,
+		value:     input.res.Value,
+		ok:        true,
+	}
 }
 
 func moreSpecific(candidate, current string) bool {
@@ -240,7 +227,7 @@ func patternSpecificity(pattern string) (literal, wildcards, segments int) {
 	return literal, wildcards, segments
 }
 
-func scanMetrics(pkg *distance.PackageReport, pattern string, threshold float64) []Violation {
+func scanMetrics(pkg *PackageReport, pattern string, threshold float64) []Violation {
 	violations := make([]Violation, zero, len(pkg.Metrics))
 
 	for index := range pkg.Metrics {
@@ -257,30 +244,6 @@ func scanMetrics(pkg *distance.PackageReport, pattern string, threshold float64)
 	}
 
 	return violations
-}
-
-func metricGate(input *gateInput) *packageGate {
-	if input.res.Name != distance.MetricDistance || !input.res.Applicable {
-		return &packageGate{pkg: input.pkg.Path, pattern: input.pattern, threshold: input.threshold}
-	}
-
-	return &packageGate{
-		pkg:       input.pkg.Path,
-		pattern:   input.pattern,
-		threshold: input.threshold,
-		value:     input.res.Value,
-		ok:        true,
-	}
-}
-
-// Matches reports whether the rule pattern matches importPath.
-func (rule Rule) Matches(importPath string) bool {
-	return MatchPackage(rule.Pattern, importPath)
-}
-
-// MaxDistance returns the exclusive maximum distance for this rule.
-func (rule Rule) MaxDistance() float64 {
-	return rule.Max
 }
 
 func splitPattern(pattern string) []string {
@@ -303,54 +266,6 @@ func validateRule(key string, rule Rule) error {
 
 	if rule.Max < zero || rule.Max > one {
 		return fmt.Errorf("%s.max: %w (got %g)", key, errMaxOutOfRange, rule.Max)
-	}
-
-	return nil
-}
-
-func writef(builder *strings.Builder, format string, args ...any) error {
-	written, err := fmt.Fprintf(builder, format, args...)
-	if err != nil {
-		return fmt.Errorf(errFmtWrite, err)
-	}
-
-	if written < zero {
-		return fmt.Errorf(errFmtWrite, errNegativeWrite)
-	}
-
-	return nil
-}
-
-func writeViolationHeader(builder *strings.Builder, count int) error {
-	noun := "violations"
-
-	if count == one {
-		noun = "violation"
-	}
-
-	err := writef(builder, "policy: %d %s\n", count, noun)
-	if err != nil {
-		return fmt.Errorf("writeViolationHeader: %w", err)
-	}
-
-	return nil
-}
-
-func writeViolationLines(builder *strings.Builder, violations []Violation) error {
-	for index := range violations {
-		violation := &violations[index]
-		where := violation.Package + " (package)"
-
-		err := writef(builder, "  %s: %s %s exceeds max %s (rule %s)\n",
-			where,
-			distance.MetricDistance,
-			formatNumber(violation.Value),
-			formatNumber(violation.Threshold),
-			violation.Rule,
-		)
-		if err != nil {
-			return fmt.Errorf("writeViolationLines: %w", err)
-		}
 	}
 
 	return nil

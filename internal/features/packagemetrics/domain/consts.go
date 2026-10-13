@@ -6,11 +6,42 @@ package domain
 const (
 	// ScopeProject counts only imports of other analyzed packages.
 	ScopeProject = "project"
+
 	// ScopeModule counts imports of packages in the main module. Without
 	// module information it degrades to ScopeProject.
 	ScopeModule = "module"
+
 	// ScopeAll counts every import.
 	ScopeAll = "all"
 
 	zero = 0
+
+	// MetricAbstractness is the package interface ratio A.
+	MetricAbstractness = "abstractness"
+
+	// MetricInstability is the package coupling ratio I = Ce/(Ca+Ce).
+	MetricInstability = "instability"
+
+	// MetricDistance is a package's distance from the main sequence.
+	MetricDistance = "distance"
+
+	// DefinitionAbstractness identifies the abstractness formula version.
+	DefinitionAbstractness = "distance/abstractness-v1"
+
+	// DefinitionDistance identifies the distance formula version.
+	DefinitionDistance = "distance/distance-v1"
+
+	// DefinitionInstability identifies the instability formula version.
+	DefinitionInstability = "distance/instability-v1"
+
+	// ScopePackage marks a metric computed once per package.
+	ScopePackage = "package"
+
+	// SchemaVersion identifies the JSON/text report schema this build emits.
+	SchemaVersion = "6"
+
+	// KindInterface identifies a named interface type.
+	KindInterface = 1
+
+	mainSequenceBalance = 1.0
 )

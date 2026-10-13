@@ -1,10 +1,15 @@
+// Gostafa 2026.
+// SPDX-License-Identifier: Apache-2.0.
+
 package embedding
 
-type Base struct {
-	Count int
-}
+type (
+	Base struct {
+		Count int
+	}
 
-type Wrapper struct {
-	Base
-	Name string
-}
+	Wrapper struct {
+		Base
+		Name string
+	}
+)

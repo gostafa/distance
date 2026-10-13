@@ -95,7 +95,8 @@ already present (and matches `NIX_VERSION` when that is set).
 systemd is available:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon --yes
+curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install |\
+  sh -s -- --daemon --yes
 ```
 
 Without systemd it uses `--no-daemon` (single-user). WSL2 needs systemd for
@@ -151,8 +152,10 @@ Nix 2.34 gates unstable functionality behind flags in `nix.conf`:
 experimental-features = nix-command flakes
 ```
 
-See the [experimental features](https://nix.dev/manual/nix/2.34/development/experimental-features.html)
-and [`experimental-features` setting](https://nix.dev/manual/nix/2.34/command-ref/conf-file.html#experimental-features)
+See the
+[experimental features](https://nix.dev/manual/nix/2.34/development/experimental-features.html)
+and
+[`experimental-features` setting](https://nix.dev/manual/nix/2.34/command-ref/conf-file.html#experimental-features)
 manual pages. Flags can change or be removed in later releases.
 
 `features:enable` writes that setting to `~/.config/nix/nix.conf` (or

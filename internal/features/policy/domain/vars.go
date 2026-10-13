@@ -8,11 +8,9 @@ import (
 )
 
 var (
-	errNotFinite     = errors.New("must be a finite number")
-	errPatternEmpty  = errors.New("pattern must be non-empty")
-	errMaxOutOfRange = errors.New("max must be in [0, 1]")
-	errNegativeWrite = errors.New("negative write count")
+	errNotFinite = errors.New("must be a finite number")
 
-	_ PathMatcher = Rule{}
-	_ RuleGate    = Rule{}
+	errPatternEmpty = errors.New("pattern must be non-empty")
+
+	errMaxOutOfRange = errors.New("max must be in [0, 1]")
 )
