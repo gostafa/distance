@@ -1,4 +1,4 @@
-# distance
+# Distance
 
 [![LICENSE](https://img.shields.io/github/license/gostafa/distance)](/LICENSE)
 [![`Workflow for distance Action`](https://github.com/gostafa/distance/actions/workflows/main.yml/badge.svg)](https://github.com/gostafa/distance/actions/workflows/main.yml)
@@ -66,7 +66,7 @@ specific pattern wins: more literal segments, then fewer wildcards, then
 longer patterns; exact ties use the later rule. Abstractness and
 instability cannot be selected or gated.
 
-### Build from source
+### Build from Source
 
 ```bash
 git clone https://github.com/gostafa/distance.git
@@ -76,7 +76,7 @@ go build -o ./bin/distance ./cmd/distance
 ./bin/distance
 ```
 
-## Use as a Go library
+## Use as a Go Library
 
 Import the library facade and call the default analysis entry point:
 
@@ -103,7 +103,7 @@ and the retained scope and metric constants. The
 [architecture decision](doc/adr/0024-enforce-feature-contracts-and-reduce-public-api.md)
 documents ownership and migration.
 
-## Use as a golangci-lint plugin
+## Use as a Golangci-Lint Plugin
 
 The plugin must be included in a custom `golangci-lint` binary.
 
@@ -155,14 +155,14 @@ golangci-lint custom -v
 Always run the generated `custom-golangci-lint` binary. The standard
 `golangci-lint` binary does not include the plugin.
 
-## Exit codes
+## Exit Codes
 
 * `0`: success
 * `1`: analysis or write error
 * `2`: command usage error
 * `3`: policy violation
 
-## Verify repository changes
+## Verify Repository Changes
 
 Run these commands from the repository root. Regenerate reports after fixes
 so coverage checks use the final source locations:

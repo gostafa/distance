@@ -1,4 +1,4 @@
-# 20. Split into a single-public-metric distance linter
+# 20. Split into a Single-Public-Metric Distance Linter
 
 Date: 2026-09-02
 
