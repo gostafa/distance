@@ -168,9 +168,7 @@ Run these commands from the repository root. Regenerate reports after fixes
 so coverage checks use the final source locations:
 
 ```sh
-task test:reports
 task taskotter:ci:fix
-task test:reports
 task taskotter:ci
 task taskotter:go-junit-report:report
 go test -race ./...
