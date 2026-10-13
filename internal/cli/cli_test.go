@@ -380,7 +380,7 @@ func TestBrowserCommands(t *testing.T) {
 		t.Fatal("missing browser command succeeded")
 	}
 	directory := t.TempDir()
-	name, _ := browserOpenCommand("darwin", "report.html")
+	name := browserCommand("report.html").Args[0]
 	if err := os.WriteFile(
 		filepath.Join(directory, name),
 		[]byte("#!/bin/sh\nexit 0\n"),
